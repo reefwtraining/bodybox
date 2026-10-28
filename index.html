@@ -1,0 +1,942 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1d2124"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="BODYBOX"><style>html,body{margin:0;padding:0}</style></head><body><title>BODYBOX Programming</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: plate-loaded strip — hero as a whiteboard, goal chips pick a program, six program "plates" in a grid, coach + contact at the foot */
+:root{
+  --bg:#1d2124;        /* rubber floor */
+  --panel:#262b2f;     /* plate */
+  --line:#3a4146;
+  --chalk:#eeeae2;     /* chalk white */
+  --muted:#a9afb1;
+  --gold:#e3a73b;      /* bumper gold */
+  --blue:#5aa3c8;      /* bumper blue */
+  --display:"Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body:"Barlow", "Helvetica Neue", Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--chalk);font-family:var(--body);font-size:17px;line-height:1.55;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--gold)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:.95;letter-spacing:.01em}
+.label{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+/* nav */
+nav{border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px;flex-wrap:wrap}
+.mark{font-family:var(--display);font-weight:900;font-size:24px;letter-spacing:.04em;color:var(--chalk);text-decoration:none;display:flex;align-items:center;gap:10px}
+.mark img{width:auto;height:34px}
+.mark span{color:var(--gold)}
+nav ul{display:flex;gap:20px;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+nav a{color:var(--chalk);text-decoration:none;font-weight:500;font-size:15px}
+nav a:hover{color:var(--gold)}
+
+/* hero */
+.hero .wrap{padding-block:64px 48px;display:grid;grid-template-columns:1.4fr 1fr;gap:40px;align-items:end}
+.hero h1{font-size:clamp(48px,min(10vw,17vh),128px);font-weight:900;text-transform:uppercase}
+.hero h1 em{font-style:normal;color:var(--gold);display:block}
+.hero p.lede{font-size:19px;max-width:34ch;color:var(--chalk);margin:20px 0 0}
+.side{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;justify-items:center;min-width:0}
+.crest{width:min(300px,70vw);height:auto}
+.side .board{width:100%}
+.board{border:1px solid var(--line);background:var(--panel);padding:20px;border-radius:4px;font-family:var(--mono);font-size:14px;min-width:0}
+.board .label{margin-bottom:12px;display:block}
+.board ol{margin:0;padding-left:22px;display:grid;gap:6px}
+.board .pct{color:var(--gold)}
+
+/* goal picker */
+.picker .wrap{padding-block:16px 8px}
+.picker h2{font-size:clamp(32px,5vw,48px);text-transform:uppercase;margin:8px 0 18px}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{font:600 15px var(--body);color:var(--chalk);background:transparent;border:1px solid var(--line);border-radius:999px;padding:9px 16px;cursor:pointer}
+.chip:hover{border-color:var(--gold)}
+.chip[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#1d2124}
+
+/* programs */
+.programs .wrap{padding-block:28px 64px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.plate{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:22px;display:flex;flex-direction:column;gap:12px;transition:opacity .2s,border-color .2s}
+.plate.dim{opacity:.35}
+.plate.hit{border-color:var(--gold)}
+.plate header{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.plate h3{font-size:34px;font-weight:800;text-transform:uppercase}
+.plate .who{font-weight:600;color:var(--gold);margin:0}
+.plate p{margin:0;color:var(--chalk)}
+.sched{font-family:var(--mono);font-size:12px;color:var(--blue);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.sample{margin-top:auto;border-top:1px dashed var(--line);padding-top:12px;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.sample b{color:var(--chalk);font-weight:500}
+
+
+/* samples */
+.samples .wrap{padding-block:8px 64px}
+.samples h2{font-size:clamp(32px,5vw,48px);text-transform:uppercase;margin:8px 0 10px}
+.samples .intro{max-width:62ch;color:var(--muted);margin:0 0 22px}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.tabs button{font:800 18px var(--display);text-transform:uppercase;letter-spacing:.03em;color:var(--muted);background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;cursor:pointer;white-space:nowrap}
+.tabs button:hover{color:var(--chalk)}
+.tabs button[aria-selected="true"]{color:var(--gold);border-bottom-color:var(--gold)}
+.day{padding-top:24px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.dayhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.dayhead h3{font-size:clamp(28px,4vw,38px);text-transform:uppercase}
+.part{display:grid;grid-template-columns:130px minmax(0,1fr) minmax(0,1fr);gap:20px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:18px 20px}
+.tag{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);padding-top:3px}
+.rx{font-family:var(--mono);font-size:14px;line-height:1.75;min-width:0}
+.rx b{color:var(--chalk);font-weight:500;background:linear-gradient(transparent 62%,rgba(227,167,59,.28) 0)}
+.opt{color:var(--gold);white-space:nowrap}
+.why{margin:0;color:var(--muted);font-size:16px;border-left:1px solid var(--line);padding-left:20px}
+.note{color:var(--chalk);font-size:16px;padding:4px 2px}
+.note b{color:var(--gold)}
+.glossary{margin-top:40px;border-top:1px solid var(--line);padding-top:28px}
+.glossary h3{font-size:30px;text-transform:uppercase;margin-bottom:16px}
+.glossary dl{margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 24px}
+.glossary dt{font-family:var(--mono);color:var(--gold);font-size:15px;margin-bottom:4px}
+.glossary dd{margin:0;color:var(--muted);font-size:15px}
+.gear{margin:0;font-size:14px;color:var(--muted)}
+.gear b{color:var(--chalk);font-weight:600}
+.plate .more{font-weight:600;font-size:15px;text-decoration:none}
+.plate .more:hover{text-decoration:underline}
+
+
+/* throwdown */
+.throw{border-top:1px solid var(--line)}
+.throw .wrap{padding-block:64px;display:grid;grid-template-columns:minmax(0,1fr);gap:32px}
+.throw h2{font-size:clamp(48px,8vw,104px);text-transform:uppercase;font-weight:900}
+.throw h2 span{color:var(--gold);display:block}
+.throw .lead{font-size:19px;max-width:60ch;margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.stats div{background:var(--panel);padding:18px 20px}
+.stats b{display:block;font-family:var(--display);font-weight:900;font-size:44px;line-height:1;color:var(--gold)}
+.stats span{font-size:15px;color:var(--muted)}
+.tl{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.tl li{border-top:3px solid var(--blue);padding-top:12px}
+.tl .wk{font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:var(--blue);text-transform:uppercase}
+.tl h3{font-size:28px;text-transform:uppercase;margin:4px 0 6px}
+.tl p{margin:0;color:var(--muted);font-size:15px}
+.countries{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.countries li{font-family:var(--display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.03em;border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+.countries li:first-child{border-color:var(--gold);color:var(--gold)}
+.divs{display:grid;gap:6px;max-width:70ch}
+.divs p{margin:0;color:var(--muted)}
+.divs b{color:var(--chalk);font-weight:600}
+.watch{display:flex;align-items:center;gap:18px;max-width:520px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:16px 20px;color:var(--chalk);text-decoration:none;transition:border-color .2s}
+.watch:hover{border-color:var(--gold)}
+.watch .play{flex:none;width:56px;height:56px;border-radius:50%;background:var(--gold);position:relative}
+.watch .play::after{content:"";position:absolute;left:22px;top:17px;border-left:18px solid var(--bg);border-top:11px solid transparent;border-bottom:11px solid transparent}
+.watch b{display:block;font-family:var(--display);font-weight:800;font-size:28px;text-transform:uppercase;line-height:1}
+.watch small{color:var(--muted);font-size:15px}
+.throw .closer{max-width:62ch;margin:0;color:var(--chalk)}
+@media (max-width:900px){.stats,.tl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* photos */
+.banner{position:relative;margin:0}
+.banner img{display:block;width:100%;height:clamp(260px,48vw,560px);object-fit:cover;object-position:center 40%}
+.banner figcaption{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(16,18,20,.85));padding-block:48px 18px}
+.banner figcaption .wrap{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
+.banner b{font-family:var(--display);font-weight:900;font-size:clamp(30px,5vw,56px);text-transform:uppercase;color:#eeeae2;line-height:1}
+.banner span{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#e3a73b}
+.coachpic{margin:20px 0 0;max-width:520px}
+.coachpic img{display:block;width:100%;height:auto;border-radius:4px}
+.coachpic figcaption{font-size:14px;color:var(--muted);margin-top:8px}
+.compfloor{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.compfloor img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}
+.team .wrap{padding-block:64px}
+.team h2{font-size:clamp(44px,7vw,80px);text-transform:uppercase;margin:8px 0 10px}
+.team .intro{max-width:60ch;color:var(--muted);margin:0 0 24px}
+.gallery{columns:3 260px;column-gap:12px}
+.gallery figure{margin:0 0 12px;break-inside:avoid}
+.gallery img{display:block;width:100%;height:auto;border-radius:4px;background:var(--panel)}
+@media (max-width:600px){.compfloor{grid-template-columns:1fr 1fr}.compfloor img:last-child{grid-column:1/-1}}
+
+
+/* videos */
+.videos{border-top:1px solid var(--line)}
+.videos .wrap{padding-block:64px}
+.videos h2{font-size:clamp(44px,7vw,80px);text-transform:uppercase;margin:8px 0 10px}
+.videos .intro{max-width:60ch;color:var(--muted);margin:0 0 24px}
+.chans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.chan{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:22px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.chan header{display:grid;gap:2px}
+.chan h3{font-size:30px;text-transform:uppercase}
+.chan .handle{font-family:var(--mono);font-size:13px;text-decoration:none;overflow-wrap:anywhere}
+.chan p{margin:0;color:var(--muted);font-size:15px}
+.chan ul{list-style:none;margin:0;padding:0;display:grid;border-top:1px solid var(--line)}
+.chan li a{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);color:var(--chalk);text-decoration:none;font-size:15px;font-weight:500}
+.chan li a:hover{color:var(--gold)}
+.tri{flex:none;width:0;height:0;border-left:9px solid var(--gold);border-top:6px solid transparent;border-bottom:6px solid transparent}
+.chan .sub{margin-top:auto;align-self:start;font:600 14px var(--body);background:var(--gold);color:#1d2124;text-decoration:none;border-radius:4px;padding:9px 14px}
+@media (max-width:900px){.chans{grid-template-columns:1fr}}
+
+/* coach */
+.coach{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel)}
+.coach .wrap{padding-block:56px;display:grid;grid-template-columns:1fr 1.3fr;gap:40px}
+.coach h2{font-size:clamp(44px,7vw,80px);text-transform:uppercase}
+.coach h2 span{color:var(--gold)}
+.coach ul{margin:0;padding:0;list-style:none;display:grid;gap:14px}
+.coach li{border-left:3px solid var(--blue);padding-left:14px}
+
+/* how */
+.how .wrap{padding-block:56px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.how h3{font-size:26px;text-transform:uppercase;margin-bottom:8px}
+.how p{margin:0;color:var(--muted)}
+
+/* contact */
+.contact .wrap{padding-block:56px 72px;display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between}
+.contact h2{font-size:clamp(40px,6vw,68px);text-transform:uppercase}
+.mail{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.mail code{font-family:var(--mono);font-size:16px;background:var(--panel);border:1px solid var(--line);padding:10px 14px;border-radius:4px;user-select:all}
+.btn{font:600 15px var(--body);background:var(--gold);color:#1d2124;border:0;border-radius:4px;padding:11px 18px;cursor:pointer}
+footer{border-top:1px solid var(--line)}
+.fmark{display:inline-flex;align-items:center;gap:8px}
+.fmark img{width:auto;height:22px}
+footer .wrap{padding-block:20px;font-size:14px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* app */
+.app{border-top:1px solid var(--line)}
+.app .wrap{padding-block:64px;display:grid;gap:28px}
+.app h2{font-size:clamp(44px,7vw,80px);text-transform:uppercase;margin:8px 0 10px}
+.app h2 span{color:var(--gold)}
+.app .intro{max-width:62ch;color:var(--muted);margin:0}
+.phones{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(200px,230px);gap:18px;overflow-x:auto;padding-bottom:12px;scroll-snap-type:x mandatory;scrollbar-width:thin}
+.phones figure{margin:0;scroll-snap-align:start;display:grid;gap:10px;align-content:start}
+.phones img{display:block;width:100%;height:auto;aspect-ratio:390/844;object-fit:cover;border-radius:22px;border:6px solid #0f1112;box-shadow:0 0 0 1px var(--line)}
+.phones figcaption b{display:block;font-family:var(--display);font-weight:800;font-size:22px;text-transform:uppercase;line-height:1}
+.phones figcaption span{font-size:14px;color:var(--muted)}
+.feats{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 24px}
+.feats li{border-left:3px solid var(--gold);padding-left:14px}
+.feats b{display:block;font-weight:600}
+.feats span{color:var(--muted);font-size:15px}
+.fineprint{font-size:14px;color:var(--muted);margin:0}
+
+/* hero buttons */
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+a.btn{display:inline-block;text-decoration:none;font-size:16px;padding:13px 20px}
+.btn.ghost{background:transparent;color:var(--chalk);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.ghost:hover{box-shadow:inset 0 0 0 1px var(--gold);color:var(--gold)}
+
+/* book a class */
+.inperson{border-top:1px solid var(--line)}
+.inperson .wrap{padding-block:64px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:40px;align-items:center}
+.inperson h2{font-size:clamp(44px,7vw,80px);text-transform:uppercase;margin:8px 0 10px}
+.inperson h2 span{color:var(--gold)}
+.inperson .intro{max-width:56ch;color:var(--muted);margin:0 0 20px}
+.sfsteps{margin:0 0 22px;padding-left:22px;display:grid;gap:6px}
+.times{list-style:none;margin:0 0 20px;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-width:520px}
+.times li{border:1px solid var(--line);border-radius:4px;padding:10px 14px;background:var(--panel)}
+.times b{display:block;font-family:var(--mono);font-size:16px;color:var(--chalk);font-variant-numeric:tabular-nums}
+.times span{font-size:13px;color:var(--muted)}
+.times li.open{grid-column:1/-1;border-style:dashed}
+.qr{justify-self:center;background:#fff;border-radius:6px;padding:14px;max-width:260px;width:100%}
+.qr img{display:block;width:100%;height:auto}
+.qr p{margin:8px 0 0;color:#1d2124;font-size:13px;text-align:center;font-weight:600}
+
+/* faq */
+.faq{border-top:1px solid var(--line)}
+.faq .wrap{padding-block:64px;display:grid;gap:24px}
+.faq h2{font-size:clamp(44px,7vw,80px);text-transform:uppercase;margin:8px 0 0}
+.qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 32px;border-top:1px solid var(--line)}
+.qa details{border-bottom:1px solid var(--line);padding:14px 0}
+.qa summary{cursor:pointer;font-weight:600;font-size:17px;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary::after{content:"+";color:var(--gold);font-family:var(--mono);font-size:20px;line-height:1}
+.qa details[open] summary::after{content:"–"}
+.qa p{margin:10px 0 0;color:var(--muted);font-size:16px;max-width:60ch}
+
+/* socials */
+.socials{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}
+.socials a{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:7px 14px;color:var(--chalk);text-decoration:none;font-size:14px;font-weight:600}
+.socials a:hover{border-color:var(--gold);color:var(--gold)}
+.contact .right{display:grid;gap:14px;justify-items:start}
+@media (max-width:900px){.inperson .wrap{grid-template-columns:1fr}.qa{grid-template-columns:1fr}}
+
+/* plans */
+.plans{border-top:1px solid var(--line);background:var(--panel)}
+.plans .wrap{padding-block:64px;display:grid;gap:28px}
+.plans h2{font-size:clamp(44px,7vw,80px);text-transform:uppercase;margin:8px 0 10px}
+.plans .intro{max-width:62ch;color:var(--muted);margin:0}
+.pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.price{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.price h3{font-size:28px;text-transform:uppercase}
+.price .amt{font-family:var(--display);font-weight:900;font-size:48px;line-height:1;color:var(--gold)}
+.price .amt small{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
+.price p{margin:0;font-size:15px;color:var(--muted)}
+.price ul{margin:0;padding-left:18px;font-size:15px;display:grid;gap:4px}
+.deals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.deal{border:2px solid var(--gold);border-radius:4px;padding:22px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.deal.alt{border:1px solid var(--line)}
+.deal h3{font-size:30px;text-transform:uppercase}
+.deal p{margin:4px 0 0;color:var(--muted);font-size:15px;max-width:44ch}
+.deal .amt{font-family:var(--display);font-weight:900;font-size:56px;line-height:1;color:var(--gold);white-space:nowrap}
+.deal .amt small{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
+.beta{background:var(--gold);color:#1d2124;padding:12px 0;font-size:15px}
+.beta .wrap{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:space-between}
+.beta b{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin-right:8px}
+.beta a{color:#1d2124;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.fbk{border:1px solid var(--gold);border-radius:4px;padding:22px 24px;display:grid;gap:12px;margin-top:16px}
+.fbk h3{font-size:30px;text-transform:uppercase;margin:0}
+.fbk p{margin:0;color:var(--muted)}
+.fbk label{display:grid;gap:6px;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fbk input,.fbk textarea{font:16px var(--body);background:transparent;color:var(--chalk);border:1px solid var(--line);border-radius:4px;padding:10px 12px;text-transform:none;letter-spacing:0}
+.fbk textarea{min-height:110px;resize:vertical}
+.promo{padding:56px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.promo .wrap{display:flex;flex-wrap:wrap;gap:24px 48px;align-items:center;justify-content:center}
+.promo h2{font-family:var(--display);font-size:clamp(40px,7vw,64px);text-transform:uppercase;line-height:.95;margin:8px 0 10px}
+.promo p{color:var(--muted);margin:0}
+.promo video{width:min(320px,100%);height:auto;aspect-ratio:9/16;border-radius:18px;border:1px solid var(--line);background:#000}
+.trial{display:flex;justify-content:space-between;align-items:center;gap:16px 24px;flex-wrap:wrap;background:var(--gold);color:#1d2124;border-radius:4px;padding:22px 24px}
+.trial h3{font-size:clamp(30px,4vw,40px);text-transform:uppercase}
+.trial p{margin:6px 0 0;max-width:56ch;font-size:16px}
+.trial .mail code{background:#1d2124;color:var(--chalk);border-color:#1d2124}
+.trial .btn{background:#1d2124;color:var(--chalk)}
+.joinsteps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;counter-reset:st}
+.joinsteps>li{counter-increment:st;display:grid;gap:8px;align-content:start}
+.joinsteps>li::before{content:"Step " counter(st);font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue)}
+.joinsteps h3{font-size:26px;text-transform:uppercase}
+.joinsteps p{margin:0;color:var(--muted);font-size:15px}
+.paylist{list-style:none;margin:0;padding:0;display:grid;border-top:1px solid var(--line)}
+.paylist li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px;flex-wrap:wrap}
+.paylist li span:first-child{font-weight:600}
+.paylist a,.paylist .h{font-family:var(--mono);font-size:14px}
+@media (max-width:900px){.pricing{grid-template-columns:repeat(2,minmax(0,1fr))}.feats{grid-template-columns:repeat(2,minmax(0,1fr))}.deals,.joinsteps{grid-template-columns:1fr}}
+@media (max-width:600px){.pricing,.feats{grid-template-columns:1fr}}
+
+@media (max-width:1100px){
+  nav .wrap{flex-wrap:nowrap;gap:20px}
+  nav ul{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;min-width:0;padding-block:4px}
+  nav ul::-webkit-scrollbar{display:none}
+  nav li{flex:none}
+}
+@media (max-height:500px) and (orientation:landscape){
+  .hero .wrap{padding-block:28px 24px;grid-template-columns:1.3fr 1fr;align-items:center}
+  .crest{width:min(200px,30vw)}
+  .banner img{height:min(70vh,320px)}
+}
+@media (max-width:900px){
+  .hero .wrap,.coach .wrap{grid-template-columns:1fr}
+  .glossary dl{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .part{grid-template-columns:110px minmax(0,1fr)}
+  .why{grid-column:2;border-left:0;padding-left:0}
+  .grid,.how .wrap{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:600px){
+  .part{grid-template-columns:1fr;gap:10px}
+  .why{grid-column:auto}
+  .glossary dl{grid-template-columns:1fr}
+  .grid,.how .wrap{grid-template-columns:1fr}
+  nav ul{gap:14px}
+  .hero .wrap{padding-block:40px 32px}
+}
+@media (prefers-reduced-motion:reduce){.plate{transition:none}}
+</style>
+
+<nav>
+  <div class="wrap">
+    <a class="mark" href="#top"><img src="img/b-mark.png" alt="" width="126" height="202">BODY<span>BOX</span></a>
+    <ul>
+      <li><a href="#programs">Programs</a></li>
+      <li><a href="#samples">Sample workouts</a></li>
+      <li><a href="#throwdown">Throwdown</a></li>
+      <li><a href="#coach">Coach</a></li>
+      <li><a href="#team">Team</a></li>
+      <li><a href="#videos">Videos</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#app">The app</a></li>
+      <li><a href="#plans">Plans</a></li>
+      <li><a href="#class">Book a class</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="https://rebuilttraining.com" target="_blank" rel="noopener">Rebuilt Training ↗</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="beta" id="beta"><div class="wrap"><span><b>Team beta</b>Open through Sun Nov 1. No code, no sign-up. <a href="#feedback">Leave comments</a> · <a href="#promo">Watch the commercial</a></span><a href="https://reefwtraining.github.io/bodybox/app/" target="_blank" rel="noopener">Open the BODYBOX app ↗</a></div></div>
+<script>(function(){var d=new Date(),t=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();if(t>20261101){var b=document.getElementById('beta');if(b)b.remove();}})();</script>
+<section class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <span class="label">BODYBOX Programming · by Reef Warfield</span>
+      <h1>Train for<em>your goal.</em></h1>
+      <p class="lede">Six programs, one coach. Whether you compete, run, lift, or just want to feel good every day, there's a track built for it.</p>
+      <div class="cta"><a class="btn" href="#trial">Try 7 days free</a><a class="btn ghost" href="#plans">See plans &amp; prices</a></div>
+    </div>
+    <div class="side">
+    <img class="crest" src="img/b-logo.png" alt="Body Box logo" width="360" height="294">
+    <div class="board" aria-label="Example whiteboard">
+      <span class="label">On the board · Example day</span>
+      <ol>
+        <li>Deadlift 5 × 3, build to heavy</li>
+        <li>12 min AMRAP:</li>
+        <li>200 m Row</li>
+        <li>12 Wall Balls <span class="pct">20/14</span></li>
+        <li>10 KB Swings <span class="pct">53/35</span></li>
+      </ol>
+    </div>
+    </div>
+  </div>
+</section>
+<section class="promo" id="promo"><div class="wrap"><div><span class="label">Team beta · New</span><h2>Watch the BODYBOX commercial</h2><p>45 seconds of what we built. Turn the sound on.</p></div><video controls playsinline preload="none" poster="video/bodybox-commercial-poster.jpg" src="video/bodybox-commercial.mp4" width="540" height="960"></video></div></section>
+<script>(function(){var d=new Date(),t=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();if(t>20261101){var b=document.getElementById('promo');if(b)b.remove();}})();</script>
+
+
+<figure class="banner">
+  <img src="img/team/flag.jpg" alt="Team BODYBOX and Rebuilt Training athletes, kids included, gathered around a Body Box flag at an outdoor competition" width="1400" height="1050">
+  <figcaption><div class="wrap"><b>Team BODYBOX</b><span>Competition day</span></div></figcaption>
+</figure>
+
+<section class="picker" id="programs">
+  <div class="wrap">
+    <span class="label">Step 1</span>
+    <h2>What's your goal?</h2>
+    <div class="chips" role="group" aria-label="Filter programs by goal">
+      <button class="chip" id="g-all" data-goal="all" aria-pressed="true">Show all</button>
+      <button class="chip" id="g-general" data-goal="general" aria-pressed="false">General fitness</button>
+      <button class="chip" id="g-compete" data-goal="compete" aria-pressed="false">Compete</button>
+      <button class="chip" id="g-strength" data-goal="strength" aria-pressed="false">Build muscle &amp; strength</button>
+      <button class="chip" id="g-run" data-goal="run" aria-pressed="false">Run &amp; race</button>
+      <button class="chip" id="g-anywhere" data-goal="anywhere" aria-pressed="false">Train anywhere</button>
+      <button class="chip" id="g-move" data-goal="move" aria-pressed="false">Move &amp; feel better</button>
+    </div>
+  </div>
+</section>
+
+<section class="programs">
+  <div class="wrap">
+    <div class="grid">
+      <article class="plate" data-goals="general">
+        <header><h3>Rebuilt Training Class</h3><span class="sched">Mon–Sat · 60 min</span></header>
+        <p class="who">For everyone.</p>
+        <p>The everyday functional fitness group class. Strength, skill and a conditioning workout in one hour, scaled for every level.</p>
+        <div class="sample"><b>Looks like:</b> one strength lift + a scaled conditioning workout · partner Saturdays</div>
+        <p class="gear"><b>You need:</b> Nothing. Just show up. Every bar, plate and machine is at Rebuilt Training.</p>
+        <a class="more" href="#samples" data-tab="class">See a full sample day →</a>
+      </article>
+
+      <article class="plate" data-goals="compete strength">
+        <header><h3>Athlete Comp</h3><span class="sched">Add-on</span></header>
+        <p class="who">For competitors.</p>
+        <p>Extra Olympic lifting, gymnastics and engine work to raise your athletic ability and compete at a higher level.</p>
+        <div class="sample"><b>Looks like:</b> percentage-based lifting, gymnastics skill and competition-style intervals</div>
+        <p class="gear"><b>You need:</b> A barbell and bumper plates, a rack, a pull-up bar or rings, dumbbells, kettlebells, a jump rope, a box, a wall ball, and a rower, bike or ski erg.</p>
+        <a class="more" href="#samples" data-tab="comp">See a full sample day →</a>
+      </article>
+
+      <article class="plate" data-goals="strength compete run">
+        <header><h3>BODYBOX Building</h3><span class="sched">Add-on</span></header>
+        <p class="who">For gym-goers.</p>
+        <p>Bodybuilding-style strength work. A full program on its own, or the extra edge for runners and competitors.</p>
+        <div class="sample"><b>Looks like:</b> a main lift, 3–4 accessories and core</div>
+        <p class="gear"><b>You need:</b> A barbell and rack, a bench, dumbbells, and a cable machine or bands.</p>
+        <a class="more" href="#samples" data-tab="build">See a full sample day →</a>
+      </article>
+
+      <article class="plate" data-goals="run">
+        <header><h3>Cardio</h3><span class="sched">Add-on</span></header>
+        <p class="who">For runners &amp; engine lovers.</p>
+        <p>Run, row, ski and bike with real technique coaching. Built for race prep or anyone who loves cardio.</p>
+        <div class="sample"><b>Looks like:</b> intervals, tempo and easy miles on foot or machine</div>
+        <p class="gear"><b>You need:</b> Running shoes, plus a rower, bike or ski erg for machine days.</p>
+        <a class="more" href="#samples" data-tab="cardio">See a full sample day →</a>
+      </article>
+
+      <article class="plate" data-goals="anywhere general">
+        <header><h3>S.H.I.I.T</h3><span class="sched">Mon · Wed · Fri</span></header>
+        <p class="who">Super High Intensity Interval Training.</p>
+        <p>Small-space intervals you can do at home or in a hotel room: bodyweight, plyometrics and one dumbbell or kettlebell. The goal is moving with efficiency.</p>
+        <div class="sample"><b>Looks like:</b> timed intervals of bodyweight, plyo and one DB or KB</div>
+        <p class="gear"><b>You need:</b> Floor space and one dumbbell or kettlebell.</p>
+        <a class="more" href="#samples" data-tab="shiit">See a full sample day →</a>
+      </article>
+
+      <article class="plate" data-goals="move general">
+        <header><h3>Yoga &amp; Toning</h3><span class="sched">Coming soon</span></header>
+        <p class="who">A new class coming soon to Rebuilt Training.</p>
+        <p>Mobility &amp; stretch flows on Mon/Wed/Fri that support the lifts, and abs &amp; booty toning on Tue/Thu/Sat.</p>
+        <div class="sample"><b>Looks like:</b> guided mobility flows and abs &amp; booty toning circuits</div>
+        <p class="gear"><b>You need:</b> A mat. Straps, bands and blocks are optional.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="samples" id="samples">
+  <div class="wrap">
+    <span class="label">Step 2</span>
+    <h2>See what a day looks like</h2>
+    <p class="intro">Every program follows the same rhythm: warm up with purpose, build strength or skill, then a workout that tests it. These example days show the style of each program and what each part is for.</p>
+
+    <div class="tabs" role="tablist" aria-label="Sample workouts by program">
+      <button role="tab" id="t-class" aria-controls="p-class" aria-selected="true">Rebuilt Training Class</button>
+      <button role="tab" id="t-comp" aria-controls="p-comp" aria-selected="false">Athlete Comp</button>
+      <button role="tab" id="t-build" aria-controls="p-build" aria-selected="false">BODYBOX Building</button>
+      <button role="tab" id="t-cardio" aria-controls="p-cardio" aria-selected="false">Cardio</button>
+      <button role="tab" id="t-shiit" aria-controls="p-shiit" aria-selected="false">S.H.I.I.T</button>
+    </div>
+
+    <!-- Rebuilt Training Class -->
+    <div class="day" role="tabpanel" id="p-class" aria-labelledby="t-class">
+      <div class="dayhead"><h3>Rebuilt Training Class · Example day</h3><span class="sched">60 min · all levels</span></div>
+      <div class="part">
+        <div class="tag">Warm-up</div>
+        <div class="rx">3 min easy row, then 2 rounds: 10 Air Squats, 10 Ring Rows, 5 Inchworms, 3 Broad Jumps</div>
+        <p class="why">Moves every joint you'll use today and adds a little explosive work to wake up the legs.</p>
+      </div>
+      <div class="part">
+        <div class="tag">Strength</div>
+        <div class="rx"><b>Deadlift</b> · 5 sets of 3, building to a heavy set</div>
+        <p class="why">One main lift a day. You pick the weight, and coaches help you find a heavy but clean set.</p>
+      </div>
+      <div class="part">
+        <div class="tag">Workout</div>
+        <div class="rx"><b>12 min AMRAP</b><br>200 m Row<br>12 Wall Balls 20/14 lb<br>10 Russian KB Swings 53/35 lb <span class="opt">RX+ 70/53</span></div>
+        <p class="why">A conditioning piece that keeps you moving. Every movement has a scaled option, so beginners and veterans do the same workout.</p>
+      </div>
+      <div class="note"><b>Saturdays</b> are longer workouts done solo or with a partner: machines, carries, sled or sandbag work and plenty of teamwork.</div>
+    </div>
+
+    <!-- Athlete Comp -->
+    <div class="day" role="tabpanel" id="p-comp" aria-labelledby="t-comp" hidden>
+      <div class="dayhead"><h3>Athlete Comp · Example day</h3><span class="sched">done on top of class</span></div>
+      <div class="part">
+        <div class="tag">Warm-up</div>
+        <div class="rx">3 min bike, then 2–3 sets: 8 KB RDL, 8 Goblet Squats, 5/5 Single-Arm Press<br>Explosive primer: 3 sets of 3 Seated Box Jumps + 3 Clean Pulls</div>
+        <p class="why">Gets the hips and shoulders ready, then trains speed before you touch a heavy bar.</p>
+      </div>
+      <div class="part">
+        <div class="tag">Strength</div>
+        <div class="rx"><b>Power Clean + Front Squat</b> complex<br>5 sets: 3+1 @ 60% · 2+1 @ 70% · 1+1 @ 75 / 80 / 80%</div>
+        <p class="why">Percentages are of your best lift, so the day fits your level. Pairing the clean with a squat builds strength in the catch.</p>
+      </div>
+      <div class="part">
+        <div class="tag">Workout</div>
+        <div class="rx"><b>Every 3:00 × 5 rounds</b><br>12/10 Cal Row<br>8 Toes-to-Bar<br>6 Thrusters 95/65 lb <span class="opt">RX+ 115/80</span><br>Rest the remaining time</div>
+        <p class="why">Repeatable hard efforts with rest, just like heats at a competition. The goal is holding the same pace every round.</p>
+      </div>
+    </div>
+
+    <!-- BODYBOX Building -->
+    <div class="day" role="tabpanel" id="p-build" aria-labelledby="t-build" hidden>
+      <div class="dayhead"><h3>BODYBOX Building · Example day</h3><span class="sched">lower body</span></div>
+      <div class="part">
+        <div class="tag">Warm-up</div>
+        <div class="rx">4 min bike for distance, then 3 rounds: 10 Glute Bridges, 10 Bodyweight Lunges, 20 Jumping Jacks</div>
+        <p class="why">Raises the heart rate and gets blood into the muscles you're about to train.</p>
+      </div>
+      <div class="part">
+        <div class="tag">Strength</div>
+        <div class="rx"><b>Back Squat</b> 5 × 5 @ 70%<br><b>Romanian Deadlift</b> 4 × 8<br><b>DB Walking Lunge</b> 3 × 20 steps<br><b>Leg Extension or Banded Knee Extension</b> 3 × 15</div>
+        <p class="why">Classic muscle-building work: one heavy lift for strength, then higher-rep accessories for size. Technique notes come with every movement.</p>
+      </div>
+      <div class="part">
+        <div class="tag">Core</div>
+        <div class="rx">3 sets, 1 min rest: :30 Weighted Plank · 12 Hanging Knee Raises · 10/10 Side Plank Reach-Throughs</div>
+        <p class="why">Finishes with midline work that carries over to every lift.</p>
+      </div>
+    </div>
+
+    <!-- Cardio -->
+    <div class="day" role="tabpanel" id="p-cardio" aria-labelledby="t-cardio" hidden>
+      <div class="dayhead"><h3>Cardio · Example day</h3><span class="sched">run day</span></div>
+      <div class="part">
+        <div class="tag">Warm-up</div>
+        <div class="rx">10 reps each: leg swings, lateral lunges, hip openers, down-dog calf stretch, high knees, butt kickers</div>
+        <p class="why">A runner's dynamic warm-up that opens the hips and ankles before faster work.</p>
+      </div>
+      <div class="part">
+        <div class="tag">Workout</div>
+        <div class="rx"><b>6 × 400 m</b> at goal 5K pace<br>90 sec walk between</div>
+        <p class="why">Teaches your body what race pace feels like, with enough rest to hit it every time.</p>
+      </div>
+      <div class="part">
+        <div class="tag">Cool-down</div>
+        <div class="rx">2 sets: 15 Tibialis Raises · 10 Banded Chinese Squats</div>
+        <p class="why">Light accessory work to keep shins and knees healthy. No heavy weight.</p>
+      </div>
+      <div class="note"><b>Other days</b> use the rower, ski erg and bikes, with real technique coaching: row "1 o'clock to 11 o'clock," ski "cheek to cheek," and drive the heel down on the bike.</div>
+    </div>
+
+    <!-- S.H.I.I.T -->
+    <div class="day" role="tabpanel" id="p-shiit" aria-labelledby="t-shiit" hidden>
+      <div class="dayhead"><h3>S.H.I.I.T · Example day</h3><span class="sched">Mon · Wed · Fri</span></div>
+      <div class="part">
+        <div class="tag">Format</div>
+        <div class="rx">Timed blocks, each with one focus: warm-up, power, conditioning, finisher</div>
+        <p class="why">The clock does the coaching. Work hard for the interval, rest, and go again.</p>
+      </div>
+      <div class="part">
+        <div class="tag">Workout</div>
+        <div class="rx"><b>:40 work / :20 rest × 3 rounds</b><br>Squat Jumps · Push-ups · DB or KB Swings · Mountain Climbers · Reverse Lunges</div>
+        <p class="why">Bodyweight and plyometrics with at most one dumbbell or kettlebell, so it works at home or in a hotel room.</p>
+      </div>
+      <div class="note">The goal is moving with efficiency. Adjust the weight; there's no need to go heavy.</div>
+    </div>
+
+
+    <div class="glossary">
+      <h3>How to read the board</h3>
+      <dl>
+        <div><dt>EMOM</dt><dd>Every minute on the minute. Start a set at the top of each minute; whatever time is left is rest.</dd></div>
+        <div><dt>AMRAP</dt><dd>As many rounds or reps as possible in the time given.</dd></div>
+        <div><dt>For time</dt><dd>Finish the work as fast as you can, with good form.</dd></div>
+        <div><dt>75/55</dt><dd>Suggested weight in pounds. First number for men, second for women.</dd></div>
+        <div><dt>RX / RX+</dt><dd>RX is the workout as written. RX+ is a harder version. Scaled options are always available.</dd></div>
+        <div><dt>@ 70%</dt><dd>Use 70% of your best single lift for that movement.</dd></div>
+        <div><dt>4-6-4-6</dt><dd>Reps per set, in order. Each number is one set.</dd></div>
+        <div><dt>5RM</dt><dd>Rep max. The heaviest weight you can lift for 5 good reps.</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="throw" id="throwdown">
+  <div class="wrap">
+    <div>
+      <span class="label">Where it started · Fall 2020</span>
+      <h2>BodyBox<span>Throwdown 2020</span></h2>
+    </div>
+    <p class="lead">When gyms were closed and competitions were cancelled, we built our own. The BodyBox Throwdown was a free, four-week online competition that brought 120 athletes together on one leaderboard, competing from CrossFit boxes and garage gyms in nine countries.</p>
+    <ul class="countries" aria-label="Countries represented">
+      <li>United States</li><li>Germany</li><li>England</li><li>Morocco</li><li>Bulgaria</li><li>Lithuania</li><li>Portugal</li><li>Belgium</li><li>France</li>
+    </ul>
+    <div class="stats">
+      <div><b>120</b><span>athletes signed up</span></div>
+      <div><b>8</b><span>divisions, men's and women's</span></div>
+      <div><b>4</b><span>weeks, 5 scored events</span></div>
+      <div><b>9</b><span>countries represented</span></div>
+    </div>
+    <div class="divs">
+      <span class="label">Divisions</span>
+      <p><b>RX</b> · <b>Scaled</b> · <b>Garage Athlete</b> · <b>Garage Athlete Scaled</b>. The Garage divisions were built for people training at home with limited equipment, the same way BODYBOX started.</p>
+    </div>
+    <ol class="tl">
+      <li><span class="wk">Week 1</span><h3>Workout 20.1</h3><p>The opener dropped with movement standard videos so everyone knew exactly what counted.</p></li>
+      <li><span class="wk">Week 2</span><h3>20.2 + 20.2A</h3><p>A two-part week that tested both engine and skill.</p></li>
+      <li><span class="wk">Week 3</span><h3>Workout 20.3</h3><p>Athletes filmed their efforts and sent in video for judging.</p></li>
+      <li><span class="wk">Week 4</span><h3>Workout 20.4</h3><p>The finale, scored, judged and posted to the final leaderboard.</p></li>
+    </ol>
+    <div class="compfloor">
+      <img src="img/team/overhead.jpg" alt="Athlete locking out a barbell overhead in front of a cheering crowd" loading="lazy">
+      <img src="img/team/comp-cheer.jpg" alt="Coach cheering an athlete through a movement at a competition" loading="lazy">
+      <img src="img/team/boxstep.jpg" alt="Athlete in a Body Box shirt stepping onto a box at a competition" loading="lazy">
+    </div>
+    <a class="watch" href="https://youtu.be/5te2Vh_LuE0" target="_blank" rel="noopener">
+      <span class="play" aria-hidden="true"></span>
+      <span><b>Watch the promo</b><small>Throwdown 2020 promo video on YouTube ↗</small></span>
+    </a>
+    <p class="closer">Every score was backed by video. We partnered with WODProof for time-stamped competition timers, gave away weekly prizes with Game Face Wipes, and ran it all on Competition Corner. When it was over, we sat down and recorded a review of the whats and whys, because the athletes' feedback shapes how we build everything, including the programming on this page.</p>
+  </div>
+</section>
+
+<section class="videos" id="videos">
+  <div class="wrap">
+    <span class="label">On YouTube</span>
+    <h2>Watch the work</h2>
+    <p class="intro">Team sessions, max-out days and the Throwdown highlight reels. Every link opens on YouTube.</p>
+    <div class="chans">
+      <article class="chan">
+        <header>
+          <h3>Team BodyBox</h3>
+          <a class="handle" href="https://www.youtube.com/@teambodybox8284" target="_blank" rel="noopener">@teambodybox8284 ↗</a>
+        </header>
+        <p>Team training sessions, max-out days and the athletes behind the programming.</p>
+        <ul>
+          <li><a href="https://youtu.be/N_W0odK2rfs" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Team squat clean max</a></li>
+          <li><a href="https://youtu.be/W8a_S6Xv30g" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Who drops out first: xEMOM</a></li>
+          <li><a href="https://youtu.be/sV_V6fYz4do" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Interval: wall balls and clean &amp; jerks</a></li>
+          <li><a href="https://youtu.be/zojoMeLLNtQ" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>No One Fights Alone: “Resilience”</a></li>
+        </ul>
+        <a class="sub" href="https://www.youtube.com/@teambodybox8284" target="_blank" rel="noopener">Open channel</a>
+      </article>
+      <article class="chan">
+        <header>
+          <h3>BodyBox Competitions</h3>
+          <a class="handle" href="https://www.youtube.com/@bodyboxcompetitions8350" target="_blank" rel="noopener">@bodyboxcompetitions8350 ↗</a>
+        </header>
+        <p>The Throwdown 2020 promo and highlight reels from athletes around the world.</p>
+        <ul>
+          <li><a href="https://youtu.be/5te2Vh_LuE0" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Throwdown 2020 promo video</a></li>
+          <li><a href="https://youtu.be/zyWHRPzpjLE" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Ivo Ivanov · Throwdown 2020 highlights</a></li>
+          <li><a href="https://youtu.be/S5g_OejWcVQ" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Nicole Rossi · Throwdown 2020 highlights</a></li>
+          <li><a href="https://youtu.be/XoNjaVy0eP0" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Hulk Pavlov · Throwdown 2020 highlights</a></li>
+        </ul>
+        <a class="sub" href="https://www.youtube.com/@bodyboxcompetitions8350" target="_blank" rel="noopener">Open channel</a>
+      </article>
+      <article class="chan">
+        <header>
+          <h3>Movement demos</h3>
+          <a class="handle" href="https://www.youtube.com/playlist?list=PLVtdAsYf-KJOvhPerEvkQA7iY_Lsme-nR" target="_blank" rel="noopener">Team BodyBox Movements playlist ↗</a>
+        </header>
+        <p>How we want the movements done. The same demos are in the app, one tap from every workout.</p>
+        <ul>
+          <li><a href="https://www.youtube.com/watch?v=cOBi9oJeia8" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Clean &amp; jerk</a></li>
+          <li><a href="https://www.youtube.com/watch?v=ksv_sfVuOP4" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Snatch</a></li>
+          <li><a href="https://www.youtube.com/watch?v=ZvLnJjaILHE" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Wall ball</a></li>
+          <li><a href="https://www.youtube.com/watch?v=NmXLIH0HfuY" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Toes to bar</a></li>
+        </ul>
+        <a class="sub" href="https://www.youtube.com/playlist?list=PLVtdAsYf-KJOvhPerEvkQA7iY_Lsme-nR" target="_blank" rel="noopener">Open playlist</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="coach" id="coach">
+  <div class="wrap">
+    <div>
+      <span class="label">Head coach &amp; programmer</span>
+      <h2>Reef<br><span>Warfield</span></h2>
+      <figure class="coachpic">
+        <img src="img/team/reef.jpg" alt="Reef Warfield in a Body Box shirt setting up under a loaded barbell for a back squat at a competition" width="1200" height="800">
+        <figcaption>Competing in Body Box colors. Photo: @awesnap</figcaption>
+      </figure>
+    </div>
+    <ul>
+      <li>Over 10 years dedicated to CrossFit and fitness, on the floor and behind the programming.</li>
+      <li>Started coaching out of a garage that became Body Box Garage, then competed under that name.</li>
+      <li>Has programmed and coached online comp athletes and in-person athletes, and hosted the BodyBox Throwdown 2020 online competition.</li>
+      <li>Competed at Wodapalooza 2023 and Fittest of the Coast 2025.</li>
+      <li>Head trainer, programmer and co-owner of <a href="https://rebuilttraining.com" target="_blank" rel="noopener">Rebuilt Training</a>.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="team" id="team">
+  <div class="wrap">
+    <span class="label">The community</span>
+    <h2>Team BODYBOX</h2>
+    <p class="intro">Garage gyms, class floors and competition days. These are the athletes who train the programming every week.</p>
+    <div class="gallery">
+      <figure><img src="img/team/coaching.jpg" alt="Coach talking an athlete through a workout on the gym floor" loading="lazy"></figure>
+      <figure><img src="img/team/team-studio.jpg" alt="Team BODYBOX athletes posing together in the gym" loading="lazy"></figure>
+      <figure><img src="img/team/lunge.jpg" alt="Athlete in a lunge with a dumbbell on her shoulder" loading="lazy"></figure>
+      <figure><img src="img/team/sled.jpg" alt="Two athletes pushing a loaded sled across a field" loading="lazy"></figure>
+      <figure><img src="img/team/games.jpg" alt="Athlete on the competition floor in an arena" loading="lazy"></figure>
+      <figure><img src="img/team/wallball.jpg" alt="Athlete driving a wall ball overhead during a competition" loading="lazy"></figure>
+      <figure><img src="img/team/murph.jpg" alt="Rebuilt Training members in matching shirts after Murph" loading="lazy"></figure>
+      <figure><img src="img/team/sandbag.jpg" alt="Athlete carrying a sandbag at a competition" loading="lazy"></figure>
+      <figure><img src="img/team/crew.jpg" alt="Four athletes smiling together at an outdoor event" loading="lazy"></figure>
+      <figure><img src="img/team/duo.jpg" alt="Two athletes ready on the competition field" loading="lazy"></figure>
+      <figure><img src="img/team/group-gym.jpg" alt="Group photo after a class at Rebuilt Training" loading="lazy"></figure>
+      <figure><img src="img/team/post-wod.jpg" alt="Two athletes celebrating on the floor after a workout" loading="lazy"></figure>
+      <figure><img src="img/team/smile.jpg" alt="Athlete smiling between heats" loading="lazy"></figure>
+      <figure><img src="img/team/group-bars.jpg" alt="Class celebrating together on the gym floor" loading="lazy"></figure>
+      <figure><img src="img/team/group-tall.jpg" alt="A packed Saturday class at Rebuilt Training" loading="lazy"></figure>
+    </div>
+  </div>
+</section>
+
+<section class="how" id="how">
+  <div class="wrap">
+    <div>
+      <h3>Pick a track</h3>
+      <p>Start with the program that matches your goal. Stack an add-on when you want more.</p>
+    </div>
+    <div>
+      <h3>Train in the app</h3>
+      <p>The BODYBOX app has the daily workouts, timers, your numbers, video proof and the all-time leaderboard in one place.</p>
+    </div>
+    <div>
+      <h3>Train in person</h3>
+      <p>Classes run at <a href="https://rebuilttraining.com" target="_blank" rel="noopener">Rebuilt Training</a> in Kenilworth, NJ. Visit rebuilttraining.com for the class schedule and memberships.</p>
+    </div>
+  </div>
+</section>
+
+<section class="app" id="app">
+  <div class="wrap">
+    <div>
+      <span class="label">One app for everything</span>
+      <h2>The BODYBOX <span>app</span></h2>
+      <p class="intro">Your daily workouts, timers, numbers, video proof and the all-time leaderboard, in one place on your phone. Members unlock their program with a code and sign in with their email and a 4-digit PIN.</p>
+    </div>
+    <div class="phones" aria-label="App screens">
+      <figure><img src="img/app/today.jpg" alt="App Today screen with the daily announcement" width="780" height="1688" loading="lazy"><figcaption><b>Today</b><span>The daily announcement, then your training for the day.</span></figcaption></figure>
+      <figure><img src="img/app/timer.jpg" alt="App workout timer counting down an EMOM" width="780" height="1688" loading="lazy"><figcaption><b>Workout timer</b><span>Every workout's clock is set for you, with a :10 countdown like the gym.</span></figcaption></figure>
+      <figure><img src="img/app/clock.jpg" alt="App Clock tab for building a custom timer" width="780" height="1688" loading="lazy"><figcaption><b>Clock</b><span>Build any timer: for time, AMRAP, EMOM, Tabata or intervals.</span></figcaption></figure>
+      <figure><img src="img/app/calc.jpg" alt="App percentage calculator showing 75 percent of a 295 pound back squat with plates" width="780" height="1688" loading="lazy"><figcaption><b>% Calculator</b><span>Weights from your maxes, with the plates for each side.</span></figcaption></figure>
+      <figure><img src="img/app/numbers.jpg" alt="App My Numbers screen with a back squat progress chart" width="780" height="1688" loading="lazy"><figcaption><b>My Numbers</b><span>Track your lifts and watch them climb. Example numbers shown.</span></figcaption></figure>
+      <figure><img src="img/app/named.jpg" alt="App Named Workouts list with the BodyBox Throwdown 2020 workouts" width="780" height="1688" loading="lazy"><figcaption><b>Named workouts</b><span>Redo the Throwdown 2020 workouts and beat your last score.</span></figcaption></figure>
+    </div>
+    <ul class="feats">
+      <li><b>Your programming, every day</b><span>Percentages turn into your weights automatically from your saved maxes.</span></li>
+      <li><b>All-time leaderboard</b><span>Every scored lift and workout counts. Lowest points wins. Men, women and all.</span></li>
+      <li><b>Logbook with notes</b><span>Every lift and score by date, with your own notes on how it went.</span></li>
+      <li><b>Video clock</b><span>Stamp the workout clock and the BODYBOX logo onto your workout video.</span></li>
+      <li><b>Movement demos</b><span>Tap a movement to watch the Team BodyBox demo.</span></li>
+      <li><b>PRs from the board</b><span>Log a heavy lift for the board and it lands in your numbers, with a PR alert.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="plans" id="plans">
+  <div class="wrap">
+    <div>
+      <span class="label">Your goal. Your program.</span>
+      <h2>Plans &amp; prices</h2>
+      <p class="intro">The same programming BODYBOX athletes train on, wherever you train. Pick one program or get all five.</p>
+    </div>
+    <div class="pricing">
+      <article class="price"><h3>Athlete Comp</h3><div class="amt">$30<small>/month</small></div><p>Compete higher. Get stronger under the bar.</p><ul><li>Percentage-based strength and Olympic lifting</li><li>Competition-style conditioning and gymnastics</li><li>Coaching notes and movement videos</li></ul></article>
+      <article class="price"><h3>BODYBOX Building</h3><div class="amt">$30<small>/month</small></div><p>Build real strength and the physique to match.</p><ul><li>Strength progressions you can track</li><li>Hypertrophy and accessory work</li><li>Core finishers every session</li></ul></article>
+      <article class="price"><h3>Cardio</h3><div class="amt">$30<small>/month</small></div><p>Get faster. Go farther. Train with purpose.</p><ul><li>Speed, interval and distance work</li><li>Full dynamic warm-ups every session</li><li>Faster and more efficient, not just more miles</li></ul></article>
+      <article class="price"><h3>The Garage Program</h3><div class="amt">$30<small>/month</small></div><p>Athlete-level training with no barbell and no machines.</p><ul><li>Built from Athlete Comp: same days, same intent</li><li>Dumbbells or kettlebells, a jump rope, running and bodyweight</li><li>Test weeks to see your progress</li></ul><p style="color:var(--gold);font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase">Coming soon</p></article>
+      <article class="price"><h3>S.H.I.I.T</h3><div class="amt">$30<small>/month</small></div><p>No gym? No problem. No excuses.</p><ul><li>Super High Intensity Interval Training</li><li>Bodyweight, plyo and one DB or KB at most</li><li>Daily workout timer, ready to press start</li></ul></article>
+    </div>
+    <div class="deals">
+      <div class="deal"><div><h3>The Full BODYBOX Bundle</h3><p>All 5 programs, Garage included. Compete, build, run and sweat anywhere. Save $51 every month.</p></div><div class="amt">$99<small>/month</small></div></div>
+      <div class="deal alt"><div><h3>S.H.I.I.T Challenge</h3><p>4 weeks, 3 workouts a week (Mon, Wed, Fri). Day 1 is the S.H.I.I.T Test. Each week builds on the last, and on Day 12 you take the test again to see how far you came. Scores go on the challenge leaderboard. All you need is floor space and one dumbbell or kettlebell.</p></div><div class="amt" style="font-size:32px">Coming soon</div></div>
+      <div class="deal alt"><div><h3>Rebuilt Training members</h3><p>$25 a month per program, or $85 a month for the full bundle. Rebuilt Training Class is part of your Rebuilt Training membership.</p></div><div class="amt">$25<small>/program</small></div></div>
+    </div>
+    <div class="trial" id="trial">
+      <div><h3>Try 7 days free</h3><p>Your first 7 days of any program are free. Email us the program you want to try and we'll get you started. No payment needed.</p></div>
+      <div class="mail"><code id="trialEmail">teambodybox@gmail.com</code><button class="btn" id="trialCopy" type="button">Copy email</button></div>
+    </div>
+    <div class="fbk" id="feedback">
+      <h3>Leave comments</h3>
+      <p>This is the BODYBOX beta, open to the team through <b>Sun Nov 1</b>. Tell us what to fix, what to add and what you love about the site or the app.</p>
+      <label>Your name<input id="fbName" maxlength="60" autocomplete="name"></label>
+      <label>Your comment<textarea id="fbText" maxlength="2000" placeholder="What should we fix or add?"></textarea></label>
+      <div><a class="btn" id="fbSend" href="mailto:teambodybox@gmail.com?subject=BODYBOX%20beta%20comments" target="_blank" rel="noopener">Send comment</a></div>
+      <p style="font-size:14px">Opens your email to teambodybox@gmail.com with your comment filled in.</p>
+    </div>
+<script>(function(){var n=document.getElementById('fbName'),t=document.getElementById('fbText'),a=document.getElementById('fbSend');function u(){var nm=n.value.trim();a.href='mailto:teambodybox@gmail.com?subject='+encodeURIComponent('BODYBOX beta comments'+(nm?' from '+nm:''))+'&body='+encodeURIComponent(t.value+(nm?'\n\n- '+nm:''));}n.addEventListener('input',u);t.addEventListener('input',u);var d=new Date(),k=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();if(k>20261101){var f=document.getElementById('feedback');if(f)f.remove();}})();</script>
+    <ol class="joinsteps">
+      <li><h3>Email us</h3><p>Tell us which program you want at <b>teambodybox@gmail.com</b>.</p></li>
+      <li><h3>Pay your first month</h3>
+        <ul class="paylist">
+          <li><span>Cash App</span><a href="https://cash.app/$bodybox" target="_blank" rel="noopener">$bodybox ↗</a></li>
+          <li><span>Venmo</span><a href="https://venmo.com/code?user_id=2425008479535104889" target="_blank" rel="noopener">@teambodybox ↗</a></li>
+          <li><span>Apple Pay</span><span class="h">Email teambodybox@gmail.com</span></li>
+          <li><span>Cash</span><span class="h">In person at Rebuilt Training</span></li>
+        </ul>
+        <p>Put your name and program in the payment note.</p></li>
+      <li><h3>Get your code</h3><p>We send your program code and your app sign-in: your email and a 4-digit PIN. Enter the code in the app and your programming unlocks.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="inperson" id="class">
+  <div class="wrap">
+    <div>
+      <span class="label">Kenilworth, NJ</span>
+      <h2>Book a <span>class</span></h2>
+      <p class="intro">Rebuilt Training Class runs in person at Rebuilt Training. Memberships, drop-ins and class sign-ups are all in the StreamFit Member App.</p>
+      <span class="label">Class times</span>
+      <ul class="times" style="margin-top:8px">
+        <li><b>5:00–6:00 AM</b><span>Mon–Fri</span></li>
+        <li><b>9:30–10:30 AM</b><span>Mon–Fri</span></li>
+        <li><b>4:15–5:15 PM</b><span>Mon–Fri</span></li>
+        <li><b>6:45–7:45 PM</b><span>Mon–Fri</span></li>
+        <li><b>8:15 AM</b><span>Saturday</span></li>
+        <li class="open"><b>Open gym</b><span>Open gym hours are available. See StreamFit for times.</span></li>
+      </ul>
+      <ol class="sfsteps">
+        <li>Download the StreamFit Member App and create an account</li>
+        <li>Buy a membership or a drop-in</li>
+        <li>Register for a class</li>
+      </ol>
+      <div class="cta" style="margin-top:0"><a class="btn" href="https://flowcode.com/p/5mjDnuWR6" target="_blank" rel="noopener">Open StreamFit ↗</a><a class="btn ghost" href="https://rebuilttraining.com" target="_blank" rel="noopener">rebuilttraining.com ↗</a></div>
+    </div>
+    <div class="qr"><img src="img/streamfit-qr.jpg" alt="QR code that opens the StreamFit Member App" width="360" height="360" loading="lazy"><p>Scan to open StreamFit</p></div>
+  </div>
+</section>
+
+<section class="faq" id="faq">
+  <div class="wrap">
+    <div><span class="label">Before you start</span><h2>Questions</h2></div>
+    <div class="qa">
+      <details><summary>Do I need a gym?</summary><p>It depends on the program. S.H.I.I.T needs floor space and one dumbbell or kettlebell, so it works at home or in a hotel. The Garage Program needs dumbbells or kettlebells, a jump rope and room to run. Cardio needs a road, track or machine. Athlete Comp and BODYBOX Building need a gym with a barbell and plates.</p></details>
+      <details><summary>I'm a beginner. Is that okay?</summary><p>Yes. Every workout comes with scaling options, so you can lower the weight, the reps or swap a movement. Rebuilt Training Class is coached in person and built for all levels.</p></details>
+      <details><summary>How do I get the workouts?</summary><p>In the BODYBOX app. After you pay, we send you a program code and your sign-in. Enter the code and your training shows up every day, with the timer, your weights and movement demos.</p></details>
+      <details><summary>Can I try it before I pay?</summary><p>Yes. Your first 7 days of any program are free. Email teambodybox@gmail.com with the program you want to try.</p></details>
+      <details><summary>Can I do more than one program?</summary><p>Yes. Stack any programs you want, or get all five with the Full BODYBOX Bundle for $99 a month.</p></details>
+      <details><summary>Can I switch programs?</summary><p>Yes. Email teambodybox@gmail.com and tell us which program you want to switch to.</p></details>
+      <details><summary>Can I cancel?</summary><p>Plans are paid month to month. If you don't want another month, just don't pay for the next one, or email us.</p></details>
+      <details><summary>What's the difference between Rebuilt Training Class and the online programs?</summary><p>Rebuilt Training Class is the in-person group class at Rebuilt Training in Kenilworth, NJ, booked through StreamFit. The online programs are BODYBOX programming you follow on your own, anywhere, in the app.</p></details>
+      <details><summary>Is there a team chat?</summary><p>Yes. Join the TEAMBODYBOX group on GroupMe to talk training, ask questions and get updates: <a href="https://groupme.com/join_group/118401324/YRnLguZz" target="_blank" rel="noopener">join the team chat ↗</a></p></details>
+      <details><summary>I'm a Rebuilt Training member. Do I get a deal?</summary><p>Yes. Rebuilt members pay $25 a month per program, or $85 a month for the full bundle.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="contact" id="contact">
+  <div class="wrap">
+    <div>
+      <span class="label">Ready to start?</span>
+      <h2>Join Team BODYBOX</h2>
+    </div>
+    <div class="right">
+      <div class="mail">
+        <code id="email">teambodybox@gmail.com</code>
+        <button class="btn" id="copy">Copy email</button>
+      </div>
+      <ul class="socials" aria-label="Follow BODYBOX">
+        <li><a href="https://groupme.com/join_group/118401324/YRnLguZz" target="_blank" rel="noopener" style="border-color:var(--gold);color:var(--gold)">Team chat on GroupMe ↗</a></li>
+        <li><a href="https://www.instagram.com/reefwarfield" target="_blank" rel="noopener">Instagram @reefwarfield ↗</a></li>
+        <li><a href="https://www.youtube.com/@teambodybox8284" target="_blank" rel="noopener">YouTube Team BodyBox ↗</a></li>
+        <li><a href="https://www.youtube.com/@bodyboxcompetitions8350" target="_blank" rel="noopener">YouTube BodyBox Competitions ↗</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="fmark"><img src="img/b-mark.png" alt="" width="126" height="202">© 2026 BODYBOX Programming</span>
+    <span>Programming by Reef Warfield · <a href="https://rebuilttraining.com" target="_blank" rel="noopener">rebuilttraining.com</a> · <a href="https://groupme.com/join_group/118401324/YRnLguZz" target="_blank" rel="noopener">Team chat</a> · <a href="https://www.instagram.com/reefwarfield" target="_blank" rel="noopener">Instagram</a> · <a href="https://www.youtube.com/@teambodybox8284" target="_blank" rel="noopener">YouTube</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var chips=[].slice.call(document.querySelectorAll('.chip'));
+  var plates=[].slice.call(document.querySelectorAll('.plate'));
+  function pick(goal){
+    chips.forEach(function(c){c.setAttribute('aria-pressed',String(c.dataset.goal===goal));});
+    plates.forEach(function(p){
+      var match=goal==='all'||p.dataset.goals.split(' ').indexOf(goal)>-1;
+      p.classList.toggle('dim',!match);
+      p.classList.toggle('hit',match&&goal!=='all');
+    });
+  }
+  chips.forEach(function(c){c.addEventListener('click',function(){pick(c.dataset.goal);});});
+
+
+  var tabs=[].slice.call(document.querySelectorAll('[role="tab"]'));
+  function show(id){
+    tabs.forEach(function(t){
+      var on=t.id==='t-'+id;
+      t.setAttribute('aria-selected',String(on));
+      t.tabIndex=on?0:-1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden=!on;
+    });
+  }
+  tabs.forEach(function(t,i){
+    t.addEventListener('click',function(){show(t.id.slice(2));});
+    t.addEventListener('keydown',function(e){
+      var d=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0; if(!d)return;
+      var n=tabs[(i+d+tabs.length)%tabs.length]; show(n.id.slice(2)); n.focus();
+    });
+  });
+  [].slice.call(document.querySelectorAll('.more')).forEach(function(a){
+    a.addEventListener('click',function(){show(a.dataset.tab);});
+  });
+  show('class');
+
+  var tb=document.getElementById('trialCopy'),te=document.getElementById('trialEmail');
+  tb.addEventListener('click',function(){
+    function fb(){var r=document.createRange();r.selectNodeContents(te);var s=getSelection();s.removeAllRanges();s.addRange(r);tb.textContent='Selected';}
+    try{navigator.clipboard.writeText(te.textContent).then(function(){tb.textContent='Copied';setTimeout(function(){tb.textContent='Copy email';},1800);},fb);}catch(e){fb();}
+  });
+  var btn=document.getElementById('copy'),email=document.getElementById('email');
+  btn.addEventListener('click',function(){
+    function done(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy email';},1800);}
+    function fallback(){var r=document.createRange();r.selectNodeContents(email);var s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Selected';}
+    try{navigator.clipboard.writeText(email.textContent).then(done,fallback);}catch(e){fallback();}
+  });
+})();
+</script>
+</body></html>
