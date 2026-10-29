@@ -93,6 +93,7 @@ footer a{color:var(--muted)}
 
 /* pin sheet */
 .sheet{position:fixed;inset:0;z-index:20;background:rgba(10,12,13,.7);display:flex;align-items:flex-end;justify-content:center}
+.sheet > .card{max-height:92vh;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .sheet .card{background:var(--panel);border-top:1px solid var(--line);width:100%;max-width:520px;border-radius:14px 14px 0 0;padding:20px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:grid;gap:12px}
 .sheet h2{font-family:var(--display);font-weight:900;font-size:30px;text-transform:uppercase;margin:0}
 .sheet input{font-family:var(--mono);font-size:28px;letter-spacing:.4em;text-align:center;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--chalk);padding:12px;width:100%}
@@ -115,6 +116,23 @@ footer a{color:var(--muted)}
 .t-bot{display:grid;gap:10px}
 .t-prog{height:6px;background:rgba(0,0,0,.2);border-radius:3px;overflow:hidden}
 .t-prog i{display:block;height:100%;width:0;background:currentColor;opacity:.6}
+.goalb{display:grid;gap:4px;margin-top:6px}.goalb.sm{margin-top:4px}
+.gtrack{display:block;height:6px;border-radius:99px;background:var(--line);overflow:hidden}.gtrack i{display:block;height:100%;background:var(--gold)}
+.glab{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.goaled{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+.ready{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 12px;margin:0 0 12px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);font-size:14px}
+.ready.ok{border-color:#5fbf83}.ready.mid{border-color:var(--gold)}.ready.low{border-color:#ff8a7a}
+.ready.ask{display:grid;gap:8px;border-color:var(--blue)}
+.rq{display:grid;grid-template-columns:90px minmax(0,1fr);align-items:center;gap:8px}.rq .sexf{margin:0}
+.cal{border:1px solid var(--line);border-radius:8px;padding:10px;margin:0 0 12px}
+.calhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.calg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}
+.calg .dow{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase}
+.cd{aspect-ratio:1;border:1px solid transparent;border-radius:8px;background:var(--panel);color:var(--chalk);font:inherit;font-size:14px;cursor:pointer;position:relative}
+.cd.prog{border-color:var(--blue)}.cd.done{background:var(--gold);color:var(--ink);font-weight:700}.cd.today{outline:2px solid var(--chalk);outline-offset:1px}
+.lg{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:middle}.lg.done{background:var(--gold)}.lg.prog{border:1px solid var(--blue)}
+.mlib{display:grid;gap:8px}.mcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:6px}
+.mcard p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
 .swap{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;background:rgba(90,163,200,.18);border:1px solid var(--blue);color:var(--chalk);font-family:var(--body);font-size:12px;font-weight:600;white-space:nowrap}
 .part.ind{border-color:var(--gold);box-shadow:inset 4px 0 0 var(--gold)}
 .part.ind.staff{border-color:var(--blue);box-shadow:inset 4px 0 0 var(--blue)}
@@ -516,6 +534,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
   <form class="card" id="cmForm" autocomplete="off">
     <span class="label">Coach · private programming</span>
     <h2>Add workout or extra</h2>
+    <label class="field"><span class="label">Start from a saved workout</span><select id="cmLib"></select></label>
     <label class="field"><span class="label">Who sees it</span><select id="cmAud"><option value="ath">Specific athletes (and coaches)</option><option value="coach">Coaches only</option><option value="prog">Programmers only</option></select></label>
     <div class="chks" id="cmWho"></div>
     <div id="cmNotes"></div>
@@ -527,6 +546,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     <label class="field"><span class="label">Coach note for them (optional)</span><textarea id="cmNote" class="notein" maxlength="600"></textarea></label>
     <div class="grid2"><label class="field"><span class="label">Score</span><select id="cmScore"><option value="none">No score, just done</option><option value="time">Time</option><option value="reps">Reps</option><option value="load">Weight (updates their max)</option><option value="text">Other</option></select></label>
     <label class="field" id="cmShowRow"><span class="label">Show it</span><select id="cmShow"><option value="now">Now</option><option value="night">Night before, at their delivery time</option></select></label></div>
+    <label class="row" style="gap:8px"><input id="cmSaveLib" type="checkbox" style="width:20px;height:20px"> <span>Save to library as</span><input id="cmLibName" maxlength="60" placeholder="e.g. Jorge jerk footwork" style="flex:1;min-width:0"></label>
     <label class="row" style="gap:8px"><input id="cmBoard" type="checkbox" style="width:20px;height:20px"> <span>Counts on the main leaderboard</span></label>
     <label class="field" id="cmEvF" hidden><span class="label">Which board workout</span><select id="cmEv"></select></label>
     <p class="err" id="cmErr"></p>
@@ -1962,7 +1982,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     const v = $('view');
     const have = LIFT_ORDER.filter(k => A.log.some(e => e.lift === k));
     const none = LIFT_ORDER.filter(k => !have.includes(k));
-    let h = (prefix||'') + recapHtml() + '<div class="psec"><span class="label">Your lifts · saved on this phone</span><h2>My Numbers</h2></div><p class="how">Log your best lifts. The app uses them to show your weights on every percentage workout and in the % calculator.</p>';
+    let h = (prefix||'') + recapHtml() + lifeHtml() + goalsHtml() + '<div class="row" style="margin:4px 0 14px"><button class="btn" type="button" data-movelib="1">Exercise library</button></div>' + '<div class="psec"><span class="label">Your lifts · saved on this phone</span><h2>My Numbers</h2></div><p class="how">Log your best lifts. The app uses them to show your weights on every percentage workout and in the % calculator.</p>';
     h += '<div class="n-top"><button class="btn solid" type="button" id="logBtn">+ Log a lift</button>'+
          '<div class="seg" role="group" aria-label="Units"><button type="button" data-unit="lb" aria-pressed="'+(A.unit==='lb')+'">lb</button><button type="button" data-unit="kg" aria-pressed="'+(A.unit==='kg')+'">kg</button></div></div>';
     if(!storeOK) h += '<p class="example" style="border-color:rgba(229,83,75,.5)"><b style="color:#ff8a7a">Not saving.</b> This browser is blocking storage, so your numbers will be lost when you close the app. Use Save a backup below.</p>';
@@ -1976,7 +1996,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
         const gain = es.length > 1 ? Math.round(b.val - firstV) : 0;
         h += '<button class="pr" type="button" data-lift="'+k+'" aria-expanded="'+(openLift===k)+'"><span class="nm">'+esc(LIFTS[k])+'</span>'+
              '<span class="val">'+fmtW(b.val)+' <small>'+A.unit+(b.est?' est.':'')+'</small></span>'+
-             '<span class="meta">'+niceDate(b.e.date)+(gain>0?' · <span class="up">+'+gain+' '+A.unit+'</span>':'')+'</span></button>';
+             '<span class="meta">'+niceDate(b.e.date)+(gain>0?' · <span class="up">+'+gain+' '+A.unit+'</span>':'')+'</span>'+goalBar(k, true)+'</button>';
         if(openLift === k) h += detailHtml(k);
       });
       h += '</div>';
@@ -2010,7 +2030,8 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
   }
   function detailHtml(k){
     const es = entriesOf(k);
-    const pts = es.map(e => ({ d: e.date, v: conv(e1rm(e.w, e.reps), e.u, A.unit) }));
+    const esC = es.some(e => !e.nomax) ? es.filter(e => !e.nomax) : es;
+    const pts = esC.map(e => ({ d: e.date, v: conv(e1rm(e.w, e.reps), e.u, A.unit) }));
     let chart = '';
     if(pts.length){
       const W = 320, H = 130, L = 40, R = 10, T = 12, B = 22;
@@ -2038,7 +2059,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
       return '<li><span class="d">'+niceDate(e.date)+'</span><span>'+fmtW(Math.round(w*10)/10)+' × '+e.reps+(e.reps>1?' <span class="d">≈ '+fmtW(Math.round(est))+' max</span>':'')+(e.src?' <span class="d">· from the board</span>':'')+(nt?'<span class="unote">'+esc(nt)+'</span>':'')+'</span>'+
              '<button type="button" data-del="'+e.id+'" class="'+(armed===e.id?'sure':'')+'">'+(armed===e.id?'Delete?':'Remove')+'</button></li>';
     }).join('');
-    return '<div class="detail"><h3>'+esc(LIFTS[k])+'</h3>'+liftWarnings(k).map(w => '<p class="warnl">⚠ '+esc(w)+'</p>').join('')+chart+
+    return '<div class="detail"><h3>'+esc(LIFTS[k])+'</h3>'+liftWarnings(k).map(w => '<p class="warnl">⚠ '+esc(w)+'</p>').join('')+goalBar(k)+chart+goalEditHtml(k)+
       '<div class="row"><button class="btn solid" type="button" data-logfor="'+k+'">+ Log '+esc(LIFTS[k])+'</button><button class="btn" type="button" data-calc="'+k+'">Percentages</button></div>'+
       '<ul class="hist">'+rows+'</ul><p class="scale" style="margin:0">Sets of more than 1 rep are turned into an estimated max.</p></div>';
   }
@@ -2125,7 +2146,9 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     ['streak4','🔥','4-week streak', () => weekStreak() >= 4],
     ['allout','⚡','Went all-out', () => (A.done||[]).some(x => x.feel==='allout')],
     ['named','📜','Did a Named workout', () => A.scores.length >= 1],
-    ['board','🥇','Posted on the board', () => (A.subs||[]).length >= 1]
+    ['board','🥇','Posted on the board', () => (A.subs||[]).length >= 1],
+    ['k100','🏋️','100,000 lb lifted', () => lifeStats().lifted * (A.unit==='kg'?2.20462:1) >= 1e5],
+    ['mil','💎','Millionaire\'s Club', () => lifeStats().lifted * (A.unit==='kg'?2.20462:1) >= 1e6]
   ];
   function recapHtml(){
     const ws = weekStats(), st = weekStreak();
@@ -2965,6 +2988,8 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     const sampleOnly = memSlots.size && [...memSlots].every(x => x === 'sample');
     let h = '<section class="mytrain"><div class="mh"><h2>'+(sampleOnly ? 'Your free 7 days' : (memSlots.has('beta') && memSlots.size === 1) ? 'Team preview' : 'My training')+'</h2><span class="label">'+progs.map(k => esc(D.programs[k].short)).join(' · ')+(MEM.coachnotes?' · Coach':'')+'</span></div>';
     h += viewAsBar();
+    if(!viewAs) h += readyHtml();
+    h += '<div class="row" style="justify-content:flex-end;margin:-4px 0 8px"><button class="linkbtn" type="button" id="calToggle">'+(calOpen?'Hide month':'Month view')+'</button></div>' + (calOpen ? calHtml() : '');
     if(viewAs && athById(viewAs)) h += '<p class="example" style="margin:0 0 10px">Showing <b>'+esc(athById(viewAs).name)+'</b>\'s screen: their extras, their versions and their swaps. <button class="linkbtn" type="button" id="viewAsOff">Back to group</button></p>';
     if(weeks.length > 1 || memWeek !== thisWk){
       const wi = weeks.indexOf(memWeek), st = parse(memWeek);
@@ -3023,6 +3048,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     const ac = $('addCode'); if(ac) ac.onclick = () => { memAdding = true; memMsg = ''; render(); setTimeout(() => { const ci = $('codeIn'); if(ci) ci.focus(); }, 30); };
     const cc = $('codeCancel'); if(cc) cc.onclick = () => { memAdding = false; memMsg = ''; render(); };
     v.querySelectorAll('[data-mday]').forEach(b => b.onclick = () => { memDay = b.dataset.mday; render(); });
+    wireReady(); wireCal();
     wireViewAs(); const vo = $('viewAsOff'); if(vo) vo.onclick = () => { viewAs = ''; render(); };
     v.querySelectorAll('[data-wk]').forEach(b => b.onclick = () => {
       const ws = memWeeks(), i = ws.indexOf(memWeek);
@@ -3188,9 +3214,9 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     let h = '<button class="back" type="button" id="plBack">← Back</button>';
     h += '<div class="head"><span class="sched">Your goal. Your program.</span><h1>Join BODYBOX</h1><p>The same programming BODYBOX athletes train on, wherever you train. Programs from $30 a month. Your first 7 days are free.</p></div>';
     h += '<div class="plans">'+PLANS.map(pl => '<article class="plan"><header><h3>'+esc(pl.name)+'</h3><span class="price">$30<small>/month</small></span></header><p class="best" style="color:var(--muted)">'+esc(pl.tag)+'</p><ul>'+pl.pts.map(x => '<li>'+esc(x)+'</li>').join('')+'</ul><p class="best"><b>Best for:</b> '+esc(pl.best)+'</p></article>').join('')+
-      '<article class="plan bundle"><header><h3>The Full BODYBOX Bundle</h3><span class="price">$99<small>/month</small></span></header><p class="best">All 5 programs, Garage included. Compete, build, run and sweat anywhere. Save $51 every month.</p></article>'+
+      '<article class="plan bundle"><header><h3>The Full BODYBOX Bundle</h3><span class="price">$129<small>/month</small></span></header><p class="best">All 5 programs, Garage included, personalized to you. Log your scores in the app, and every 4 weeks Reef reviews them and builds work on your weaknesses into your programming. Save $21 every month.</p></article>'+
       '<article class="plan"><header><h3>S.H.I.I.T Challenge</h3><span class="price" style="font-size:18px">Coming soon</span></header><p class="best">4 weeks, 3 workouts a week (Mon, Wed, Fri). Day 1 is the S.H.I.I.T Test. Each week builds on the last, and on Day 12 you take the test again to see how far you came. Scores go on the challenge leaderboard. All you need is floor space and one dumbbell or kettlebell.</p></article>'+
-      '<article class="plan"><header><h3>Rebuilt Training members</h3><span class="price">$25<small>/program</small></span></header><p class="best">Members save: $25 a month per program, or <b>$85 a month</b> for the full bundle. RT Movement classes are part of your Rebuilt membership.</p></article></div>';
+      '<article class="plan"><header><h3>Rebuilt Training members</h3><span class="price">$25<small>/program</small></span></header><p class="best">Members save: $25 a month per program, or <b>$119 a month</b> for the full bundle. RT Movement classes are part of your Rebuilt membership.</p></article></div>';
     h += '<div class="psec"><span class="label">How to join</span><h2>Three steps</h2></div><ol class="steps">'+
       '<li><b>Email us the program you want</b><span class="row"><span class="mail" id="plMail">'+esc(pay.email)+'</span><button class="btn" type="button" id="plCopy">Copy email</button></span></li>'+
       '<li><b>Pay for your first month</b><ul class="paylist">'+pay.methods.map(m => '<li><span>'+esc(m.name)+'</span>'+(m.url?'<a href="'+esc(m.url)+'" target="_blank" rel="noopener">'+esc(m.handle)+' ↗</a>':'<span>'+esc(m.handle)+'</span>')+'</li>').join('')+'</ul><span style="font-size:14px;color:var(--muted)">Put your name and program in the payment note.</span></li>'+
@@ -3203,7 +3229,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 
   /* ---------- tabs ---------- */
   let tab = 'workouts';
-  const TABS_OK = ['workouts','named','board','numbers','calc','clock','plans','coach'];
+  const TABS_OK = ['workouts','named','board','numbers','calc','clock','plans','coach','moves'];
   function setTab(t){ tab = t; store.set('bb-tab', t); render(); window.scrollTo(0,0); }
   document.querySelectorAll('.tabs [data-tab]').forEach(b => b.onclick = () => { if(b.dataset.tab === 'named') namedOpen = null; if(b.dataset.tab === 'board'){ lbOpenEv = null; profId = null; } setTab(b.dataset.tab); });
   function render(){
@@ -3212,7 +3238,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     const w = tab === 'workouts';
     $('progs').hidden = true; $('exampleNote').hidden = true;
     $('hdrLbl').textContent = tab === 'plans' ? 'Join' : w ? longDate(todayStr()) : tab === 'named' ? 'Saved on this phone' : tab === 'numbers' ? (meId && athById(meId) ? 'Signed in' : 'Sign in') : tab === 'board' ? 'All-time' : tab === 'clock' ? 'Any workout' : '';
-    if(tab === 'coach'){ renderCoachHub(); } else if(w) renderWorkouts(); else if(tab === 'plans') renderPlans(); else if(tab === 'named') renderNamed(); else if(tab === 'board') renderBoard(); else if(tab === 'numbers') renderMe(); else if(tab === 'clock') renderClock(); else renderCalc();
+    if(tab === 'coach'){ renderCoachHub(); } else if(tab === 'moves'){ renderMoves(); } else if(w) renderWorkouts(); else if(tab === 'plans') renderPlans(); else if(tab === 'named') renderNamed(); else if(tab === 'board') renderBoard(); else if(tab === 'numbers') renderMe(); else if(tab === 'clock') renderClock(); else renderCalc();
     if(toastPR){ const t = document.createElement('div'); t.className = 'example'; t.style.marginBottom = '12px'; t.innerHTML = '<b>'+esc(toastPR)+'</b>'+(toastShare?' <button class="linkbtn" type="button" data-shareprs="1">Share it</button>':''); $('view').prepend(t); toastPR = ''; }
   }
 
@@ -3492,7 +3518,8 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
       log: A.log.filter(keep).map(e => ({ id:e.id, lift:e.lift, w:e.w, u:e.u, reps:e.reps, date:e.date, t:e.t, note:e.note })),
       moves: A.moves || {}, done: (A.done||[]).filter(keep), personal: (A.personal||[]).filter(keep),
       indr: Object.fromEntries(Object.entries(A.indr||{}).filter(([k,v]) => keep(v))), scores: A.scores.filter(keep).map(x => ({ w:x.w, date:x.date, s:scoreText(x) })),
-      mod: (A.personal||[]).filter(x => x.kind === 'mod' && keep(x)).length };
+      mod: (A.personal||[]).filter(x => x.kind === 'mod' && keep(x)).length,
+      ready: Object.fromEntries(Object.entries(A.ready||{}).filter(([d]) => d >= since)), goals: A.goals || {} };
     let bytes = ENC.encode(JSON.stringify(rep)), z = 0;
     try{ const c = await gz(bytes); if(c && c.length < bytes.length){ bytes = c; z = 1; } }catch(e){}
     const pub = await crypto.subtle.importKey('spki', b64d(IND().pub), { name:'RSA-OAEP', hash:'SHA-256' }, false, ['encrypt']);
@@ -3568,6 +3595,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
          '<textarea id="repIn" class="notein" placeholder="Paste updates here"></textarea><div class="row"><button class="btn solid" type="button" id="repGo">Import</button></div><p class="how" id="repMsg">'+esc(ihNote)+'</p></div>';
     const staff = [].concat((IK.cb.items||[]).map(x => Object.assign({ _src:'coach' }, x)), IK.pb ? IK.pb.items.map(x => Object.assign({ _src:'prog' }, x)) : []).sort((a,b) => a.date < b.date ? 1 : -1);
     if(staff.length) h += '<div class="psec"><span class="label">Staff only</span><h2>Coach and programmer workouts</h2></div>' + itemList(staff, null);
+    h += libListHtml();
     v.innerHTML = h; wireDirty();
     v.querySelectorAll('[data-cath]').forEach(b => b.onclick = () => { coachAth = b.dataset.cath; render(); window.scrollTo(0,0); });
     const na = $('newAthGo'); if(na) na.onclick = async () => { const nm = $('newAth').value.trim().replace(/\s+/g,' ').slice(0,40); if(!nm) return;
@@ -3615,6 +3643,9 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
       h += '<div class="recap"><div><b>'+d.a7+'</b><span>Days · 7d</span></div><div><b>'+d.a30+'</b><span>Days · 30d</span></div><div><b>'+d.done+'/'+d.assigned+'</b><span>Extras done</span></div><div><b>'+(d.last?(d.daysSince===0?'Today':d.daysSince+'d'):'–')+'</b><span>Since last log</span></div></div>';
       if(d.status === 'check') h += '<p class="example" style="border-color:rgba(229,83,75,.5)"><b style="color:#ff8a7a">Check in.</b> '+(d.daysSince>=7?'Nothing logged in '+d.daysSince+' days.':'Their last update is '+d.repAge+' days old.')+'</p>';
       h += '<p class="how">Update sent '+esc(whenTxt(d.r.t))+'.</p>';
+      const rd = Object.entries(d.r.ready||{}).sort((a,b) => a[0] < b[0] ? 1 : -1)[0];
+      if(rd){ const tip = readyTip(rd[1]); h += '<div class="ready '+tip.k+'"><span><b>Check-in '+esc(niceDate(rd[0]))+':</b> sleep '+esc(RQ[0][2][rd[1].sleep]||'–').toLowerCase()+', soreness '+esc(RQ[1][2][rd[1].sore]||'–').toLowerCase()+', energy '+esc(RQ[2][2][rd[1].energy]||'–').toLowerCase()+'.</span></div>'; }
+      const gl = Object.entries(d.r.goals||{}); if(gl.length) h += '<p class="how"><b>Goals:</b> '+gl.map(([k,g]) => esc(liftNm(k))+' '+fmtW(g.w)+' '+esc(g.u||'lb')).join(' · ')+'</p>';
       if(d.prs.length) h += '<div class="minigrid">'+d.prs.map(p => '<div class="mini"><span>PR · '+esc(liftNm(p.lift))+' · '+niceDate(p.date)+'</span><b>'+fmtW(conv(p.w,p.u,A.unit))+' '+A.unit+' × '+p.reps+'</b></div>').join('')+'</div>';
       const lifts = [...new Set((d.r.log||[]).map(e => e.lift))];
       if(lifts.length){ h += '<div class="psec"><span class="label">Their numbers</span><h2>Every movement</h2></div><ul class="ilist">'+lifts.map(k => { const L = d.r.log.filter(e => e.lift === k); const best = L.reduce((m,e) => Math.max(m, conv(e1rm(e.w,e.reps), e.u, A.unit)), 0); const w = liftWarnings(k, L);
@@ -3679,6 +3710,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     $('cmNote').value = cmp.note || ''; $('cmScore').value = cmp.score || 'none'; $('cmBoard').checked = !!cmp.board; $('cmShow').value = cmp.show;
     const pr = $('cmProg'); pr.innerHTML = ORDER.filter(k => MEM[k]).map(k => '<option value="'+k+'">'+esc(D.programs[k].short)+'</option>').join('') + '<option value="own">Own custom day</option>'; pr.value = cmp.prog;
     const lf = $('cmLift'); lf.innerHTML = '<option value="">No lift (no weights from their numbers)</option>' + LIFT_ORDER.map(k => '<option value="'+k+'">'+esc(LIFTS[k])+'</option>').join(''); lf.value = cmp.lift || '';
+    $('cmLib').innerHTML = libSelectHtml(); $('cmLib').value = ''; $('cmSaveLib').checked = false; $('cmLibName').value = '';
     paintComposer(); $('cmErr').textContent = ''; S.hidden = false;
   }
   function paintComposer(){
@@ -3711,6 +3743,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     ['cmAud','cmDate','cmProg'].forEach(id => $(id).onchange = () => { cmp.pos = { t:'after', i:0 }; paintComposer(); });
     $('cmBoard').onchange = () => { $('cmEvF').hidden = !$('cmBoard').checked || $('cmAud').value !== 'ath'; };
     $('cmCancel').onclick = () => { $('cmSheet').hidden = true; };
+    $('cmLib').onchange = () => libFill($('cmLib').value);
     $('cmForm').onsubmit = async e => {
       e.preventDefault();
       const aud = $('cmAud').value, date = $('cmDate').value, prog = $('cmProg').value; const [pt, pi] = $('cmPos').value.split('|');
@@ -3724,6 +3757,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
       const lift = $('cmLift').value; if(lift) base.lift = lift;
       if(base.board && $('cmEv').value) base.ev = $('cmEv').value;
       const note = $('cmNote').value.trim().slice(0,600); if(note) base.note = note;
+      if($('cmSaveLib').checked){ const nm = $('cmLibName').value.trim() || title || lines[0] || 'Saved workout'; await libSave(nm); }
       // editing: remove the old copy first
       if(cmp.id && cmp._own) await removeItem(cmp._own, cmp.id);
       if(aud === 'coach'){ IK.cb.items.push(Object.assign({ id: cmp.id || uid() }, base)); await saveCB(); }
@@ -3795,6 +3829,196 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     return '<div class="viewas"><span class="label">Coach · see the day as</span><select id="viewAsSel"><option value="">Group (everyone)</option>'+opts+'</select></div>';
   }
   function wireViewAs(){ const s = $('viewAsSel'); if(s) s.onchange = () => { viewAs = s.value; render(); }; }
+
+  /* ================= goals, lifetime stats, readiness, calendar, library ================= */
+  // ---- lift goals ----
+  function goalOf(k){ const g = (A.goals||{})[k]; return g && g.w > 0 ? g : null; }
+  function goalBar(k, compact){
+    const g = goalOf(k); if(!g) return '';
+    const b = bestOf(k); const cur = b ? b.val : 0; const tgt = conv(g.w, g.u || A.unit, A.unit);
+    const pct = Math.max(0, Math.min(100, Math.round(cur / tgt * 100))); const left = Math.max(0, Math.round((tgt - cur) * 10) / 10);
+    return '<span class="goalb'+(compact?' sm':'')+'"><span class="gtrack"><i style="width:'+pct+'%"></i></span><span class="glab">'+(left > 0 ? 'Goal '+fmtW(tgt)+' · '+fmtW(left)+' to go' : 'Goal '+fmtW(tgt)+' · hit it')+'</span></span>';
+  }
+  function goalsHtml(){
+    const ks = Object.keys(A.goals||{}).filter(k => LIFTS[k] && goalOf(k));
+    let h = '<div class="psec"><span class="label">What you\'re chasing</span><h2>My goals</h2></div>';
+    if(!ks.length) return h + '<p class="how">Open any lift below and tap "Set a goal" to track how close you are.</p>';
+    return h + '<ul class="ilist">' + ks.map(k => '<li><span class="w">'+esc(LIFTS[k])+'</span>'+goalBar(k)+'</li>').join('') + '</ul>';
+  }
+  function goalEditHtml(k){
+    const g = goalOf(k);
+    return '<div class="goaled"><label class="field"><span class="label">Goal for '+esc(LIFTS[k])+' ('+A.unit+')</span><input id="goalIn" type="number" inputmode="decimal" min="1" step="any" value="'+(g?fmtW(conv(g.w, g.u||A.unit, A.unit)):'')+'" placeholder="e.g. 375"></label>'+
+      '<div class="row"><button class="btn" type="button" data-goalsave="'+k+'">'+(g?'Update goal':'Set a goal')+'</button>'+(g?'<button class="linkbtn" type="button" data-goalclear="'+k+'">Clear goal</button>':'')+'</div></div>';
+  }
+  document.addEventListener('click', e => {
+    const gs = e.target.closest && e.target.closest('[data-goalsave]');
+    if(gs){ const k = gs.dataset.goalsave, w = parseFloat(($('goalIn')||{}).value); if(!(w > 0)) return; A.goals = A.goals || {}; A.goals[k] = { w, u: A.unit, set: todayStr() }; saveA(); render(); }
+    const gc = e.target.closest && e.target.closest('[data-goalclear]');
+    if(gc){ if(A.goals) delete A.goals[gc.dataset.goalclear]; saveA(); render(); }
+  });
+
+  // ---- lifetime stats ----
+  function lifeStats(){
+    let lb = 0, reps = 0;
+    A.log.forEach(e => { const w = conv(e.w, e.u, 'lb'); lb += w * (e.reps||1); reps += (e.reps||1); });
+    const secs = (A.done||[]).reduce((s,x) => s + (x.secs||0), 0);
+    const sessions = new Set([].concat(A.log.map(x=>x.date), (A.done||[]).map(x=>x.date), A.scores.map(x=>x.date), (A.personal||[]).map(x=>x.date), Object.values(A.indr||{}).map(x=>x.date))).size;
+    const lifted = A.unit === 'kg' ? lb / 2.20462 : lb;
+    return { lifted: Math.round(lifted), reps, hours: Math.round(secs/360)/10, sessions };
+  }
+  const bigNum = n => n >= 1e6 ? (Math.round(n/1e5)/10)+'M' : n >= 1e4 ? Math.round(n/1000)+'k' : String(n);
+  function lifeHtml(){
+    const s = lifeStats(); const lbTot = A.unit === 'kg' ? s.lifted * 2.20462 : s.lifted;
+    const next = [100000, 250000, 500000, 1000000, 2000000].find(x => lbTot < x);
+    let h = '<div class="psec"><span class="label">Since you started</span><h2>All-time</h2></div>';
+    h += '<div class="recap"><div><b>'+bigNum(s.lifted)+'</b><span>'+A.unit+' lifted</span></div><div><b>'+bigNum(s.reps)+'</b><span>Reps logged</span></div><div><b>'+s.hours+'</b><span>Timer hours</span></div><div><b>'+s.sessions+'</b><span>Workouts</span></div></div>';
+    if(lbTot >= 1e6) h += '<p class="example"><b>Millionaire\'s Club.</b> Over 1,000,000 lb lifted.</p>';
+    else if(next) h += '<p class="how">'+bigNum(Math.round(next - lbTot))+' lb to '+(next === 1e6 ? 'the Millionaire\'s Club' : bigNum(next)+' lb')+'.</p>';
+    return h;
+  }
+
+  // ---- readiness check-in ----
+  const RQ = [['sleep','Sleep',['Great','OK','Poor']],['sore','Soreness',['None','Some','A lot']],['energy','Energy',['High','OK','Low']]];
+  function readyTip(r){
+    const sc = (r.sleep||0) + (r.sore||0) + (r.energy||0);
+    if(sc >= 4) return { k:'low', t:'Go lighter today. Drop the weights 10–15%, keep the movement quality, and skip any extra volume.' };
+    if(sc >= 2) return { k:'mid', t:'Train as written. Take a longer warm-up and listen to your body on the heavy sets.' };
+    return { k:'ok', t:'Green light. Attack the day.' };
+  }
+  let readyEdit = false;
+  function readyHtml(){
+    const today = todayStr(), r = (A.ready||{})[today];
+    if(r && r.t && !readyEdit){ const tip = readyTip(r);
+      return '<div class="ready '+tip.k+'"><span><b>Today\'s check-in:</b> '+esc(tip.t)+'</span><button class="linkbtn" type="button" id="rdyEdit">Change</button></div>'; }
+    const cur = r || {};
+    return '<div class="ready ask"><span class="label">10-second check-in</span><b>How are you today?</b>'+RQ.map(([k,l,opts]) => '<div class="rq"><span>'+l+'</span><div class="sexf" role="group" aria-label="'+l+'">'+opts.map((o,i) => '<button type="button" data-rq="'+k+'|'+i+'" aria-pressed="'+(cur[k]===i)+'">'+o+'</button>').join('')+'</div></div>').join('')+'</div>';
+  }
+  function wireReady(){
+    document.querySelectorAll('[data-rq]').forEach(b => b.onclick = () => {
+      const [k, i] = b.dataset.rq.split('|'); const today = todayStr(); A.ready = A.ready || {};
+      const r = A.ready[today] = Object.assign({}, A.ready[today] || {}); r[k] = +i;
+      if(RQ.every(([q]) => r[q] != null)){ readyEdit = false; r.t = Date.now(); }
+      saveA(); render();
+    });
+    const ed = $('rdyEdit'); if(ed) ed.onclick = () => { readyEdit = true; render(); };
+  }
+
+  // ---- training calendar (month view) ----
+  let calOpen = false, calMonth = null;
+  function calHtml(){
+    const base = calMonth || todayStr().slice(0,7);
+    const [Y, M] = base.split('-').map(Number); const first = new Date(Y, M-1, 1); const days = new Date(Y, M, 0).getDate();
+    const act = activityDates(); const today = todayStr();
+    const hasProg = d => ORDER.some(k => ((MEM[k]||{}).days||{})[d]) || (payFor() && payFor().items.some(it => it.date === d && visible(it)));
+    let h = '<div class="cal"><div class="calhd"><button type="button" class="linkbtn" data-calm="-1">←</button><b>'+MON[M-1]+' '+Y+'</b><button type="button" class="linkbtn" data-calm="1">→</button></div><div class="calg">';
+    h += ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => '<span class="dow">'+d+'</span>').join('');
+    const pad = (first.getDay()+6)%7; for(let i=0;i<pad;i++) h += '<span></span>';
+    for(let d=1; d<=days; d++){
+      const ds = Y+'-'+String(M).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const cls = ['cd']; if(act.has(ds)) cls.push('done'); if(hasProg(ds)) cls.push('prog'); if(ds === today) cls.push('today');
+      h += '<button type="button" class="'+cls.join(' ')+'" data-cald="'+ds+'">'+d+'</button>';
+    }
+    h += '</div><p class="how" style="margin:6px 0 0"><span class="lg done"></span> trained · <span class="lg prog"></span> programming</p></div>';
+    return h;
+  }
+  function wireCal(){
+    const t = $('calToggle'); if(t) t.onclick = () => { calOpen = !calOpen; calMonth = (memDay || todayStr()).slice(0,7); render(); };
+    document.querySelectorAll('[data-calm]').forEach(b => b.onclick = () => { const [Y,M] = (calMonth||todayStr().slice(0,7)).split('-').map(Number); const d = new Date(Y, M-1 + (+b.dataset.calm), 1); calMonth = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); render(); });
+    document.querySelectorAll('[data-cald]').forEach(b => b.onclick = () => { memWeek = mondayOf(b.dataset.cald); memDay = b.dataset.cald; calOpen = false; render(); });
+  }
+
+  // ---- exercise library ----
+  const CUES = {
+    'Air squat':'Feet shoulder width, chest up. Sit back and down until your hips go below your knees, then stand all the way up.',
+    'Alt DB snatch':'DB between your feet, flat back. Drive through the floor, keep the DB close, punch it overhead and lock out. Switch hands at the bottom.',
+    'Back squat':'Bar on your upper back, brace hard. Knees track over your toes, hit depth, and drive up with your chest leading.',
+    'Bar-facing burpee':'Chest to the floor facing the bar, jump both feet together over it. Stay low over the bar to save time.',
+    'Bear hug sandbag carry':'Hug the bag high on your chest, elbows tight, stand tall. Short, quick steps and keep breathing.',
+    'Bodyweight thruster':'Squat to depth, then drive up fast and punch your hands overhead in one move. Use your legs, not your arms.',
+    'Box step-up':'Whole foot on the box, stand all the way up to full hip extension, step down with control. No pushing off the back foot.',
+    'Broad jumps':'Swing the arms, jump out as far as you can, land soft on both feet with your knees bent. Reset and go.',
+    'Burpee over DB / bar':'Chest to the floor, stand and jump over with both feet together. Keep a steady pace you can hold.',
+    'Burpees':'Chest and thighs touch the floor, then jump and clap overhead. Step back and forward if you need to save your back.',
+    'Chest-to-bar pull-up':'Big swing from the shoulders, pull hard and bring your chest to the bar. Push away at the top to cycle the next rep.',
+    'Clean & Jerk':'Clean it to the front rack and stand, then dip straight down through your heels and drive it overhead. Lock out before you drop it.',
+    'DB devil press':'Burpee with hands on the DBs, then swing them from the floor to overhead in one move. Hinge, don\'t squat it.',
+    'Deadlift':'Bar over mid-foot, flat back, shoulders over the bar. Push the floor away and stand tall. Lower it the same way.',
+    'Double-unders':'Stay tall, small bounce, quick wrists. The rope passes twice per jump. Keep your hands by your hips.',
+    'Front squat':'Elbows high, bar on your shoulders. Sit straight down between your heels and drive up with your elbows leading.',
+    'Goblet box squat':'Hold the weight at your chest, sit back to touch the box with control, then stand up tall. Don\'t crash onto the box.',
+    'Goblet squat':'Weight held at your chest, elbows inside the knees at the bottom. Chest up, full depth, stand tall.',
+    'Hand-release push-ups':'Chest to the floor, lift your hands off, then press back up in one straight line from head to heels.',
+    'Handstand push-ups':'Hands just wider than shoulders, head makes a triangle with your hands. Lower with control, press to lockout.',
+    'Hang clean':'Start at the hip or knee, jump and shrug, pull yourself under, and catch in the front rack with high elbows.',
+    'Hang power snatch':'Wide grip, start from the hip, explode up and punch the bar overhead. Catch above parallel with locked arms.',
+    'Hang squat clean':'From the hang, jump and pull under fast, catch in a full front squat, and stand up tall.',
+    'Hanging knee raises':'Hang tight with active shoulders, bring your knees up to your chest, lower with control. No big swing.',
+    'Inchworms':'Fold forward, walk your hands out to a plank, then walk your feet back in to your hands. Keep the legs as straight as you can.',
+    'Jumping jacks':'Light on your feet, arms all the way overhead, keep a steady rhythm.',
+    'Jumping pull-ups':'Box set so your chin is near the bar. Jump and pull together, lower slowly to work the pull.',
+    'KB goblet squat':'Hold the bell by the horns at your chest. Full depth, chest tall, drive up through your whole foot.',
+    'Line-facing burpee':'Face the line, chest to the floor, jump over the line with both feet. Stay low and keep moving.',
+    'Lunges':'Long step, back knee kisses the floor, front shin stays upright. Drive through the front heel to stand.',
+    'Mountain climbers':'Strong plank, hips level, drive the knees to your chest one at a time. Quick but controlled.',
+    'Overhead squat':'Wide grip, bar locked out over the back of your head. Push up into the bar and sit straight down.',
+    'Power clean':'Jump and shrug, pull yourself under fast, catch above parallel with high elbows. Stand to finish.',
+    'Pull-ups':'Start from a dead hang, pull your chin over the bar, lower all the way down under control.',
+    'Push jerk':'Dip straight down through your heels, drive up hard, press yourself under and catch in a quarter squat. Stand to finish.',
+    'Push press':'Short dip through the heels, drive with the legs, finish the press with your arms. Biceps by your ears at the top.',
+    'Push-ups':'Hands under the shoulders, body in one straight line, chest to the floor, full lockout at the top.',
+    'Ring dips':'Rings close to your sides, lower until your shoulders are below your elbows, press to full lockout.',
+    'Single-unders':'Stay tall, small bounce, rope passes once per jump. Wrists turn the rope, not your arms.',
+    'Sit-ups':'Arms reach overhead to touch the floor behind you, then come all the way up and touch your toes.',
+    'Snatch':'Wide grip, bar close, finish the pull, then pull yourself under and catch in a full overhead squat with locked arms.',
+    'Split jerk':'Dip and drive straight up, split the feet fast, punch under the bar. Front shin vertical, back heel up. Step the front foot back first.',
+    'Squat clean':'Pull and finish tall, pull yourself under fast, catch in the bottom of a front squat with high elbows, and stand up.',
+    'Squat jumps':'Squat to parallel, jump as high as you can, land soft and go right into the next rep.',
+    'Step-back lunge':'Step back, back knee kisses the floor, front shin upright. Drive through the front foot to return.',
+    'Thruster':'Front squat to depth, then drive up and press overhead in one move. Use the legs to move the bar.',
+    'Toes-to-bar':'Active hang, kick back, then snap your toes up to touch the bar between your hands. Control the swing.',
+    'V-ups':'Lie flat, lift your arms and legs together, touch your toes at the top, lower with control.',
+    'Wall ball':'Ball at your chin, squat below parallel, drive up and throw it to the target. Catch and go straight into the next squat.',
+    'Wall climb':'Feet walk up the wall as your hands walk in, chest to the wall at the top, then walk back out with control.'
+  };
+  let movesQ = '';
+  function renderMoves(){
+    const v = $('view'); const seen = new Set(); const list = [];
+    MOVES.forEach(m => { const name = m[1]; if(typeof name !== 'string' || seen.has(name)) return; seen.add(name); list.push({ name, y: m[2], src: m[3] }); });
+    list.sort((a,b) => a.name.localeCompare(b.name));
+    const q = movesQ.trim().toLowerCase(); const show = q ? list.filter(m => m.name.toLowerCase().includes(q) || (CUES[m.name]||'').toLowerCase().includes(q)) : list;
+    let h = '<button class="back" type="button" id="mvBack2">← Back</button><div class="head"><span class="sched">Team BodyBox · @reeftraining</span><h1>Exercise library</h1><p>Every movement in the programming, with what to focus on and a demo video.</p></div>';
+    h += '<input id="movesQ" class="fbin" type="search" placeholder="Search movements" value="'+esc(movesQ)+'" style="width:100%;margin:0 0 12px">';
+    h += '<div class="mlib">' + show.map(m => '<div class="mcard"><b>'+esc(m.name)+'</b><p>'+esc(CUES[m.name] || 'Coaching points coming soon.')+'</p>'+
+      (m.y ? '<a class="demo" href="https://www.youtube.com/watch?v='+m.y+'" target="_blank" rel="noopener"><span class="tri" aria-hidden="true"></span>Watch the demo</a>' : '<span class="label">Video coming soon</span>')+'</div>').join('') + '</div>';
+    if(!show.length) h += '<p class="how">No movement matches that.</p>';
+    v.innerHTML = h;
+    $('mvBack2').onclick = () => setTab('numbers');
+    const qi = $('movesQ'); qi.oninput = () => { movesQ = qi.value; const pos = qi.selectionStart; renderMoves(); const n = $('movesQ'); n.focus(); try{ n.setSelectionRange(pos, pos); }catch(e){} };
+  }
+  document.addEventListener('click', e => { const m = e.target.closest && e.target.closest('[data-movelib]'); if(m){ e.preventDefault(); setTab('moves'); } });
+
+  // ---- coach saved workout library ----
+  function libSelectHtml(){
+    const L = (IK.cb && IK.cb.lib) || [];
+    return L.length ? '<option value="">Start from scratch</option>' + L.map(x => '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('') : '<option value="">Nothing saved yet</option>';
+  }
+  function libFill(id){
+    const x = ((IK.cb && IK.cb.lib) || []).find(l => l.id === id); if(!x) return;
+    $('cmTag').value = x.tag || ''; $('cmTitle').value = x.title || ''; $('cmLines').value = (x.lines||[]).join('\n'); $('cmNote').value = x.note || '';
+    $('cmScore').value = x.score || 'none'; $('cmLift').value = x.lift || '';
+  }
+  async function libSave(name){
+    if(!IK.cb) return; IK.cb.lib = IK.cb.lib || [];
+    const x = { id: uid(), name: name.slice(0,60), tag: $('cmTag').value.trim(), title: $('cmTitle').value.trim(), lines: $('cmLines').value.split('\n').map(s => s.trim()).filter(Boolean), note: $('cmNote').value.trim() || undefined, score: $('cmScore').value, lift: $('cmLift').value || undefined };
+    IK.cb.lib = IK.cb.lib.filter(l => l.name.toLowerCase() !== x.name.toLowerCase()).concat([x]); await saveCB();
+  }
+  function libListHtml(){
+    const L = (IK.cb && IK.cb.lib) || [];
+    let h = '<div class="psec"><span class="label">Reuse in a tap</span><h2>Saved workouts</h2></div>';
+    if(!L.length) return h + '<p class="how">When you add a workout or extra, tick "Save to library" to reuse it later.</p>';
+    return h + '<ul class="ilist">' + L.map(x => '<li><span class="w">'+esc(x.name)+'</span><span class="b">'+esc((x.lines||[]).slice(0,2).join(' · '))+'</span>'+(canEditLB?'<span class="row"><button class="linkbtn" type="button" data-libdel="'+esc(x.id)+'">Remove</button></span>':'')+'</li>').join('') + '</ul>';
+  }
+  document.addEventListener('click', async e => { const d = e.target.closest && e.target.closest('[data-libdel]'); if(d && IK.cb){ IK.cb.lib = (IK.cb.lib||[]).filter(x => x.id !== d.dataset.libdel); await saveCB(); render(); } });
 
   wireIndLogSheet(); wirePersonalSheet(); wireComposer();
   // First visit on this device: send people to the website first. Once per device, so the
