@@ -362,7 +362,7 @@ a.btn{display:inline-block;text-decoration:none;font-size:16px;padding:13px 20px
     <div>
       <span class="label">BODYBOX Programming · by Reef Warfield</span>
       <h1>Train for<em>your goal.</em></h1>
-      <p class="lede">Six programs, one coach. Whether you compete, run, lift, or just want to feel good every day, there's a track built for it.</p>
+      <p class="lede">Seven programs, one coach. Whether you compete, run, lift, or just want to feel good every day, there's a track built for it.</p>
       <div class="cta"><a class="btn" href="#trial">Try 7 days free</a><a class="btn ghost" href="#plans">See plans &amp; prices</a></div>
     </div>
     <div class="side">
@@ -444,6 +444,15 @@ a.btn{display:inline-block;text-decoration:none;font-size:16px;padding:13px 20px
         <a class="more" href="#samples" data-tab="cardio">See a full sample day →</a>
       </article>
 
+      <article class="plate" data-goals="anywhere compete general">
+        <header><h3>Garage Box</h3><span class="sched">Train anywhere</span></header>
+        <p class="who">For home, garage and travel training.</p>
+        <p>Athlete-level training with no barbell and no machines. Every workout comes four ways: RX and Scaled with equipment, and RX and Scaled with none, where a loaded backpack becomes your dumbbell.</p>
+        <div class="sample"><b>Looks like:</b> a strength piece built on tempo and pauses, then a conditioning workout with running, jump rope or burpees</div>
+        <p class="gear"><b>You need:</b> One or two dumbbells or kettlebells and a jump rope, or just a backpack, a chair and a wall.</p>
+        <a class="more" href="#samples" data-tab="garage">See a full sample day →</a>
+      </article>
+
       <article class="plate" data-goals="anywhere general">
         <header><h3>S.H.I.I.T</h3><span class="sched">Mon · Wed · Fri</span></header>
         <p class="who">Super High Intensity Interval Training.</p>
@@ -475,6 +484,7 @@ a.btn{display:inline-block;text-decoration:none;font-size:16px;padding:13px 20px
       <button role="tab" id="t-comp" aria-controls="p-comp" aria-selected="false">Athlete Comp</button>
       <button role="tab" id="t-build" aria-controls="p-build" aria-selected="false">BODYBOX Building</button>
       <button role="tab" id="t-cardio" aria-controls="p-cardio" aria-selected="false">Cardio</button>
+      <button role="tab" id="t-garage" aria-controls="p-garage" aria-selected="false">Garage Box</button>
       <button role="tab" id="t-shiit" aria-controls="p-shiit" aria-selected="false">S.H.I.I.T</button>
     </div>
 
@@ -558,6 +568,27 @@ a.btn{display:inline-block;text-decoration:none;font-size:16px;padding:13px 20px
         <p class="why">Light accessory work to keep shins and knees healthy. No heavy weight.</p>
       </div>
       <div class="note"><b>Other days</b> use the rower, ski erg and bikes, with real technique coaching: row "1 o'clock to 11 o'clock," ski "cheek to cheek," and drive the heel down on the bike.</div>
+    </div>
+
+    <!-- Garage Box -->
+    <div class="day" role="tabpanel" id="p-garage" aria-labelledby="t-garage" hidden>
+      <div class="dayhead"><h3>Garage Box · Example day</h3><span class="sched">four versions · pick yours</span></div>
+      <div class="part">
+        <div class="tag">Warm-up</div>
+        <div class="rx">3 min jump rope or jog in place, then 2 rounds: 10 Air Squats, 10 Backpack Good Mornings, 8 Push-ups, 3 Broad Jumps</div>
+        <p class="why">Gets the hips and shoulders moving with whatever you have at home.</p>
+      </div>
+      <div class="part">
+        <div class="tag">Strength</div>
+        <div class="rx"><b>Front Squat</b> · 5 × 5, build across the sets<br><span class="opt">RX · Equipment</span> Double DB Front Squat, 3-sec lower<br><span class="opt">Scaled · Equipment</span> Goblet Squat, 2-sec pause<br><span class="opt">RX · No equipment</span> Backpack hugged at your chest, 2-sec pause<br><span class="opt">Scaled · No equipment</span> Air Squat to a chair</div>
+        <p class="why">No barbell, so tempo and pauses make light loads feel heavy. Each set should feel a little harder than the last.</p>
+      </div>
+      <div class="part">
+        <div class="tag">Workout</div>
+        <div class="rx"><b>12 min AMRAP</b><br><span class="opt">RX · Equipment</span> 300 m Run · 12 DB Thrusters 2×35/2×20 · 10 Burpee DB Jump-Overs<br><span class="opt">Scaled · Equipment</span> 200 m Run · 12 Single DB Thrusters 35/20 · 8 Burpee DB Step-Overs<br><span class="opt">RX · No equipment</span> 300 m Run · 12 Backpack Thrusters · 10 Burpee Backpack Jump-Overs<br><span class="opt">Scaled · No equipment</span> 30 Jumping Jacks + 10 Mountain Climbers · 12 Air Squats with an overhead reach · 8 Step-back Burpees</div>
+        <p class="why">The same intent in every version: a steady engine with legs and lungs working together. Pick the version that matches your gear and keeps you moving.</p>
+      </div>
+      <div class="note"><b>The backpack</b> is the dumbbell for the no-equipment versions. Load it with books, water bottles or a bag of rice, pack it tight, and you're ready. Garage Box comes with its own scaling guide, including run conversions for when there's no room to run.</div>
     </div>
 
     <!-- S.H.I.I.T -->
@@ -783,11 +814,11 @@ a.btn{display:inline-block;text-decoration:none;font-size:16px;padding:13px 20px
       <article class="price"><h3>Athlete Comp</h3><div class="amt">$30<small>/month</small></div><p>Compete higher. Get stronger under the bar.</p><ul><li>Percentage-based strength and Olympic lifting</li><li>Competition-style conditioning and gymnastics</li><li>Coaching notes and movement videos</li></ul></article>
       <article class="price"><h3>BODYBOX Building</h3><div class="amt">$30<small>/month</small></div><p>Build real strength and the physique to match.</p><ul><li>Strength progressions you can track</li><li>Hypertrophy and accessory work</li><li>Core finishers every session</li></ul></article>
       <article class="price"><h3>Cardio</h3><div class="amt">$30<small>/month</small></div><p>Get faster. Go farther. Train with purpose.</p><ul><li>Speed, interval and distance work</li><li>Full dynamic warm-ups every session</li><li>Faster and more efficient, not just more miles</li></ul></article>
-      <article class="price"><h3>The Garage Program</h3><div class="amt">$30<small>/month</small></div><p>Athlete-level training with no barbell and no machines.</p><ul><li>Built from Athlete Comp: same days, same intent</li><li>Dumbbells or kettlebells, a jump rope, running and bodyweight</li><li>Test weeks to see your progress</li></ul><p style="color:var(--gold);font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase">Coming soon</p></article>
+      <article class="price"><h3>Garage Box</h3><div class="amt">$30<small>/month</small></div><p>Athlete-level training with no barbell and no machines.</p><ul><li>Every workout four ways: RX and Scaled, with or without equipment</li><li>Dumbbells or kettlebells, or a loaded backpack and bodyweight</li><li>Its own scaling guide for every movement</li></ul></article>
       <article class="price"><h3>S.H.I.I.T</h3><div class="amt">$30<small>/month</small></div><p>No gym? No problem. No excuses.</p><ul><li>Super High Intensity Interval Training</li><li>Bodyweight, plyo and one DB or KB at most</li><li>Daily workout timer, ready to press start</li></ul></article>
     </div>
     <div class="deals">
-      <div class="deal"><div><h3>The Full BODYBOX Bundle</h3><p>All 5 programs, Garage included, personalized to you. Log your scores in the app, and every 4 weeks Reef reviews them and builds work on your weaknesses into your programming. Save $21 every month.</p></div><div class="amt">$129<small>/month</small></div></div>
+      <div class="deal"><div><h3>The Full BODYBOX Bundle</h3><p>All 5 programs, Garage Box included, personalized to you. Log your scores in the app, and every 4 weeks Reef reviews them and builds work on your weaknesses into your programming. Save $21 every month.</p></div><div class="amt">$129<small>/month</small></div></div>
       <div class="deal alt"><div><h3>S.H.I.I.T Challenge</h3><p>4 weeks, 3 workouts a week (Mon, Wed, Fri). Day 1 is the S.H.I.I.T Test. Each week builds on the last, and on Day 12 you take the test again to see how far you came. Scores go on the challenge leaderboard. All you need is floor space and one dumbbell or kettlebell.</p></div><div class="amt" style="font-size:32px">Coming soon</div></div>
       <div class="deal alt"><div><h3>Rebuilt Training members</h3><p>$25 a month per program, or $119 a month for the full bundle. Rebuilt Training Class is part of your Rebuilt Training membership.</p></div><div class="amt">$25<small>/program</small></div></div>
     </div>
@@ -849,7 +880,7 @@ a.btn{display:inline-block;text-decoration:none;font-size:16px;padding:13px 20px
   <div class="wrap">
     <div><span class="label">Before you start</span><h2>Questions</h2></div>
     <div class="qa">
-      <details><summary>Do I need a gym?</summary><p>It depends on the program. S.H.I.I.T needs floor space and one dumbbell or kettlebell, so it works at home or in a hotel. The Garage Program needs dumbbells or kettlebells, a jump rope and room to run. Cardio needs a road, track or machine. Athlete Comp and BODYBOX Building need a gym with a barbell and plates.</p></details>
+      <details><summary>Do I need a gym?</summary><p>It depends on the program. S.H.I.I.T needs floor space and one dumbbell or kettlebell, so it works at home or in a hotel. Garage Box works with dumbbells or kettlebells and a jump rope, or with no equipment at all: a loaded backpack, a chair and a wall. Cardio needs a road, track or machine. Athlete Comp and BODYBOX Building need a gym with a barbell and plates.</p></details>
       <details><summary>I'm a beginner. Is that okay?</summary><p>Yes. Every workout comes with scaling options, so you can lower the weight, the reps or swap a movement. Rebuilt Training Class is coached in person and built for all levels.</p></details>
       <details><summary>How do I get the workouts?</summary><p>In the BODYBOX app. After you pay, we send you a program code and your sign-in. Enter the code and your training shows up every day, with the timer, your weights and movement demos.</p></details>
       <details><summary>Can I try it before I pay?</summary><p>Yes. Your first 7 days of any program are free. Email teambodybox@gmail.com with the program you want to try.</p></details>
