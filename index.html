@@ -2,18 +2,20 @@
 <title>BODYBOX Programming</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=JetBrains+Mono:wght@500&display=swap">
 <style>
 /* Layout: plate-loaded strip — hero as a whiteboard, goal chips pick a program, six program "plates" in a grid, coach + contact at the foot */
 :root{
-  --bg:#1d2124;        /* rubber floor */
-  --panel:#262b2f;     /* plate */
-  --line:#3a4146;
-  --chalk:#eeeae2;     /* chalk white */
-  --muted:#a9afb1;
-  --gold:#e3a73b;      /* bumper gold */
-  --blue:#5aa3c8;      /* bumper blue */
-  --display:"Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --bg:#111111;        /* black */
+  --panel:#1B1B1B;     /* card */
+  --line:#2A2A2A;
+  --chalk:#F4F2EE;     /* white text */
+  --muted:#8F8B84;
+  --gold:#FF5A64;      /* red for text on black */
+  --red:#C8102E;       /* BODYBOX red: fills, buttons */
+  --blue:#D9D5CD;      /* secondary labels */
+  --display:"Anton", Impact, "Arial Narrow", sans-serif;
+  --cond:"Barlow Condensed", "Arial Narrow", sans-serif;
   --body:"Barlow", "Helvetica Neue", Arial, sans-serif;
   --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
   color-scheme:dark;
@@ -332,6 +334,54 @@ a.btn{display:inline-block;text-decoration:none;font-size:16px;padding:13px 20px
   .hero .wrap{padding-block:40px 32px}
 }
 @media (prefers-reduced-motion:reduce){.plate{transition:none}}
+/* ===== BODYBOX look (Nov 2026): black · red #C8102E · white · Anton · Barlow ===== */
+a:hover{color:#fff}
+h1,h2,h3,.mark,.stats b,.watch b,.banner b,.phones figcaption b,.price .amt,.deal .amt,.countries li,.tabs button{font-weight:400!important}
+.label,.sched,.tag,.tl .wk,.joinsteps>li::before,.beta b,.fbk label{font-family:var(--cond);font-weight:700;letter-spacing:.2em}
+.label{font-size:14px;color:var(--gold)}
+.tag,.sched,.tl .wk{font-size:13px}
+.hero h1{font-size:clamp(48px,min(9vw,15vh),112px)}
+.hero h1 em,.throw h2 span,.coach h2 span,.app h2 span,.inperson h2 span{color:var(--gold)}
+/* round cards */
+.plate,.board,.part,.chan,.price,.deal,.fbk,.watch,.trial,.stats,.qr,.coachpic img,.gallery img,.compfloor img,.times li,.mail code{border-radius:16px}
+.plate{border-top:6px solid var(--red)}
+.rx b{background:linear-gradient(transparent 62%,rgba(200,16,46,.4) 0)}
+/* round red buttons */
+.btn,a.btn,.chan .sub{display:inline-flex;align-items:center;justify-content:center;min-height:48px;border-radius:999px;background:var(--red);color:#fff;font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.05em;text-transform:uppercase;padding:0 24px;text-decoration:none}
+a.btn{min-height:56px;font-size:19px;padding:0 30px}
+.btn:hover,a.btn:hover,.chan .sub:hover{background:#A80D26;color:#fff}
+.btn.ghost{background:transparent;color:#fff;box-shadow:inset 0 0 0 1.5px #fff;font-family:var(--body);font-weight:600;text-transform:none;letter-spacing:0;font-size:17px}
+.btn.ghost:hover{background:#fff;color:#111;box-shadow:inset 0 0 0 1.5px #fff}
+.chip{border-radius:999px;min-height:40px}
+.chip[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.watch .play{background:var(--red)}
+.watch .play::after{border-left-color:#fff}
+.tri{border-left-color:var(--red)}
+.banner span{color:var(--gold);font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.2em}
+.banner figcaption{background:linear-gradient(transparent,rgba(17,17,17,.9))}
+.tabs button[aria-selected="true"]{color:#fff;border-bottom-color:var(--red)}
+.coach li,.tl li{border-color:var(--red)}
+.feats li{border-left-color:var(--red)}
+.price .amt,.deal .amt{color:#fff}
+.deal{border-color:var(--red)}
+.beta{background:var(--red);color:#fff}
+.beta a{color:#fff}
+.trial{background:var(--red);color:#fff}
+.trial .mail code{background:#111;color:#fff;border-color:#111}
+.trial .btn{background:#111;color:#fff}
+.trial .btn:hover{background:#000}
+.phones img{border-color:#000}
+/* white section: goal picker + programs */
+.picker,.programs{--bg:#FFFFFF;--panel:#FFFFFF;--line:#E2DED6;--chalk:#111111;--muted:#555555;--gold:#C8102E;--blue:#555555;background:#fff;color:#111}
+.picker .label{color:var(--red)}
+.programs .plate{border-width:1.5px;border-top-width:6px;border-top-color:var(--red)}
+.programs .plate.hit{border-color:var(--red)}
+.programs .plate p{color:#444}
+.programs .plate .who{color:var(--red)}
+.programs a.more{color:var(--red)}
+.programs a.more:hover{color:#111}
+.picker .chip:hover{border-color:#111}
+.programs .wrap{padding-bottom:80px}
 </style>
 
 <nav>
@@ -355,8 +405,6 @@ a.btn{display:inline-block;text-decoration:none;font-size:16px;padding:13px 20px
   </div>
 </nav>
 
-<div class="beta" id="beta"><div class="wrap"><span><b>Team beta</b>Open through Sun Nov 1. No code, no sign-up. <a href="#feedback">Leave comments</a> · <a href="#promo">Watch the commercial</a></span><a href="https://reefwtraining.github.io/bodybox/app/" target="_blank" rel="noopener">Open the BODYBOX app ↗</a></div></div>
-<script>(function(){var d=new Date(),t=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();if(t>20261101){var b=document.getElementById('beta');if(b)b.remove();}})();</script>
 <section class="hero" id="top">
   <div class="wrap">
     <div>
@@ -380,8 +428,6 @@ a.btn{display:inline-block;text-decoration:none;font-size:16px;padding:13px 20px
     </div>
   </div>
 </section>
-<section class="promo" id="promo"><div class="wrap"><div><span class="label">Team beta · New</span><h2>Watch the BODYBOX commercial</h2><p>45 seconds of what we built. Turn the sound on.</p></div><video controls playsinline preload="none" poster="video/bodybox-commercial-poster.jpg" src="video/bodybox-commercial.mp4" width="540" height="960"></video></div></section>
-<script>(function(){var d=new Date(),t=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();if(t>20261101){var b=document.getElementById('promo');if(b)b.remove();}})();</script>
 
 
 <figure class="banner">
@@ -826,16 +872,7 @@ a.btn{display:inline-block;text-decoration:none;font-size:16px;padding:13px 20px
       <div><h3>Try 7 days free</h3><p>Your first 7 days of any program are free. Email us the program you want to try and we'll get you started. No payment needed.</p></div>
       <div class="mail"><code id="trialEmail">teambodybox@gmail.com</code><button class="btn" id="trialCopy" type="button">Copy email</button></div>
     </div>
-    <div class="fbk" id="feedback">
-      <h3>Leave comments</h3>
-      <p>This is the BODYBOX beta, open to the team through <b>Sun Nov 1</b>. Tell us what to fix, what to add and what you love about the site or the app.</p>
-      <label>Your name<input id="fbName" maxlength="60" autocomplete="name"></label>
-      <label>Your comment<textarea id="fbText" maxlength="2000" placeholder="What should we fix or add?"></textarea></label>
-      <div><a class="btn" id="fbSend" href="mailto:teambodybox@gmail.com?subject=BODYBOX%20beta%20comments" target="_blank" rel="noopener">Send comment</a></div>
-      <p style="font-size:14px">Opens your email to teambodybox@gmail.com with your comment filled in.</p>
-    </div>
-<script>(function(){var n=document.getElementById('fbName'),t=document.getElementById('fbText'),a=document.getElementById('fbSend');function u(){var nm=n.value.trim();a.href='mailto:teambodybox@gmail.com?subject='+encodeURIComponent('BODYBOX beta comments'+(nm?' from '+nm:''))+'&body='+encodeURIComponent(t.value+(nm?'\n\n- '+nm:''));}n.addEventListener('input',u);t.addEventListener('input',u);var d=new Date(),k=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();if(k>20261101){var f=document.getElementById('feedback');if(f)f.remove();}})();</script>
-    <ol class="joinsteps">
+        <ol class="joinsteps">
       <li><h3>Email us</h3><p>Tell us which program you want at <b>teambodybox@gmail.com</b>.</p></li>
       <li><h3>Pay your first month</h3>
         <ul class="paylist">
