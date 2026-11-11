@@ -799,7 +799,7 @@ Rest 2:00"></textarea></label>
     if(lift){
       const b = bestOf(lift);
       if(b) t = t.replace(/(\d{2,3}(?:\s*\/\s*\d{2,3})*)\s?%/g, (m, grp) => {
-        const ws = grp.split('/').map(x => fmtW(roundW(b.val * parseFloat(x) / 100)));
+        const ws = grp.split('/').map(x => fmtW(gymW(lift, gymMax(lift, b.val) * parseFloat(x) / 100)));
         return m + '<span class="wt">' + ws.join(' / ') + ' ' + A.unit + '</span>';
       });
     }
@@ -1355,7 +1355,17 @@ Rest 2:00"></textarea></label>
   const LIFT_ORDER = Object.keys(LIFTS);
   // Dumbbell / kettlebell movements: weight is per dumbbell (or the one bell), no bar or plates
   const isDB = k => /^(db_|kb_|goblet_|farmer_)/.test(k) || /\b(DB|KB|Dumbbell|Kettlebell|Goblet)\b/i.test(LIFTS[k]||'');
-  const perTxt = k => !isDB(k) ? '' : (/^(kb_|goblet_)/.test(k) || /\b(KB|Goblet)\b/i.test(LIFTS[k]||'')) ? ' per bell' : (/1arm|single/i.test(k+' '+(LIFTS[k]||''))) ? ' one DB' : ' per DB';
+  const isKB = k => /^kb_/.test(k) || /\b(KB|Kettlebell)\b/i.test(LIFTS[k]||'');
+  const perTxt = k => !isDB(k) ? '' : isKB(k) ? ' per bell' : (/^goblet_|1arm|single/i.test(k+' '+(LIFTS[k]||''))) ? ' one DB' : ' per DB';
+  // Gym equipment: dumbbells go up by 5 lb; Rogue kettlebells come in these sizes
+  const KB_LB = [9,13,18,26,35,44,53,62,70,80,88,97,106], KB_KG = [4,6,8,12,16,20,24,28,32,36,40,44,48];
+  const kbSizes = () => A.unit === 'kg' ? KB_KG : KB_LB;
+  const nearKB = (w, down) => { const s = kbSizes(); if(down){ let r = s[0]; s.forEach(x => { if(x <= w + 0.01) r = x; }); return r; } return s.reduce((a,b) => Math.abs(b-w) < Math.abs(a-w) ? b : a); };
+  const dbStep = () => A.unit === 'kg' ? 2.5 : 5;
+  // Working weight for a lift, rounded to what the gym actually has
+  const gymW = (lift, w) => !lift || !isDB(lift) ? roundW(w) : isKB(lift) ? nearKB(w) : Math.max(dbStep(), Math.round(w / dbStep()) * dbStep());
+  // A dumbbell/kettlebell max shown as a weight that exists (estimates round down)
+  const gymMax = (lift, v) => !isDB(lift) ? v : isKB(lift) ? nearKB(v, true) : Math.max(dbStep(), Math.floor(v / dbStep() + 1e-9) * dbStep());
   const DEF_A = { v:1, unit:'lb', bar:45, log:[], scores:[], subs:[], name:'', evNotes:{}, unsync:[], done:[], personal:[], indr:{}, moves:{} };
   let storeOK = true;
   function loadA(){
@@ -1405,7 +1415,7 @@ Rest 2:00"></textarea></label>
         const firstV = first ? conv(e1rm(first.w, first.reps), first.u, A.unit) : 0;
         const gain = es.length > 1 ? Math.round(b.val - firstV) : 0;
         h += '<button class="pr" type="button" data-lift="'+k+'" aria-expanded="'+(openLift===k)+'"><span class="nm">'+esc(LIFTS[k])+'</span>'+
-             '<span class="val">'+fmtW(b.val)+' <small>'+A.unit+perTxt(k)+(b.est?' est.':'')+'</small></span>'+
+             '<span class="val">'+fmtW(gymMax(k, b.val))+' <small>'+A.unit+perTxt(k)+(b.est?' est.':'')+'</small></span>'+
              '<span class="meta">'+niceDate(b.e.date)+(gain>0?' · <span class="up">+'+gain+' '+A.unit+'</span>':'')+'</span>'+goalBar(k, true)+'</button>';
         if(openLift === k) h += detailHtml(k);
       });
@@ -1679,7 +1689,7 @@ Rest 2:00"></textarea></label>
   }
   function calcBase(){
     if(CALC.manual != null && CALC.manual > 0) return CALC.manual;
-    const b = CALC.lift ? bestOf(CALC.lift) : null; return b ? b.val : null;
+    const b = CALC.lift ? bestOf(CALC.lift) : null; return b ? gymMax(CALC.lift, b.val) : null;
   }
   function renderCalc(){
     const v = $('view');
@@ -1689,23 +1699,23 @@ Rest 2:00"></textarea></label>
     const base = calcBase();
     let h = '<div class="head"><span class="sched">Percentages · plate math</span><h1>% Calculator</h1><p>Pick one of your lifts or type any number, then choose a percentage.</p></div><div class="calc">';
     h += '<div class="two"><label class="field"><span class="label">Lift</span><select id="cLift"><option value="">Type a number</option>'+
-         have.map(k => '<option value="'+k+'"'+(CALC.lift===k&&CALC.manual==null?' selected':'')+'>'+esc(LIFTS[k])+' · '+fmtW(bestOf(k).val)+'</option>').join('')+'</select></label>'+
+         have.map(k => '<option value="'+k+'"'+(CALC.lift===k&&CALC.manual==null?' selected':'')+'>'+esc(LIFTS[k])+' · '+fmtW(gymMax(k, bestOf(k).val))+'</option>').join('')+'</select></label>'+
          '<label class="field"><span class="label">Max ('+A.unit+')</span><input id="cMax" type="number" inputmode="decimal" min="1" step="any" value="'+(base?fmtW(base):'')+'" placeholder="e.g. 225"></label></div>';
     h += '<label class="field"><span class="label">Percentage</span><input id="cPct" type="number" inputmode="decimal" min="1" max="150" step="any" value="'+CALC.pct+'"></label>';
     h += '<div class="pchips" role="group" aria-label="Quick percentages">'+[50,55,60,65,70,75,80,85,90,95].map(p => '<button type="button" data-p="'+p+'" aria-pressed="'+(CALC.pct===p)+'">'+p+'%</button>').join('')+'</div>';
     if(base){
       const dbL = CALC.manual == null && CALC.lift && isDB(CALC.lift);
-      const w = dbL ? Math.max(5, Math.round(base * CALC.pct / 100 / 5) * 5) : roundW(base * CALC.pct / 100), pl = dbL ? null : platesFor(w);
+      const w = dbL ? gymW(CALC.lift, base * CALC.pct / 100) : roundW(base * CALC.pct / 100), pl = dbL ? null : platesFor(w);
       h += '<div class="result"><span class="label" style="color:var(--ink)">'+fmtW(CALC.pct)+'% of '+fmtW(base)+'</span><div class="big">'+fmtW(w)+' <small>'+A.unit+'</small></div>'+
            '<div class="sub">'+(dbL ? (perTxt(CALC.lift)===' per DB' ? 'Closest dumbbells to this, one in each hand' : perTxt(CALC.lift)===' per bell' ? 'Closest bell to this' : 'Closest dumbbell to this') : pl ? 'Each side of a '+A.bar+' '+A.unit+' bar:' : 'Lighter than the '+A.bar+' '+A.unit+' bar')+'</div>'+
            (pl ? '<div class="plates">'+(pl.plates.length?pl.plates.map(p => '<span class="plate">'+fmtW(p)+'</span>').join(''):'<span>Just the bar</span>')+(pl.left?'<span style="font-size:13px">+'+fmtW(pl.left)+' '+A.unit+' in change plates</span>':'')+'</div>' : '')+
            '</div>';
-      h += '<div class="row"><span class="label">Bar</span><div class="seg" role="group" aria-label="Bar weight">'+BARS[A.unit].map(b => '<button type="button" data-bar="'+b+'" aria-pressed="'+(A.bar===b)+'">'+b+' '+A.unit+'</button>').join('')+'</div></div>';
+      if(!dbL) h += '<div class="row"><span class="label">Bar</span><div class="seg" role="group" aria-label="Bar weight">'+BARS[A.unit].map(b => '<button type="button" data-bar="'+b+'" aria-pressed="'+(A.bar===b)+'">'+b+' '+A.unit+'</button>').join('')+'</div></div>';
       h += '<div style="overflow-x:auto"><table class="ptable"><tbody>';
-      for(let p = 100; p >= 40; p -= 5){ const ww = roundW(base * p / 100);
+      for(let p = 100; p >= 40; p -= 5){ const ww = dbL ? gymW(CALC.lift, base * p / 100) : roundW(base * p / 100);
         h += '<tr data-row="'+p+'" class="'+(CALC.pct===p?'on':'')+'"><td>'+p+'%</td><td>'+fmtW(ww)+' '+A.unit+'</td><td>'+(fmtW(Math.round(base*p)/100))+' exact</td></tr>'; }
       h += '</tbody></table></div>';
-      h += '<p class="scale" style="margin:0">Weights round to the nearest '+inc()+' '+A.unit+'.</p>';
+      h += '<p class="scale" style="margin:0">'+(dbL ? (isKB(CALC.lift) ? 'Rounded to the closest kettlebell we have.' : 'Rounded to the closest dumbbell (5 lb jumps).') : 'Weights round to the nearest '+inc()+' '+A.unit+'.')+'</p>';
     } else {
       h += '<div class="empty"><b>Add a number</b>Type your max above, or log your lifts in My Numbers so they fill in here and in your workouts.</div>';
     }
