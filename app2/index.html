@@ -2497,11 +2497,17 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function partSrc(pt, date){ return 'part|'+date+'|'+String(pt.tag||'')+'|'+String((pt.lines||[])[0]||'').slice(0,40); }
   function repsGuess(lines){ let r = 0; (lines||[]).forEach(l => { const m = String(l).match(/(\d+)\s*[x×]\s*(\d+)/i); if(m) r = +m[2]; }); return r >= 1 && r <= 10 ? r : 1; }
   const SETCTX = {};
+  function partName(pt){
+    let n = String(pt.tag || (pt.lines||[])[0] || 'Lift').replace(/\s+(?:for (?:load|quality|time)|for load:).*$/i,'').replace(/[:]+$/,'').replace(/\s+\d+(?:\s*[x×]\s*\d+(?:\/\d+)?)?(?:\s*-\s*\d+)*\s*$/i,'').trim();
+    if(n === n.toUpperCase()) n = n.toLowerCase().replace(/\b([a-z])/g, c => c.toUpperCase()).replace(/\bDb\b/g,'DB').replace(/\bKb\b/g,'KB');
+    return n.slice(0,40) || 'Lift';
+  }
+  function liftByName(n){ const t = String(n||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(!t) return null; return Object.keys(LIFTS).find(k => String(LIFTS[k]).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim() === t) || null; }
   function setKey(pt, date){ return (pt.lift||'')+'|'+date+'|'+String((pt.lines||[])[0]||'').slice(0,30); }
   // read the scheme: "5x5", "3 × 2 @ 60%", "4 x 6-8" -> one row per set with reps (and % if given)
   function setPlan(lines){
     const L = (lines||[]).map(String);
-    const per = []; L.forEach(l => { const m = l.match(/^\s*set\s*\d+\s*[·:\-–]\s*(\d+)(?:\s*(?:reps?)?\s*@\s*(\d{2,3})\s*%)?/i); if(m) per.push({ reps: +m[1], pct: m[2] ? +m[2] : 0 }); });
+    const per = []; L.forEach(l => { const m = l.match(/^\s*(?:set\s*|#\s*)\d+\s*[·:\-–.]?\s*(\d+)(?:\s*(?:\/\s*\d+)?\s*(?:reps?)?\s*@\s*(\d{2,3})\s*%)?/i); if(m) per.push({ reps: +m[1], pct: m[2] ? +m[2] : 0 }); });
     if(per.length) return per.slice(0, 15);
     const out = [];
     (lines||[]).forEach(l => { const re = /(\d+)\s*[x×]\s*(\d+)(?:\s*[-–]\s*\d+)?(?:\s*@\s*(\d{2,3})\s*%)?/gi; let m;
@@ -2517,9 +2523,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   let setCur = null;
   function openSets(k){
     const c = SETCTX[k]; if(!c) return; setCur = c;
-    const b = bestOf(c.lift), last = lastOf(c.lift);
-    let plan = setPlan(c.lines); if(!plan.length) plan = [{ reps: 0, pct: 0 }, { reps: 0, pct: 0 }, { reps: 0, pct: 0 }];
-    $('setTitle').textContent = LIFTS[c.lift] || 'Log my sets'; $('setWhat').textContent = 'Log my sets';
+    const b = c.lift ? bestOf(c.lift) : null, last = c.lift ? lastOf(c.lift) : null;
+    let plan = setPlan(c.lines); if(!plan.length && c.tag) plan = setPlan([c.tag]); if(!plan.length) plan = [{ reps: 0, pct: 0 }, { reps: 0, pct: 0 }, { reps: 0, pct: 0 }];
+    $('setTitle').textContent = (c.lift && LIFTS[c.lift]) || c.name || 'Log my sets'; $('setWhat').textContent = 'Log my sets';
     $('setDate').value = c.date || todayStr(); $('setNote').value = ''; $('setErr').textContent = '';
     $('setRows').innerHTML = plan.map((p, i) => { let ph = ''; if(p.pct && b) ph = fmtW(gymW(c.lift, gymMax(c.lift, b.val) * p.pct / 100)); else if(last) ph = fmtW(conv(last.w, last.u, A.unit)); return setRowHtml(i, p.reps, ph); }).join('');
     wireSetRows(); $('setSheet').hidden = false; setTimeout(() => { const f = document.querySelector('#setRows .sw'); if(f) f.focus(); }, 50);
@@ -2534,6 +2540,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const date = $('setDate').value; if(!date){ $('setErr').textContent = 'Pick the date.'; return; }
       const rows = [...document.querySelectorAll('#setRows .setrow')].map(r => ({ w: parseFloat(r.querySelector('.sw').value), reps: parseInt(r.querySelector('.sr').value, 10) || 1 })).filter(x => x.w > 0);
       if(!rows.length){ $('setErr').textContent = 'Enter the weight for at least one set.'; return; }
+      if(!setCur.lift){ setCur.lift = addMove(setCur.name || 'Lift'); if(!setCur.lift){ $('setErr').textContent = 'Couldn\'t save this movement.'; return; } }
       const note = $('setNote').value.trim().slice(0,600), before = bestOf(setCur.lift), base = Date.now();
       rows.forEach((x, i) => A.log.push(Object.assign({ id: base.toString(36)+i+Math.random().toString(36).slice(2,5), lift: setCur.lift, w: x.w, u: A.unit, reps: Math.min(50, x.reps), date, t: base + i, set: i+1 }, (note && i === 0) ? { note } : {})));
       saveA(); $('setSheet').hidden = true;
@@ -2544,11 +2551,13 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   }
   function partLogBar(pt, entry, date){
     if(!date || /warm|cool|mobil|stretch|recover/i.test(pt.tag || '')) return '';
-    if(pt.lift && LIFTS[pt.lift]){
-      const done = (A.log||[]).filter(e => e.lift === pt.lift && e.date === date && !String(e.src||'').startsWith('est'));
+    const pname = partName(pt), lk = (pt.lift && LIFTS[pt.lift]) ? pt.lift : liftByName(pname), noWt = /jump|bound|\bhops?\b|toss|throw|sprint|\brun|carry|medley|superset|tri-?set|core|accessory|lower leg/i.test(pt.tag || '');
+    let plan = noWt ? [] : setPlan(pt.lines); if(!noWt && !plan.length) plan = setPlan([pt.tag || '']);
+    if(lk || plan.length){
+      const done = lk ? (A.log||[]).filter(e => e.lift === lk && e.date === date && !String(e.src||'').startsWith('est')) : [];
       const k = setKey(pt, date);
       const btn = '<button class="btn solid" type="button" data-psets="'+esc(k)+'" style="padding:7px 12px">'+(done.length?'Add more sets':'Log my sets')+'</button>';
-      SETCTX[k] = { lift: pt.lift, date, lines: pt.lines || [] };
+      SETCTX[k] = { lift: lk || null, name: pname, tag: pt.tag || '', date, lines: pt.lines || [] };
       return '<div class="logbar"><span>'+(done.length ? 'Logged: <b>'+done.map(e => fmtW(conv(e.w, e.u, A.unit))+' × '+(e.reps||1)).join(', ')+'</b>' : 'Log every set: weight and reps')+'</span>'+btn+'</div>';
     }
     const src = partSrc(pt, date), r = (A.personal||[]).filter(x => x && x.src === src).slice(-1)[0];
