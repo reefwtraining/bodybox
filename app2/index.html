@@ -3571,10 +3571,11 @@ const PLANS = [
   { id:'build',  name:'Body Box Building', price:'$35/mo', progs:['build'] },
   { id:'cardio', name:'Cardio',            price:'$35/mo', progs:['cardio'] },
   { id:'all3',   name:'All 3 Programs',    price:'$69/mo', progs:['comp','build','cardio'], best:true },
-  { id:'coach',  name:'Personal Coaching', price:'$129/mo', progs:['comp','build','cardio'], note:'All 3 programs plus programming built for you by Coach Reef' }
+  { id:'coach',  name:'Personal Coaching', price:'$129/mo', progs:['comp','build','cardio','shiit','rt','personal'], note:'All 3 programs plus programming built for you by Coach Reef' }
 ];
-const CODE_PROGS = Object.assign({ AK4MVX:['comp','build','cardio','shiit'] }, Object.fromEntries(PROGS.map(p => [p[2], [p[0]]])));
-const progName = k => (PROGS.find(p => p[0] === k) || [k,k])[1];
+const PERSONAL = ['personal','Personal (from Coach Reef)'];
+const CODE_PROGS = Object.assign({ AK4MVX:['comp','build','cardio','shiit'], U9PPH7:['comp','build','cardio','shiit','rt','personal'] }, Object.fromEntries(PROGS.map(p => [p[2], [p[0]]])));
+const progName = k => (PROGS.concat([PERSONAL]).find(p => p[0] === k) || [k,k])[1];
 const progsForPlans = ids => [...new Set(PLANS.filter(p => (ids||[]).includes(p.id)).flatMap(p => p.progs))];
 const codesFor = ks => PROGS.filter(p => (ks||[]).includes(p[0])).map(p => p[2]);
 const cfg = {
@@ -3734,7 +3735,7 @@ async function openMembers(){
   const pend = rows.filter(r => !r.approved).length;
   box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p style="color:#8F8B84;margin:0">'+pend+' waiting for approval · '+(rows.length-pend)+' approved. Tap a program to turn it on or off for that person (red = on). No codes needed.</p>'+
     rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small>'+((r.wants&&r.wants.length)?'<small>Picked: '+esc(PLANS.filter(p => r.wants.includes(p.id)).map(p => p.name).join(' + '))+'</small>':'<small>Hasn\'t picked programs yet</small>')+((r.codeProgs&&r.codeProgs.length)?'<small>Code opens: '+esc(r.codeProgs.map(progName).join(', '))+'</small>':'')+'</div>'+
-      (r.approved ? '<button class="ghost" data-off="'+r.id+'">Remove access</button>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>'+(r.approved ? '<div class="mprogs">'+PROGS.map(p => '<button class="'+((r.progs||[]).includes(p[0])?'':'ghost')+'" data-prog="'+r.id+'|'+p[0]+'">'+p[1]+'</button>').join('')+'</div>' : '')).join('')+
+      (r.approved ? '<button class="ghost" data-off="'+r.id+'">Remove access</button>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>'+(r.approved ? '<div class="mprogs">'+PROGS.concat([PERSONAL]).map(p => '<button class="'+((r.progs||[]).includes(p[0])?'':'ghost')+'" data-prog="'+r.id+'|'+p[0]+'">'+p[1]+'</button>').join('')+'</div>' : '')).join('')+
     '<div class="mrow" style="display:block"><b>Update content</b><small>Load a new content file from Claude (programming + leaderboard).</small>'+contentPicker()+'</div><div class="mrow"><button class="ghost" id="mClose">Close</button><button class="ghost" id="mOut">Sign out</button></div>';
   box.querySelector('#mClose').onclick = () => box.remove(); box.querySelector('#mOut').onclick = () => signOut(auth); wirePicker(box);
   box.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { b.disabled = true; const r = rows.find(x => x.id === b.dataset.on) || {}; const progs = (r.progs && r.progs.length) ? r.progs : (r.codeProgs && r.codeProgs.length) ? r.codeProgs : progsForPlans(r.wants); try{ await updateDoc(doc(fs,'members',b.dataset.on), { approved: true, approvedAt: serverTimestamp(), progs }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
