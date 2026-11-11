@@ -407,6 +407,15 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
 .wkdays{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin-bottom:10px}
 .logbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:8px;font-size:14px;color:var(--muted)}
 .logbar b{color:var(--chalk);font-family:var(--mono)}
+.setrows{display:grid;gap:8px;margin:4px 0 10px}
+.setrow{display:grid;grid-template-columns:52px 1fr 78px 34px;gap:8px;align-items:end}
+.setrow .sn{font-family:var(--mono);color:var(--muted);font-size:13px;padding-bottom:12px}
+.setrow input{width:100%}
+.setrow .sx{background:none;border:1px solid var(--line);color:var(--muted);border-radius:10px;height:44px;cursor:pointer}
+.setrow .field{margin:0}
+#setSheet .card{max-height:92vh;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.setrow:not(:first-child) .label{display:none}
+.setrow:not(:first-child) .sn{padding-bottom:12px}
 .demos{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border-top:1px dashed var(--line);padding-top:8px}
 .demos .label{margin-right:2px}
 .demo{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:13px;color:var(--chalk);text-decoration:none;background:var(--bg)}
@@ -628,6 +637,19 @@ Rest 2:00"></textarea></label>
     <p class="e1" id="logE1"></p>
     <p class="err" id="logErr"></p>
     <div class="row"><button class="btn solid" type="submit">Save lift</button><button class="btn" type="button" id="logCancel">Cancel</button></div>
+  </form>
+</div>
+
+<div class="sheet" id="setSheet" hidden="">
+  <form class="card" id="setForm" autocomplete="off">
+    <span class="label" id="setWhat">Log my sets</span>
+    <h2 id="setTitle">Log my sets</h2>
+    <label class="field"><span class="label">Date</span><input id="setDate" type="date" required=""></label>
+    <div class="setrows" id="setRows"></div>
+    <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="setAdd">+ Add set</button><button class="btn" type="button" id="setFill">Same weight all sets</button></div>
+    <label class="field"><span class="label">Notes (optional)</span><textarea id="setNote" class="notein" maxlength="600" placeholder="How it moved, what to try next time"></textarea></label>
+    <p class="err" id="setErr"></p>
+    <div class="row"><button class="btn solid" type="submit">Save sets</button><button class="btn" type="button" id="setCancel">Cancel</button></div>
   </form>
 </div>
 
@@ -2462,7 +2484,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       h += cnotesHtml(cn);
       const partHtml = pt => '<section class="part"><span class="tag">'+esc(pt.tag)+'</span><ul class="rx">'+pt.lines.map(l => lineHtml(l, pt.lift)).join('')+'</ul>'+liftNote(pt)+
         (pt.scale?'<p class="scale"><b>Scale it:</b> '+esc(pt.scale.replace(/^Scaled:\s*/,''))+'</p>':'')+
-        (pt.note?'<p class="note">'+esc(pt.note)+'</p>':'')+demoHtml(pt.lines.concat(pt.scale||[]))+ (pt.event && evById(pt.event) && meId && athById(meId) ? logBar(evById(pt.event)) : partLogBar(pt, entry, memDay)) +'</section>';
+        (pt.note?'<p class="note">'+esc(pt.note)+'</p>':'')+demoHtml(pt.lines.concat(pt.scale||[]))+ (pt.event && evById(pt.event) && meId && athById(meId) ? logBar(evById(pt.event)) + (pt.lift && LIFTS[pt.lift] ? partLogBar(pt, entry, memDay) : '') : partLogBar(pt, entry, memDay)) +'</section>';
       const wv = partsWithItems(entry, showMoved ? mv.from : memDay, memProg, partHtml);
       h += ownDayHtml(wv.own) + '<div class="parts">'+wv.html+'</div>';
     }
@@ -2474,12 +2496,56 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   // every non-board piece gets a log button: lifts log the weight you used, workouts log your result
   function partSrc(pt, date){ return 'part|'+date+'|'+String(pt.tag||'')+'|'+String((pt.lines||[])[0]||'').slice(0,40); }
   function repsGuess(lines){ let r = 0; (lines||[]).forEach(l => { const m = String(l).match(/(\d+)\s*[x×]\s*(\d+)/i); if(m) r = +m[2]; }); return r >= 1 && r <= 10 ? r : 1; }
+  const SETCTX = {};
+  function setKey(pt, date){ return (pt.lift||'')+'|'+date+'|'+String((pt.lines||[])[0]||'').slice(0,30); }
+  // read the scheme: "5x5", "3 × 2 @ 60%", "4 x 6-8" -> one row per set with reps (and % if given)
+  function setPlan(lines){
+    const out = [];
+    (lines||[]).forEach(l => { const re = /(\d+)\s*[x×]\s*(\d+)(?:\s*[-–]\s*\d+)?(?:\s*@\s*(\d{2,3})\s*%)?/gi; let m;
+      while((m = re.exec(String(l)))){ const n = +m[1], r = +m[2]; if(n >= 1 && n <= 12 && r >= 1 && r <= 30) for(let i = 0; i < n; i++) out.push({ reps: r, pct: m[3] ? +m[3] : 0 }); } });
+    return out.slice(0, 15);
+  }
+  function setRowHtml(i, reps, ph){
+    return '<div class="setrow"><span class="sn">Set '+(i+1)+'</span><label class="field"><span class="label">Weight ('+A.unit+')</span><input type="number" inputmode="decimal" min="0" step="any" class="sw" placeholder="'+esc(ph||'')+'"></label><label class="field"><span class="label">Reps</span><input type="number" inputmode="numeric" min="1" max="50" class="sr" value="'+(reps||'')+'"></label><button type="button" class="sx" aria-label="Remove set">×</button></div>';
+  }
+  function renumberSets(){ document.querySelectorAll('#setRows .setrow').forEach((r, i) => { r.querySelector('.sn').textContent = 'Set '+(i+1); }); }
+  function wireSetRows(){ document.querySelectorAll('#setRows .sx').forEach(b => b.onclick = () => { const rows = document.querySelectorAll('#setRows .setrow'); if(rows.length > 1){ b.closest('.setrow').remove(); renumberSets(); } }); }
+  let setCur = null;
+  function openSets(k){
+    const c = SETCTX[k]; if(!c) return; setCur = c;
+    const b = bestOf(c.lift), last = lastOf(c.lift);
+    let plan = setPlan(c.lines); if(!plan.length) plan = [{ reps: 0, pct: 0 }, { reps: 0, pct: 0 }, { reps: 0, pct: 0 }];
+    $('setTitle').textContent = LIFTS[c.lift] || 'Log my sets'; $('setWhat').textContent = 'Log my sets';
+    $('setDate').value = c.date || todayStr(); $('setNote').value = ''; $('setErr').textContent = '';
+    $('setRows').innerHTML = plan.map((p, i) => { let ph = ''; if(p.pct && b) ph = fmtW(gymW(c.lift, gymMax(c.lift, b.val) * p.pct / 100)); else if(last) ph = fmtW(conv(last.w, last.u, A.unit)); return setRowHtml(i, p.reps, ph); }).join('');
+    wireSetRows(); $('setSheet').hidden = false; setTimeout(() => { const f = document.querySelector('#setRows .sw'); if(f) f.focus(); }, 50);
+  }
+  function wireSetSheet(){
+    $('setCancel').onclick = () => { $('setSheet').hidden = true; };
+    $('setAdd').onclick = () => { const rows = document.querySelectorAll('#setRows .setrow'); const lastRow = rows[rows.length-1]; const w = lastRow ? lastRow.querySelector('.sw').value : '', r = lastRow ? lastRow.querySelector('.sr').value : '';
+      $('setRows').insertAdjacentHTML('beforeend', setRowHtml(rows.length, r, lastRow ? lastRow.querySelector('.sw').placeholder : '')); const nr = $('setRows').lastElementChild; if(w) nr.querySelector('.sw').value = w; wireSetRows(); nr.querySelector('.sw').focus(); };
+    $('setFill').onclick = () => { const ws = [...document.querySelectorAll('#setRows .sw')]; const first = ws.find(x => x.value); if(!first){ $('setErr').textContent = 'Enter the weight for set 1 first.'; return; } ws.forEach(x => { if(!x.value) x.value = first.value; }); $('setErr').textContent = ''; };
+    $('setForm').onsubmit = e => {
+      e.preventDefault(); if(!setCur) return;
+      const date = $('setDate').value; if(!date){ $('setErr').textContent = 'Pick the date.'; return; }
+      const rows = [...document.querySelectorAll('#setRows .setrow')].map(r => ({ w: parseFloat(r.querySelector('.sw').value), reps: parseInt(r.querySelector('.sr').value, 10) || 1 })).filter(x => x.w > 0);
+      if(!rows.length){ $('setErr').textContent = 'Enter the weight for at least one set.'; return; }
+      const note = $('setNote').value.trim().slice(0,600), before = bestOf(setCur.lift), base = Date.now();
+      rows.forEach((x, i) => A.log.push(Object.assign({ id: base.toString(36)+i+Math.random().toString(36).slice(2,5), lift: setCur.lift, w: x.w, u: A.unit, reps: Math.min(50, x.reps), date, t: base + i, set: i+1 }, (note && i === 0) ? { note } : {})));
+      saveA(); $('setSheet').hidden = true;
+      const after = bestOf(setCur.lift);
+      toastPR = before && after.val > before.val ? 'New '+LIFTS[setCur.lift]+' PR: '+fmtW(after.val)+' '+A.unit+' (+'+fmtW(Math.round((after.val-before.val)*10)/10)+')' : '';
+      toastShare = null; render();
+    };
+  }
   function partLogBar(pt, entry, date){
     if(!date || /warm|cool|mobil|stretch|recover/i.test(pt.tag || '')) return '';
     if(pt.lift && LIFTS[pt.lift]){
       const done = (A.log||[]).filter(e => e.lift === pt.lift && e.date === date && !String(e.src||'').startsWith('est'));
-      const btn = '<button class="btn solid" type="button" data-plog="'+esc(pt.lift)+'" data-pdate="'+esc(date)+'" data-preps="'+repsGuess(pt.lines)+'" style="padding:7px 12px">'+(done.length?'Log another set':'Log my weight')+'</button>';
-      return '<div class="logbar"><span>'+(done.length ? 'Logged: <b>'+done.map(e => fmtW(conv(e.w, e.u, A.unit))+' × '+(e.reps||1)).join(', ')+'</b>' : 'Log the weight you used today')+'</span>'+btn+'</div>';
+      const k = setKey(pt, date);
+      const btn = '<button class="btn solid" type="button" data-psets="'+esc(k)+'" style="padding:7px 12px">'+(done.length?'Add more sets':'Log my sets')+'</button>';
+      SETCTX[k] = { lift: pt.lift, date, lines: pt.lines || [] };
+      return '<div class="logbar"><span>'+(done.length ? 'Logged: <b>'+done.map(e => fmtW(conv(e.w, e.u, A.unit))+' × '+(e.reps||1)).join(', ')+'</b>' : 'Log every set: weight and reps')+'</span>'+btn+'</div>';
     }
     const src = partSrc(pt, date), r = (A.personal||[]).filter(x => x && x.src === src).slice(-1)[0];
     const title = ((entry && entry.title) ? entry.title+' · ' : '')+(pt.tag||'Workout');
@@ -2511,7 +2577,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const ac = $('addCode'); if(ac) ac.onclick = () => { memAdding = true; memMsg = ''; render(); setTimeout(() => { const ci = $('codeIn'); if(ci) ci.focus(); }, 30); };
     const cc = $('codeCancel'); if(cc) cc.onclick = () => { memAdding = false; memMsg = ''; render(); };
     v.querySelectorAll('[data-mday]').forEach(b => b.onclick = () => { memDay = b.dataset.mday; render(); });
-    v.querySelectorAll('[data-plog]').forEach(b => b.onclick = () => openLog(b.dataset.plog, b.dataset.pdate, +b.dataset.preps || 1));
+    v.querySelectorAll('[data-psets]').forEach(b => b.onclick = () => openSets(b.dataset.psets));
     v.querySelectorAll('[data-pres]').forEach(b => b.onclick = () => { const sec = b.closest('.part'); const what = sec ? [...sec.querySelectorAll('.rx li')].map(li => li.textContent.trim()).join('\n') : ''; openPersonal({ title: b.dataset.ptitle, date: b.dataset.pdate, src: b.dataset.pres, what }); });
     wireReady(); wireCal();
     wireViewAs(); const vo = $('viewAsOff'); if(vo) vo.onclick = () => { viewAs = ''; render(); };
@@ -3650,7 +3716,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   }
   document.addEventListener('click', async e => { const d = e.target.closest && e.target.closest('[data-libdel]'); if(d && IK.cb){ IK.cb.lib = (IK.cb.lib||[]).filter(x => x.id !== d.dataset.libdel); await saveCB(); render(); } });
 
-  wireIndLogSheet(); wirePersonalSheet(); wireComposer();
+  wireIndLogSheet(); wirePersonalSheet(); wireSetSheet(); wireComposer();
   // First visit on this device: send people to the website first. Once per device, so the
   // website's "Open the BODYBOX app" link brings them straight into the app afterwards.
   (function siteFirst(){
