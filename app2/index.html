@@ -3518,9 +3518,10 @@ Rest 2:00"></textarea></label>
 <style>
 #bbGate{position:fixed;inset:0;z-index:20000;background:#111111;color:#F4F2EE;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;font-family:var(--body)}
 #bbGate .gcard{width:100%;max-width:380px;display:grid;gap:14px}
-#bbGate .glogo{display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--display);font-size:34px;letter-spacing:.04em}
-#bbGate .glogo img{height:44px}
-#bbGate .glogo span{color:#FF5A64}
+#bbGate .glogo{display:flex;align-items:center;justify-content:center;gap:.32em;font-family:var(--display);font-size:34px;letter-spacing:.04em;line-height:1}
+#bbGate .glogo .gw{display:inline-flex;align-items:center}
+#bbGate .glogo img{height:44px;margin-right:1px}
+#bbGate .glogo .gw.r{color:#FF5A64}
 #bbGate h2{font-family:var(--display);font-weight:400;font-size:26px;margin:4px 0 0;text-align:center;letter-spacing:.02em}
 #bbGate p{margin:0;color:#8F8B84;text-align:center;font-size:15px}
 #bbGate label{display:grid;gap:4px;font-family:var(--cond);font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#8F8B84}
@@ -3542,7 +3543,7 @@ Rest 2:00"></textarea></label>
 #bbMembers button{background:#C8102E;border:0;border-radius:999px;color:#fff;font:600 14px var(--body);padding:8px 14px;cursor:pointer}
 #bbMembers button.ghost{background:transparent;border:1px solid #2A2A2A;color:#F4F2EE}
 </style>
-<div id="bbGate"><div class="gcard"><div class="glogo"><img src="img/b-mark.png" alt="">ODY<span>BOX</span></div><div class="gspin"></div></div></div>
+<div id="bbGate"><div class="gcard"><div class="glogo" aria-label="BODY BOX"><span class="gw"><img src="img/b-mark.png" alt="">ODY</span><span class="gw r"><img class="bmr" src="img/b-mark-red.png" alt="">OX</span></div><div class="gspin"></div></div></div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, updateProfile, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -3564,7 +3565,7 @@ try{ fs = initializeFirestore(fb, { localCache: persistentLocalCache() }); }catc
 setPersistence(auth, browserLocalPersistence).catch(()=>{});
 
 const G = document.getElementById('bbGate');
-const card = h => { G.hidden = false; G.innerHTML = '<div class="gcard"><div class="glogo"><img src="img/b-mark.png" alt="">ODY<span>BOX</span></div>'+h+'</div>'; };
+const card = h => { G.hidden = false; G.innerHTML = '<div class="gcard"><div class="glogo" aria-label="BODY BOX"><span class="gw"><img src="img/b-mark.png" alt="">ODY</span><span class="gw r"><img class="bmr" src="img/b-mark-red.png" alt="">OX</span></div>'+h+'</div>'; };
 const esc = s => String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const errText = e => {
   const c = (e && e.code) || '';
