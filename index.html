@@ -202,6 +202,25 @@ nav a:hover{color:var(--gold)}
 @media (max-width:900px){.chans{grid-template-columns:1fr}}
 
 /* coach */
+.music .wrap{padding-block:56px}
+.music h2{font-size:clamp(44px,7vw,80px);text-transform:uppercase;margin:8px 0 10px}
+.music h2 span{color:var(--gold)}
+.tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px;margin-top:22px}
+.track{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:grid}
+.track img{width:100%;height:auto;aspect-ratio:1;object-fit:cover;display:block}
+.track .tb{padding:16px;display:grid;gap:10px}
+.track h3{font-family:var(--display);font-size:28px;text-transform:uppercase;line-height:1;margin:0}
+.track p{margin:0;color:var(--muted);font-size:15px}
+.tplay{display:flex;align-items:center;gap:12px}
+.tplay button{flex:none;width:52px;height:52px;border-radius:50%;border:0;background:var(--red);color:#fff;cursor:pointer;display:grid;place-items:center}
+.tplay button[disabled]{background:var(--line);color:var(--muted);cursor:default}
+.tplay button svg{width:20px;height:20px}
+.tbar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.tbar i{display:block;height:100%;width:0;background:var(--gold)}
+.ttime{font-family:var(--mono);font-size:13px;color:var(--muted);min-width:42px;text-align:right}
+.tsoon{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.music .intro{max-width:62ch;color:var(--muted);margin:0}
+.music .note{font-size:14px;color:var(--muted);margin-top:16px}
 .coach{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel)}
 .coach .wrap{padding-block:56px;display:grid;grid-template-columns:1fr 1.3fr;gap:40px}
 .coach h2{font-size:clamp(44px,7vw,80px);text-transform:uppercase}
@@ -422,6 +441,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
       <li><a href="#coach">Coach</a></li>
       <li><a href="#team">Team</a></li>
       <li><a href="#videos">Videos</a></li>
+      <li><a href="#music">Music</a></li>
       <li><a href="#how">How it works</a></li>
       <li><a href="#app">The app</a></li>
       <li><a href="#plans">Plans</a></li>
@@ -829,6 +849,35 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   </div>
 </section>
 
+<section class="music" id="music">
+  <div class="wrap">
+    <span class="label">BODYBOX Music</span>
+    <h2>Train to <span>our sound</span></h2>
+    <p class="intro">Original BODYBOX tracks made for the gym. Hear a 30-second sample of each single. Full songs are coming to Spotify, Apple Music and YouTube.</p>
+    <div class="tracks">
+      <article class="track">
+        <img src="img/music-hwlp.jpg" alt="Heavy Weights, Light Plates single cover: a loaded barbell under a red light with chalk in the air" width="800" height="800" loading="lazy">
+        <div class="tb">
+          <span class="label">Single</span>
+          <h3>Heavy Weights, Light Plates</h3>
+          <p>The theme of the in-house comp. Load the bar and go.</p>
+          <div class="tplay" data-src="audio/hwlp-sample.mp3"><button type="button" aria-label="Play a 30-second sample of Heavy Weights, Light Plates"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg></button><span class="tbar"><i></i></span><span class="ttime">0:30</span></div>
+        </div>
+      </article>
+      <article class="track">
+        <img src="img/music-kdgt.jpg" alt="Keep Doing Great Things single cover: a blueprint going from a garage gym to the 6,000 square foot Rebuilt Training floor" width="800" height="800" loading="lazy">
+        <div class="tb">
+          <span class="label">Single</span>
+          <h3>Keep Doing Great Things</h3>
+          <p>From a garage to a 6,000 sq ft gym. The BODYBOX motto, made into a song.</p>
+          <div class="tplay" data-src=""><button type="button" disabled aria-label="Sample coming soon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg></button><span class="tsoon">Sample coming soon</span></div>
+        </div>
+      </article>
+    </div>
+    <p class="note">Coming soon to Spotify, Apple Music and YouTube. #KeepDoingGreatThings</p>
+  </div>
+</section>
+
 <section class="coach" id="coach">
   <div class="wrap">
     <div>
@@ -1096,4 +1145,19 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
 })();
 </script>
 
+<script>
+(function(){
+  const PLAY='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg>', PAUSE='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
+  let cur=null;
+  document.querySelectorAll('.tplay[data-src]').forEach(el => {
+    const src=el.dataset.src, b=el.querySelector('button'), bar=el.querySelector('.tbar i'), t=el.querySelector('.ttime'); if(!src||!b) return;
+    const a=new Audio(); a.preload='none'; a.src=src;
+    const fmt=s=>{s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+    a.addEventListener('timeupdate',()=>{ if(a.duration){ bar.style.width=(a.currentTime/a.duration*100)+'%'; if(t) t.textContent=fmt(a.duration-a.currentTime);} });
+    a.addEventListener('ended',()=>{ b.innerHTML=PLAY; bar.style.width='0'; if(t) t.textContent='0:30'; });
+    b.addEventListener('click',()=>{ if(a.paused){ if(cur&&cur!==a) cur.pause(); cur=a; a.play().catch(()=>{}); b.innerHTML=PAUSE; b.setAttribute('aria-label','Pause sample'); } else { a.pause(); b.innerHTML=PLAY; b.setAttribute('aria-label','Play sample'); } });
+    a.addEventListener('pause',()=>{ b.innerHTML=PLAY; });
+  });
+})();
+</script>
 </body></html>
