@@ -1,0 +1,39 @@
+rules_version = '2';
+// BODYBOX app (Firebase project teambodybox-app).
+// Paste into Firebase console > Firestore > Rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isCoach() {
+      return signedIn()
+        && request.auth.token.email in ['reefwtraining@gmail.com']
+        && request.auth.token.email_verified == true;
+    }
+    function isMe(uid) { return signedIn() && request.auth.uid == uid; }
+    function approved() {
+      return signedIn()
+        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.approved == true;
+    }
+
+    // One doc per person who signs up. Only a coach can approve.
+    match /members/{uid} {
+      allow read: if isCoach() || isMe(uid);
+      allow create: if isMe(uid) && request.resource.data.approved == false;
+      allow update: if isCoach()
+        || (isMe(uid) && request.resource.data.approved == resource.data.approved);
+      allow delete: if isCoach();
+    }
+
+    // Programming and leaderboard. Approved members read, coaches write.
+    match /content/{docId} {
+      allow read: if isCoach() || approved();
+      allow write: if isCoach();
+    }
+
+    // Each person's own logs, scores, profile, codes.
+    match /data/users/{uid}/{docId} {
+      allow read, write: if isMe(uid) && (approved() || isCoach());
+      allow read: if isCoach();
+    }
+  }
+}
