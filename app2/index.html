@@ -26,6 +26,7 @@ button{font:inherit;color:inherit}
 
 /* top */
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.phchart{display:grid;gap:12px;margin:4px 0 18px}.phrow{display:grid;gap:6px}.phtop{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:14px}.phtop span{font-family:var(--mono);font-size:13px;color:var(--muted)}.phtop em{font-style:normal;font-weight:700;margin-left:6px}.phtop em.up{color:#6FBF73}.phtop em.down{color:#ff8a7a}.phbar{position:relative;display:block;height:10px;border-radius:6px;background:var(--panel);border:1px solid var(--line);overflow:hidden}.phmid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--muted)}.phfill{position:absolute;top:0;bottom:0}.phfill.up{background:#6FBF73}.phfill.down{background:#E5534B}.phnew{font-size:12px;color:var(--muted)}
 .vidhint{display:block;color:var(--muted,#8F8B84);font-size:12px;line-height:1.35;margin-top:4px}.vidlink{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--gold);text-decoration:none;font-size:13px}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:10px}
@@ -1431,6 +1432,7 @@ Rest 2:00"></textarea></label>
       if(nB.length) h += '<span class="label">'+(have.length?'Add more lifts':'Lifts')+'</span><div class="nolift">'+nB.map(chip).join('')+'</div>';
       if(nD.length) h += '<span class="label">Dumbbell &amp; kettlebell</span><div class="nolift">'+nD.map(chip).join('')+'</div>';
     }
+    h += phaseHtml();
     h += logbookHtml();
     h += '<div class="backup"><span class="label">Keep your numbers safe</span>'+
          '<p>Your numbers are saved on this phone only. Save a backup file now and then, and restore it if you switch phones or clear your browser. Full athlete accounts come when the app moves to its own home.</p>'+
@@ -2604,6 +2606,37 @@ Rest 2:00"></textarea></label>
     (A.personal||[]).forEach(x => out.push({ kind:'own', id:x.id, date:x.date, t:x.t||0, k:x.kind==='mod'?'Modified · off the board':'Own workout', w:x.title, s:x.s||'', note:x.note||'', vid:x.vid||'' }));
     Object.entries(A.indr||{}).forEach(([id,x]) => out.push({ kind:'ind', id, date:x.date, t:x.t||0, k:'Just for you', w:x.title||'Workout', s:x.s||'', note:x.note||'', vid:x.vid||'' }));
     return out.sort((a,b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.t - a.t);
+  }
+  /* ---------- progress: last phase vs this phase ---------- */
+  const PHASES_DEF = [['Phase 5.0','2026-09-07'],['Phase 5.1','2026-10-26'],['Phase 6.0','2027-01-04']];
+  function phasePair(){
+    const ph = (Array.isArray(D.phases) && D.phases.length ? D.phases.map(x => [x.name, x.start]) : PHASES_DEF).slice().sort((a,b) => a[1] < b[1] ? -1 : 1), t = todayStr();
+    let i = -1; ph.forEach((p, k) => { if(p[1] <= t) i = k; });
+    if(i < 0) return null;
+    return { now: { name: ph[i][0], from: ph[i][1], to: ph[i+1] ? ph[i+1][1] : '9999' }, last: i > 0 ? { name: ph[i-1][0], from: ph[i-1][1], to: ph[i][1] } : null };
+  }
+  function phaseHtml(){
+    const P = phasePair(); if(!P || !P.last) return '';
+    const inP = (d, p) => d && d >= p.from && d < p.to;
+    const best = (k, p) => A.log.filter(e => e.lift === k && inP(e.date, p)).reduce((m, e) => Math.max(m, conv(e1rm(e.w, e.reps), e.u, A.unit)), 0);
+    const rows = LIFT_ORDER.map(k => ({ k, a: best(k, P.last), b: best(k, P.now) })).filter(r => r.a || r.b);
+    const days = p => [...activityDates()].filter(d => inP(d, p)).length;
+    const weeks = p => Math.max(1, Math.ceil((Math.min(Date.now(), parse(p.to === '9999' ? todayStr() : p.to).getTime()) - parse(p.from).getTime()) / 6048e5));
+    const dl = days(P.last), dn = days(P.now), wl = weeks(P.last), wn = weeks(P.now);
+    let h = '<div class="psec"><span class="label">Progress</span><h2>'+esc(P.last.name)+' → '+esc(P.now.name)+'</h2></div>';
+    h += '<div class="recap"><div><b>'+(Math.round(dl / wl * 10) / 10)+'</b><span>Days/wk · '+esc(P.last.name)+'</span></div><div><b>'+(Math.round(dn / wn * 10) / 10)+'</b><span>Days/wk · '+esc(P.now.name)+'</span></div></div>';
+    if(!rows.length) return h + '<p class="how">Log your lifts in both phases and your progress shows up here.</p>';
+    const both = rows.filter(r => r.a && r.b), up = both.filter(r => r.b > r.a).length;
+    const avg = both.length ? both.reduce((s, r) => s + (r.b - r.a) / r.a, 0) / both.length * 100 : 0;
+    if(both.length) h += '<p class="how" style="margin:8px 0 10px">Up on <b>'+up+' of '+both.length+'</b> lifts you did in both phases'+(both.length ? ' · average <b>'+(avg >= 0 ? '+' : '')+(Math.round(avg * 10) / 10)+'%</b>' : '')+'. Best estimated max per phase.</p>';
+    const cap = 15;
+    h += '<div class="phchart">'+rows.map(r => {
+      const pct = r.a && r.b ? (r.b - r.a) / r.a * 100 : null, w = pct == null ? 0 : Math.min(50, Math.abs(pct) / cap * 50);
+      const bar = pct == null ? '<span class="phnew">'+(r.b ? 'New this phase' : 'Not logged yet this phase')+'</span>' :
+        '<span class="phbar"><span class="phmid"></span><span class="phfill '+(pct >= 0 ? 'up' : 'down')+'" style="'+(pct >= 0 ? 'left:50%' : 'right:50%')+';width:'+w.toFixed(1)+'%"></span></span>';
+      return '<div class="phrow"><div class="phtop"><b>'+esc(LIFTS[r.k])+'</b><span>'+(r.a ? fmtW(Math.round(r.a)) : '–')+' → '+(r.b ? fmtW(Math.round(r.b)) : '–')+' '+A.unit+(pct != null ? ' <em class="'+(pct >= 0 ? 'up' : 'down')+'">'+(pct >= 0 ? '+' : '')+fmtW(Math.round(r.b - r.a))+' · '+(pct >= 0 ? '+' : '')+(Math.round(pct * 10) / 10)+'%</em>' : '')+'</span></div>'+bar+'</div>';
+    }).join('')+'</div>';
+    return h;
   }
   function logbookHtml(){
     const all = logbookItems();
