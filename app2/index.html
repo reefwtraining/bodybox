@@ -4014,7 +4014,11 @@ function initChat(u, coach){
     if(!list || !list.length) return '<div class="ch-empty">'+(k === 'team' ? 'Say hi to the team. Everyone on BODYBOX sees this chat.' : coach ? 'No messages yet.' : 'Message Coach Reef here. Only you and your coach see this.')+'</div>';
     return list.map(m => '<div class="ch-msg'+(m.uid === me ? ' me' : '')+'"><div class="ch-who"><span>'+esc(m.uid === me ? 'You' : (m.name||''))+'</span>'+badgeH(m.badge)+'<span>· '+(m.at ? when(m.at) : '')+'</span>'+((m.uid === me || coach) ? '<button class="ch-del" data-del="'+esc(m.id)+'" type="button">Delete</button>' : '')+'</div><div class="ch-text">'+esc(m.text||'')+'</div></div>').join('');
   }
+  let draftV = null;
+  function markRead(){ const key = view === 'team' ? 'team' : view.startsWith('dm:') ? view : null;
+    if(key){ const arr = key === 'team' ? T.team : T.dm[key.slice(3)]; const last = (arr||[]).reduce((m,x) => Math.max(m, t2(x)), 0); if(last > (read[key]||0)){ read[key] = last; saveRead(); dot(); } } }
   function draw(){
+    markRead();
     let tabs = '<button type="button" data-v="team" aria-pressed="'+(view==='team')+'">Team'+(unreadOf('team',T.team)?'<b>'+unreadOf('team',T.team)+'</b>':'')+'</button>';
     let body = '', canSend = true, title = 'Chat';
     if(coach){
@@ -4032,23 +4036,22 @@ function initChat(u, coach){
       tabs += '<button type="button" data-v="dm:'+me+'" aria-pressed="'+(view!=='team')+'">Coach Reef'+(unreadOf('dm:'+me,T.dm[me])?'<b>'+unreadOf('dm:'+me,T.dm[me])+'</b>':'')+'</button>';
       body = view === 'team' ? msgs(T.team,'team') : msgs(T.dm[me],'dm');
     }
-    const draft = (box.querySelector('textarea')||{}).value || '';
+    const draft = draftV === view ? ((box.querySelector('textarea')||{}).value || '') : ''; draftV = view;
     box.innerHTML = '<div class="ch-top">'+(coach && view.startsWith('dm:') ? '<button class="ch-x" type="button" data-v="people">← Back</button>' : '')+'<h3>'+esc(title)+'</h3><button class="ch-x" type="button" id="chClose">Close</button></div>'+
       '<div class="ch-tabs">'+tabs+'</div><div class="ch-list" id="chList">'+body+'</div>'+
       (canSend ? '<form id="chForm"><textarea rows="1" maxlength="600" placeholder="Message" aria-label="Message"></textarea><button type="submit">Send</button></form>' : '');
     const ta = box.querySelector('textarea'); if(ta){ ta.value = draft; ta.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); box.querySelector('#chForm').requestSubmit(); } }); }
     const L = box.querySelector('#chList'); L.scrollTop = L.scrollHeight;
-    const key = view === 'team' ? 'team' : view.startsWith('dm:') ? view : null;
-    if(key){ const arr = key === 'team' ? T.team : T.dm[key.slice(3)]; const last = (arr||[]).reduce((m,x) => Math.max(m, t2(x)), 0); if(last > (read[key]||0)){ read[key] = last; saveRead(); dot(); } }
     box.querySelector('#chClose').onclick = () => { open = false; box.hidden = true; };
     box.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { view = b.dataset.v; draw(); });
     box.querySelectorAll('[data-dm]').forEach(b => b.onclick = () => { view = 'dm:' + b.dataset.dm; draw(); });
     box.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { const all = T.team.concat(...Object.values(T.dm)); const m = all.find(x => x.id === b.dataset.del); if(m && confirm('Delete this message?')){ try{ await deleteDoc(m.ref); }catch(e){} } });
     const f = box.querySelector('#chForm');
     if(f) f.onsubmit = async e => { e.preventDefault(); const t = ta.value.trim().slice(0,600); if(!t) return; const b = f.querySelector('button'); b.disabled = true;
-      const msg = { uid: me, name: myName, badge: myBadge, text: t, at: Date.now() };
-      try{ if(view === 'team') await addDoc(collection(fs,'chat'), msg); else await addDoc(collection(fs,'dms', view.slice(3), 'msgs'), msg); ta.value = ''; }catch(err){ alert('Could not send. Check your internet and try again.'); }
-      b.disabled = false; };
+      const msg = { uid: me, name: myName, badge: myBadge, text: t, at: Date.now() }; ta.value = '';
+      try{ if(view === 'team') await addDoc(collection(fs,'chat'), msg); else await addDoc(collection(fs,'dms', view.slice(3), 'msgs'), msg); }
+      catch(err){ const t3 = box.querySelector('textarea'); if(t3 && !t3.value) t3.value = t; alert('Could not send. Check your internet and try again.'); }
+      const b2 = box.querySelector('#chForm button'); if(b2) b2.disabled = false; };
   }
   btn.onclick = () => { open = true; box.hidden = false; draw(); };
   dot();
