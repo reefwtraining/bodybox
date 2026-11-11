@@ -3775,7 +3775,11 @@ async function start(u, coach){
   try{
     let ks = [];
     if(coach) ks = PROGS.map(p => p[0]);
-    else { const m = await getDoc(doc(fs, 'members', u.uid)); ks = (m.exists() && m.data().progs) || []; }
+    else { const m = await getDoc(doc(fs, 'members', u.uid)); const md = (m.exists() && m.data()) || {}; ks = md.progs || [];
+      // Personal athletes: open their own profile + private days straight from their login (no PIN)
+      if(ks.includes('personal') && md.meId && md.ka){ localStorage.setItem('bb-me', md.meId); localStorage.setItem('bb-ka-'+md.meId, md.ka); }
+      else if(!ks.includes('personal')){ try{ const old = localStorage.getItem('bb-me'); if(old) localStorage.removeItem('bb-ka-'+old); }catch(e){} }
+    }
     const want = codesFor(ks); let have = []; try{ have = JSON.parse(localStorage.getItem('bb-codes') || '[]'); }catch(e){}
     if(!Array.isArray(have)) have = []; const all = PROGS.map(p => p[2]).concat(['AK4MVX']);
     const next = have.filter(c => !all.includes(c)).concat(want);
