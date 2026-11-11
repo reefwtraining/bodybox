@@ -1358,7 +1358,7 @@ Rest 2:00"></textarea></label>
   const isKB = k => /^kb_/.test(k) || /\b(KB|Kettlebell)\b/i.test(LIFTS[k]||'');
   const perTxt = k => !isDB(k) ? '' : isKB(k) ? ' per bell' : (/^goblet_|1arm|single/i.test(k+' '+(LIFTS[k]||''))) ? ' one DB' : ' per DB';
   // Gym equipment: dumbbells go up by 5 lb; Rogue kettlebells come in these sizes
-  const KB_LB = [9,13,18,26,35,44,53,62,70,80,88,97,106], KB_KG = [4,6,8,12,16,20,24,28,32,36,40,44,48];
+  const KB_LB = [9,13,18,26,35,53,62,70], KB_KG = [4,6,8,12,16,24,28,32];
   const kbSizes = () => A.unit === 'kg' ? KB_KG : KB_LB;
   const nearKB = (w, down) => { const s = kbSizes(); if(down){ let r = s[0]; s.forEach(x => { if(x <= w + 0.01) r = x; }); return r; } return s.reduce((a,b) => Math.abs(b-w) < Math.abs(a-w) ? b : a); };
   const dbStep = () => A.unit === 'kg' ? 2.5 : 5;
