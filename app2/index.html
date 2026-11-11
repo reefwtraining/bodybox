@@ -3998,17 +3998,18 @@ async function initPush(u){
     return;
   }
   let reg; try{ reg = await navigator.serviceWorker.register('sw.js'); }catch(e){ return; }
-  const save = async sub => { try{ await setDoc(doc(fs,'pushSubs',u.uid), { sub: JSON.stringify(sub), name: (window.__bbSoc||{}).name || '', ua: navigator.userAgent.slice(0,120), at: Date.now() }); }catch(e){} };
+  const save = async (sub, loud) => { try{ await setDoc(doc(fs,'pushSubs',u.uid), { sub: JSON.stringify(sub), name: (window.__bbSoc||{}).name || '', ua: navigator.userAgent.slice(0,120), at: Date.now() }); if(loud) pushToast('Alerts are on.'); }catch(e){ pushToast('Alerts could not save: ' + ((e && (e.code || e.message)) || e)); } };
   const have = await reg.pushManager.getSubscription();
   if(have && Notification.permission === 'granted'){ save(have); return; }
   if(Notification.permission === 'denied') return;
   let snooze = 0; try{ snooze = +localStorage.getItem('bb-push-later') || 0; }catch(e){}
   if(Date.now() < snooze) return;
   pushCard('Get workout alerts', 'A heads-up when your workout is up, and a reminder if you haven\'t logged.', async () => {
-    const perm = await Notification.requestPermission(); if(perm !== 'granted') return;
-    try{ const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(VAPID_PUB) }); await save(sub); }catch(e){}
+    const perm = await Notification.requestPermission(); if(perm !== 'granted'){ pushToast('Alerts are off. You can turn them on in your phone Settings.'); return; }
+    try{ const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(VAPID_PUB) }); await save(sub, true); }catch(e){ pushToast('Alerts could not turn on: ' + ((e && (e.name + ' ' + (e.message||''))) || e)); }
   });
 }
+function pushToast(t){ const d = document.createElement('div'); d.textContent = t; d.style.cssText = 'position:fixed;left:16px;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:9999;background:#111;color:#fff;border:1px solid #c8102e;border-radius:12px;padding:12px 14px;font:600 14px/1.35 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35)'; document.body.appendChild(d); setTimeout(() => d.remove(), 7000); }
 function pushCard(title, text, onYes){
   if(document.getElementById('bbPush')) return;
   const c = document.createElement('div'); c.id = 'bbPush'; c.setAttribute('role','dialog');
