@@ -3679,8 +3679,8 @@ async function openMembers(){
   box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p style="color:#8F8B84;margin:0">'+pend+' waiting for approval · '+(rows.length-pend)+' approved</p>'+
     rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small></div>'+
       (r.approved ? '<button class="ghost" data-off="'+r.id+'">Remove access</button>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>').join('')+
-    '<div class="mrow"><button class="ghost" id="mClose">Close</button><button class="ghost" id="mOut">Sign out</button></div>';
-  box.querySelector('#mClose').onclick = () => box.remove(); box.querySelector('#mOut').onclick = () => signOut(auth);
+    '<div class="mrow" style="display:block"><b>Update content</b><small>Load a new content file from Claude (programming + leaderboard).</small>'+contentPicker()+'</div><div class="mrow"><button class="ghost" id="mClose">Close</button><button class="ghost" id="mOut">Sign out</button></div>';
+  box.querySelector('#mClose').onclick = () => box.remove(); box.querySelector('#mOut').onclick = () => signOut(auth); wirePicker(box);
   box.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { b.disabled = true; try{ await updateDoc(doc(fs,'members',b.dataset.on), { approved: true, approvedAt: serverTimestamp() }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
   box.querySelectorAll('[data-off]').forEach(b => b.onclick = async () => { b.disabled = true; try{ await updateDoc(doc(fs,'members',b.dataset.off), { approved: false }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
 }
@@ -3689,6 +3689,19 @@ async function openMembers(){
 window.__bbSeed = { parts: {}, add(name, i, chunk){ (this.parts[name] = this.parts[name] || [])[i] = chunk; return (this.parts[name].filter(x => x != null).length); },
   async save(name){ const json = this.parts[name].join(''); JSON.parse(json); const extra = name === 'lb' ? { rev: JSON.parse(json).rev || 0 } : {}; await setDoc(doc(fs, 'content', name), Object.assign({ json, at: serverTimestamp() }, extra)); return json.length; } };
 
+async function loadContentFile(file, out){
+  try{
+    const o = JSON.parse(await file.text());
+    if(typeof o.data !== 'string' || typeof o.lb !== 'string') throw new Error('format');
+    JSON.parse(o.data); const lb = JSON.parse(o.lb);
+    out.textContent = 'Saving…';
+    await setDoc(doc(fs, 'content', 'data'), { json: o.data, at: serverTimestamp() });
+    await setDoc(doc(fs, 'content', 'lb'), { json: o.lb, rev: lb.rev || 0, updated: lb.updated || '', at: serverTimestamp() });
+    out.textContent = 'Loaded. Opening the app…'; setTimeout(() => location.reload(), 600);
+  }catch(e){ out.textContent = (e && e.message === 'format') ? 'That isn\'t a BODYBOX content file.' : 'Couldn\'t save it. Make sure you\'re signed in as coach and your email is verified, then try again.'; }
+}
+function contentPicker(){ return '<label class="gbtn" style="text-align:center;display:block">Load content file<input id="gFile" type="file" accept=".json,application/json" hidden></label><p id="gFileOut" style="font-size:13px"></p>'; }
+function wirePicker(root){ const f = root.querySelector('#gFile'); if(f) f.onchange = () => { if(f.files[0]) loadContentFile(f.files[0], root.querySelector('#gFileOut')); }; }
 async function start(u, coach){
   if(started) return; started = true;
   card('<div class="gspin"></div><p>Loading your programs…</p>');
@@ -3698,7 +3711,7 @@ async function start(u, coach){
     if(a.exists()) data = a.data().json; if(b.exists()) lb = b.data().json;
   }catch(e){}
   if(!data || !lb){
-    if(coach){ window.__bbCoachReady = true; card('<h2>No programs loaded yet</h2><p>Coach view: the app\'s content hasn\'t been moved in yet. Claude loads it from your old app.</p><div class="grow"><button class="glink" id="gOut" type="button">Sign out</button></div>'); document.getElementById('gOut').onclick = () => signOut(auth); return; }
+    if(coach){ window.__bbCoachReady = true; card('<h2>No programs loaded yet</h2><p>Coach view: load the content file Claude sent you (bodybox-content.json). It moves your programming and leaderboard into the new app.</p>'+contentPicker()+'<div class="grow"><button class="glink" id="gOut" type="button">Sign out</button></div>'); document.getElementById('gOut').onclick = () => signOut(auth); wirePicker(G); return; }
     showMsg('Your programs aren\'t loaded yet. Try again in a little while.'); return;
   }
   document.getElementById('data').textContent = data;
