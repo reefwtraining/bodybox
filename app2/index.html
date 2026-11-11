@@ -1347,9 +1347,15 @@ Rest 2:00"></textarea></label>
     snatch:'Squat Snatch', power_snatch:'Power Snatch', bench:'Bench Press', strict_press:'Strict Press',
     push_press:'Push Press', thruster:'Thruster', weighted_pullup:'Weighted Pull-up',
     goblet_box_squat:'Goblet Box Squat', db_press_1arm:'Single-Arm DB Press', db_bench:'DB Bench Press', sandbag_carry:'Bear Hug Sandbag Carry',
-    farmer_carry:'Farmer Carry', trap_deadlift:'Trap Bar Deadlift', kb_front_squat:'KB Front Squat', db_snatch_1arm:'Single-Arm DB Snatch'
+    farmer_carry:'Farmer Carry', trap_deadlift:'Trap Bar Deadlift', kb_front_squat:'KB Front Squat', db_snatch_1arm:'Single-Arm DB Snatch',
+    db_front_squat:'DB Front Squat', db_thruster:'DB Thruster', db_push_press:'DB Push Press', db_strict_press:'DB Shoulder Press', db_incline_bench:'DB Incline Bench',
+    db_row_1arm:'Single-Arm DB Row', db_rdl:'DB Romanian Deadlift', db_clean:'DB Hang Clean', db_lunge:'DB Walking Lunge', db_step_up:'DB Box Step-up',
+    goblet_squat:'Goblet Squat', kb_swing:'Russian KB Swing', db_split_squat:'DB Split Squat', db_bench_1arm:'Single-Arm DB Bench'
   };
   const LIFT_ORDER = Object.keys(LIFTS);
+  // Dumbbell / kettlebell movements: weight is per dumbbell (or the one bell), no bar or plates
+  const isDB = k => /^(db_|kb_|goblet_|farmer_)/.test(k) || /\b(DB|KB|Dumbbell|Kettlebell|Goblet)\b/i.test(LIFTS[k]||'');
+  const perTxt = k => !isDB(k) ? '' : (/^(kb_|goblet_)/.test(k) || /\b(KB|Goblet)\b/i.test(LIFTS[k]||'')) ? ' per bell' : (/1arm|single/i.test(k+' '+(LIFTS[k]||''))) ? ' one DB' : ' per DB';
   const DEF_A = { v:1, unit:'lb', bar:45, log:[], scores:[], subs:[], name:'', evNotes:{}, unsync:[], done:[], personal:[], indr:{}, moves:{} };
   let storeOK = true;
   function loadA(){
@@ -1392,19 +1398,23 @@ Rest 2:00"></textarea></label>
       h += '<div class="empty"><b>No lifts yet</b>Tap a lift below or + Log a lift to add your first max.</div>';
     } else {
       h += '<div class="prs">';
-      have.forEach(k => {
+      const haveO = have.filter(k => !isDB(k)).concat(have.filter(isDB)); let dbHead = false;
+      haveO.forEach(k => {
+        if(isDB(k) && !dbHead){ dbHead = true; h += '</div><span class="label" style="display:block;margin:14px 0 6px">Dumbbell &amp; kettlebell</span><div class="prs">'; }
         const b = bestOf(k), es0 = entriesOf(k), es = es0.some(e => !e.nomax) ? es0.filter(e => !e.nomax) : es0, first = es[0];
         const firstV = first ? conv(e1rm(first.w, first.reps), first.u, A.unit) : 0;
         const gain = es.length > 1 ? Math.round(b.val - firstV) : 0;
         h += '<button class="pr" type="button" data-lift="'+k+'" aria-expanded="'+(openLift===k)+'"><span class="nm">'+esc(LIFTS[k])+'</span>'+
-             '<span class="val">'+fmtW(b.val)+' <small>'+A.unit+(b.est?' est.':'')+'</small></span>'+
+             '<span class="val">'+fmtW(b.val)+' <small>'+A.unit+perTxt(k)+(b.est?' est.':'')+'</small></span>'+
              '<span class="meta">'+niceDate(b.e.date)+(gain>0?' · <span class="up">+'+gain+' '+A.unit+'</span>':'')+'</span>'+goalBar(k, true)+'</button>';
         if(openLift === k) h += detailHtml(k);
       });
       h += '</div>';
     }
     if(none.length){
-      h += '<span class="label">'+(have.length?'Add more lifts':'Lifts')+'</span><div class="nolift">'+none.map(k => '<button class="chip" type="button" data-add="'+k+'">+ '+esc(LIFTS[k])+'</button>').join('')+'</div>';
+      const nB = none.filter(k => !isDB(k)), nD = none.filter(isDB), chip = k => '<button class="chip" type="button" data-add="'+k+'">+ '+esc(LIFTS[k])+'</button>';
+      if(nB.length) h += '<span class="label">'+(have.length?'Add more lifts':'Lifts')+'</span><div class="nolift">'+nB.map(chip).join('')+'</div>';
+      if(nD.length) h += '<span class="label">Dumbbell &amp; kettlebell</span><div class="nolift">'+nD.map(chip).join('')+'</div>';
     }
     h += logbookHtml();
     h += '<div class="backup"><span class="label">Keep your numbers safe</span>'+
@@ -1468,9 +1478,12 @@ Rest 2:00"></textarea></label>
 
   /* log sheet */
   (function(){
-    const sel = $('logLift'); LIFT_ORDER.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = LIFTS[k]; sel.appendChild(o); });
+    const sel = $('logLift');
+    const gB = document.createElement('optgroup'); gB.label = 'Barbell & other'; const gD = document.createElement('optgroup'); gD.label = 'Dumbbell & kettlebell';
+    LIFT_ORDER.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = LIFTS[k]; (isDB(k) ? gD : gB).appendChild(o); });
+    sel.appendChild(gB); sel.appendChild(gD);
     const on = document.createElement('option'); on.value = '__new'; on.textContent = '+ Add a movement…'; sel.appendChild(on);
-    sel.addEventListener('change', () => { $('logNewF').hidden = sel.value !== '__new'; if(sel.value === '__new') setTimeout(() => $('logNew').focus(), 30); });
+    sel.addEventListener('change', () => { $('logWLbl').textContent = 'Weight'+(perTxt(sel.value)||'')+' ('+A.unit+')'; $('logNewF').hidden = sel.value !== '__new'; if(sel.value === '__new') setTimeout(() => $('logNew').focus(), 30); });
     const r = $('logReps'); for(let i=1;i<=10;i++){ const o = document.createElement('option'); o.value = i; o.textContent = i===1 ? '1 (true max)' : i+' reps'; r.appendChild(o); }
   })();
   function logPreview(){
@@ -1480,7 +1493,7 @@ Rest 2:00"></textarea></label>
   function openLog(lift){
     $('logLift').value = lift || openLift || 'back_squat'; $('logNewF').hidden = true;
     $('logW').value = ''; $('logReps').value = '1'; $('logDate').value = todayStr(); $('logNote').value = '';
-    $('logWLbl').textContent = 'Weight ('+A.unit+')'; $('logErr').textContent = ''; logPreview();
+    $('logWLbl').textContent = 'Weight'+(perTxt($('logLift').value)||'')+' ('+A.unit+')'; $('logErr').textContent = ''; logPreview();
     $('logSheet').hidden = false; setTimeout(() => $('logW').focus(), 50);
   }
   $('logW').oninput = logPreview; $('logReps').onchange = logPreview;
@@ -1681,9 +1694,10 @@ Rest 2:00"></textarea></label>
     h += '<label class="field"><span class="label">Percentage</span><input id="cPct" type="number" inputmode="decimal" min="1" max="150" step="any" value="'+CALC.pct+'"></label>';
     h += '<div class="pchips" role="group" aria-label="Quick percentages">'+[50,55,60,65,70,75,80,85,90,95].map(p => '<button type="button" data-p="'+p+'" aria-pressed="'+(CALC.pct===p)+'">'+p+'%</button>').join('')+'</div>';
     if(base){
-      const w = roundW(base * CALC.pct / 100), pl = platesFor(w);
+      const dbL = CALC.manual == null && CALC.lift && isDB(CALC.lift);
+      const w = dbL ? Math.max(5, Math.round(base * CALC.pct / 100 / 5) * 5) : roundW(base * CALC.pct / 100), pl = dbL ? null : platesFor(w);
       h += '<div class="result"><span class="label" style="color:var(--ink)">'+fmtW(CALC.pct)+'% of '+fmtW(base)+'</span><div class="big">'+fmtW(w)+' <small>'+A.unit+'</small></div>'+
-           '<div class="sub">'+(pl ? 'Each side of a '+A.bar+' '+A.unit+' bar:' : 'Lighter than the '+A.bar+' '+A.unit+' bar')+'</div>'+
+           '<div class="sub">'+(dbL ? (perTxt(CALC.lift)===' per DB' ? 'Closest dumbbells to this, one in each hand' : perTxt(CALC.lift)===' per bell' ? 'Closest bell to this' : 'Closest dumbbell to this') : pl ? 'Each side of a '+A.bar+' '+A.unit+' bar:' : 'Lighter than the '+A.bar+' '+A.unit+' bar')+'</div>'+
            (pl ? '<div class="plates">'+(pl.plates.length?pl.plates.map(p => '<span class="plate">'+fmtW(p)+'</span>').join(''):'<span>Just the bar</span>')+(pl.left?'<span style="font-size:13px">+'+fmtW(pl.left)+' '+A.unit+' in change plates</span>':'')+'</div>' : '')+
            '</div>';
       h += '<div class="row"><span class="label">Bar</span><div class="seg" role="group" aria-label="Bar weight">'+BARS[A.unit].map(b => '<button type="button" data-bar="'+b+'" aria-pressed="'+(A.bar===b)+'">'+b+' '+A.unit+'</button>').join('')+'</div></div>';
