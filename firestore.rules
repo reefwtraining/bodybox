@@ -34,10 +34,10 @@ service cloud.firestore {
       allow write: if isCoach();
     }
 
-    // Each person's own logs, scores, profile, codes.
+    // Each person's own logs, scores, profile. Coaches (Reef + Claude's coach login) can read and enter data for anyone.
     match /data/users/{uid}/{docId} {
       allow read, write: if isMe(uid) && (approved() || isCoach());
-      allow read: if isCoach();
+      allow read, write: if isCoach();
     }
   }
 }
