@@ -2500,9 +2500,13 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function setKey(pt, date){ return (pt.lift||'')+'|'+date+'|'+String((pt.lines||[])[0]||'').slice(0,30); }
   // read the scheme: "5x5", "3 × 2 @ 60%", "4 x 6-8" -> one row per set with reps (and % if given)
   function setPlan(lines){
+    const L = (lines||[]).map(String);
+    const per = []; L.forEach(l => { const m = l.match(/^\s*set\s*\d+\s*[·:\-–]\s*(\d+)(?:\s*(?:reps?)?\s*@\s*(\d{2,3})\s*%)?/i); if(m) per.push({ reps: +m[1], pct: m[2] ? +m[2] : 0 }); });
+    if(per.length) return per.slice(0, 15);
     const out = [];
     (lines||[]).forEach(l => { const re = /(\d+)\s*[x×]\s*(\d+)(?:\s*[-–]\s*\d+)?(?:\s*@\s*(\d{2,3})\s*%)?/gi; let m;
       while((m = re.exec(String(l)))){ const n = +m[1], r = +m[2]; if(n >= 1 && n <= 12 && r >= 1 && r <= 30) for(let i = 0; i < n; i++) out.push({ reps: r, pct: m[3] ? +m[3] : 0 }); } });
+    if(!out.length){ for(const l of L){ const m = l.match(/(?:^|\s)(\d{1,2}(?:\s*-\s*\d{1,2}){2,})(?:\s|$)/); if(m){ m[1].split('-').map(x => +x.trim()).forEach(r => { if(r >= 1 && r <= 30) out.push({ reps: r, pct: 0 }); }); break; } } }
     return out.slice(0, 15);
   }
   function setRowHtml(i, reps, ph){
