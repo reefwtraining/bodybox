@@ -2369,6 +2369,7 @@ Rest 2:00"></textarea></label>
   function memberHtml2(){
     const progs = memProgs();
     if(!progs.length || memAdding){
+      if(window.__bbFire) return '<section class="unlock"><span class="label">Members</span><h2>Your programs are on the way</h2><p class="how">Coach Reef turns on your programs from his side. Once he does, close and reopen the app and your training shows here.</p></section>';
       return '<section class="unlock"><span class="label">Members</span><h2>'+(memAdding?'Add a program code':'Unlock your programming')+'</h2>'+
         '<p>Enter the program code you got when you signed up. Your code stays on this phone.</p>'+
         '<input id="codeIn" maxlength="12" autocomplete="off" placeholder="CODE">'+
@@ -3544,6 +3545,9 @@ Rest 2:00"></textarea></label>
 #bbMembers .mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid #2A2A2A;padding-top:10px}
 #bbMembers .mrow small{display:block;color:#8F8B84;font-size:13px}
 #bbMembers button{background:#C8102E;border:0;border-radius:999px;color:#fff;font:600 14px var(--body);padding:8px 14px;cursor:pointer}
+#addCode{display:none!important}
+#bbMembers .mprogs{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 6px}
+#bbMembers .mprogs button{padding:6px 10px;font-size:12px}
 #bbMembers button.ghost{background:transparent;border:1px solid #2A2A2A;color:#F4F2EE}
 </style>
 <div id="bbGate"><div class="gcard"><div class="glogo" aria-label="BODY BOX"><span class="gw"><img src="img/b-mark.png" alt="">ODY</span><span class="gw r"><img class="bmr" src="img/b-mark-red.png" alt="">OX</span></div><div class="gspin"></div></div></div>
@@ -3553,6 +3557,8 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWith
 import { initializeFirestore, persistentLocalCache, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const COACHES = ['reefwtraining@gmail.com'];
+const PROGS = [['comp','Athlete Comp','WGC534'],['build','Building','RMXGZJ'],['cardio','Cardio','WQH7V7'],['shiit','S.H.I.I.T','56EG63'],['rt','RT Movement','VXW86K']];
+const codesFor = ks => PROGS.filter(p => (ks||[]).includes(p[0])).map(p => p[2]);
 const cfg = {
   apiKey: "AIzaSyAMHdGXPgAwPkbdGdcmA538JHBAF_QWAEU",
   authDomain: "teambodybox-app.firebaseapp.com",
@@ -3676,12 +3682,13 @@ async function openMembers(){
   rows = rows.filter(r => !COACHES.includes((r.email||'').toLowerCase()));
   rows.sort((a,b) => (a.approved===b.approved ? (a.name||'').localeCompare(b.name||'') : a.approved ? 1 : -1));
   const pend = rows.filter(r => !r.approved).length;
-  box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p style="color:#8F8B84;margin:0">'+pend+' waiting for approval · '+(rows.length-pend)+' approved</p>'+
+  box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p style="color:#8F8B84;margin:0">'+pend+' waiting for approval · '+(rows.length-pend)+' approved. Tap a program to turn it on or off for that person (red = on). No codes needed.</p>'+
     rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small></div>'+
-      (r.approved ? '<button class="ghost" data-off="'+r.id+'">Remove access</button>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>').join('')+
+      (r.approved ? '<button class="ghost" data-off="'+r.id+'">Remove access</button>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>'+(r.approved ? '<div class="mprogs">'+PROGS.map(p => '<button class="'+((r.progs||[]).includes(p[0])?'':'ghost')+'" data-prog="'+r.id+'|'+p[0]+'">'+p[1]+'</button>').join('')+'</div>' : '')).join('')+
     '<div class="mrow" style="display:block"><b>Update content</b><small>Load a new content file from Claude (programming + leaderboard).</small>'+contentPicker()+'</div><div class="mrow"><button class="ghost" id="mClose">Close</button><button class="ghost" id="mOut">Sign out</button></div>';
   box.querySelector('#mClose').onclick = () => box.remove(); box.querySelector('#mOut').onclick = () => signOut(auth); wirePicker(box);
   box.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { b.disabled = true; try{ await updateDoc(doc(fs,'members',b.dataset.on), { approved: true, approvedAt: serverTimestamp() }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
+  box.querySelectorAll('[data-prog]').forEach(b => b.onclick = async () => { const [id, k] = b.dataset.prog.split('|'); const r = rows.find(x => x.id === id); const cur = new Set(r.progs || []); cur.has(k) ? cur.delete(k) : cur.add(k); b.disabled = true; try{ await updateDoc(doc(fs,'members',id), { progs: [...cur] }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
   box.querySelectorAll('[data-off]').forEach(b => b.onclick = async () => { b.disabled = true; try{ await updateDoc(doc(fs,'members',b.dataset.off), { approved: false }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
 }
 
@@ -3714,6 +3721,16 @@ async function start(u, coach){
     if(coach){ window.__bbCoachReady = true; card('<h2>No programs loaded yet</h2><p>Coach view: load the content file Claude sent you (bodybox-content.json). It moves your programming and leaderboard into the new app.</p>'+contentPicker()+'<div class="grow"><button class="glink" id="gOut" type="button">Sign out</button></div>'); document.getElementById('gOut').onclick = () => signOut(auth); wirePicker(G); return; }
     showMsg('Your programs aren\'t loaded yet. Try again in a little while.'); return;
   }
+  try{
+    let ks = [];
+    if(coach) ks = PROGS.map(p => p[0]);
+    else { const m = await getDoc(doc(fs, 'members', u.uid)); ks = (m.exists() && m.data().progs) || []; }
+    const want = codesFor(ks); let have = []; try{ have = JSON.parse(localStorage.getItem('bb-codes') || '[]'); }catch(e){}
+    if(!Array.isArray(have)) have = []; const all = PROGS.map(p => p[2]).concat(['AK4MVX']);
+    const next = have.filter(c => !all.includes(c)).concat(want);
+    localStorage.setItem('bb-codes', JSON.stringify(next));
+  }catch(e){}
+  window.__bbFire = true;
   document.getElementById('data').textContent = data;
   document.getElementById('lbdata').textContent = lb;
   try{ localStorage.setItem('bb-site-first', '1'); }catch(e){}
