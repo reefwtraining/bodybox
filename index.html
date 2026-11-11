@@ -1,4 +1,19 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1d2124"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="BODYBOX"><style>html,body{margin:0;padding:0}</style></head><body>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1d2124"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="BODYBOX"><style>html,body{margin:0;padding:0}
+/* pages */
+[data-page]:not(.on){display:none}
+nav a[aria-current="page"]{color:var(--gold)}
+nav a.navapp{color:var(--red)}
+.pagetabs .wrap{display:flex;gap:10px;padding-top:28px;padding-bottom:0}
+.pagetabs .ptab{flex:1;max-width:220px;text-align:center;padding:12px 16px;border:1px solid var(--line);border-radius:999px;color:var(--chalk);text-decoration:none;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:14px}
+.pagetabs .ptab[aria-selected="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.hubs .wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;padding-block:48px}
+.hubs a{display:flex;flex-direction:column;gap:4px;padding:20px;border:1px solid var(--line);border-radius:14px;color:var(--chalk);text-decoration:none}
+.hubs a b{font-size:20px}
+.hubs a span{opacity:.75;font-size:14px}
+.hubs a:hover{border-color:var(--red)}
+.grid>*{min-width:0}
+.plate{overflow-wrap:anywhere}
+</style></head><body>
 <title>BODYBOX Programming</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -434,27 +449,20 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   <div class="wrap">
     <a class="mark" href="#top"><span class="gw"><img src="img/b-mark.png" alt="" width="126" height="202">ODY</span><span class="gw r"><img src="img/b-mark-red.png" alt="" width="126" height="202">OX</span></a>
     <ul>
-      <li><a href="#programs">Programs</a></li>
-      <li><a href="#samples">Sample workouts</a></li>
-      <li><a href="#comp">Comp Dec 12</a></li>
-      <li><a href="#throwdown">Throwdown</a></li>
-      <li><a href="#coach">Coach</a></li>
-      <li><a href="#team">Team</a></li>
-      <li><a href="#videos">Videos</a></li>
-      <li><a href="#music">Music</a></li>
-      <li><a href="#how">How it works</a></li>
-      <li><a href="#app">The app</a></li>
-      <li><a href="#plans">Plans</a></li>
-      <li><a href="#class">Book a class</a></li>
-      <li><a href="#faq">FAQ</a></li>
-      <li><a href="#contact">Contact</a></li>
-      <li><a href="app2/">Open the app</a></li>
+      <li><a href="#top" data-nav="home">Home</a></li>
+      <li><a href="#programs" data-nav="programs">Programs</a></li>
+      <li><a href="#comp" data-nav="comps">Comps</a></li>
+      <li><a href="#app" data-nav="app">The app</a></li>
+      <li><a href="#music" data-nav="music">Music</a></li>
+      <li><a href="#coach" data-nav="team">Coach &amp; Team</a></li>
+      <li><a href="#plans" data-nav="join">Join &amp; FAQ</a></li>
+      <li><a class="navapp" href="app2/">Open the app</a></li>
       <li><a href="https://rebuilttraining.com" target="_blank" rel="noopener">Rebuilt Training ↗</a></li>
     </ul>
   </div>
 </nav>
 
-<section class="hero" id="top">
+<section class="hero" id="top" data-page="home">
   <div class="wrap">
     <div>
       <span class="label">BODYBOX Programming · by Reef Warfield</span>
@@ -479,12 +487,12 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
 </section>
 
 
-<figure class="banner">
+<figure class="banner" data-page="home">
   <img src="img/team/flag.jpg" alt="Team BODYBOX and Rebuilt Training athletes, kids included, gathered around a Body Box flag at an outdoor competition" width="1400" height="1050">
   <figcaption><div class="wrap"><b>Team BODYBOX</b><span>Competition day</span></div></figcaption>
 </figure>
 
-<section class="picker" id="programs">
+<section class="picker" id="programs" data-page="programs">
   <div class="wrap">
     <span class="label">Step 1</span>
     <h2>What's your goal?</h2>
@@ -500,7 +508,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   </div>
 </section>
 
-<section class="programs">
+<section class="programs" data-page="programs">
   <div class="wrap">
     <div class="grid">
       <article class="plate" data-goals="general">
@@ -568,7 +576,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   </div>
 </section>
 
-<section class="samples" id="samples">
+<section class="samples" id="samples" data-page="programs">
   <div class="wrap">
     <span class="label">Step 2</span>
     <h2>See what a day looks like</h2>
@@ -719,7 +727,11 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   </div>
 </section>
 
-<section class="comp" id="comp">
+<div class="pagetabs" data-page="comps"><div class="wrap" role="tablist" aria-label="Competitions">
+  <a href="#comp" class="ptab" data-ptab="comp">In-House</a>
+  <a href="#throwdown" class="ptab" data-ptab="throwdown">Online</a>
+</div></div>
+<section class="comp" id="comp" data-page="comps">
   <div class="wrap">
     <div>
       <span class="label">Up next · In-house comp</span>
@@ -758,7 +770,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   </div>
 </section>
 
-<section class="throw" id="throwdown">
+<section class="throw" id="throwdown" data-page="comps">
   <div class="wrap">
     <div>
       <span class="label">Where it started · Fall 2020</span>
@@ -797,7 +809,90 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   </div>
 </section>
 
-<section class="videos" id="videos">
+<section class="music" id="music" data-page="music">
+  <div class="wrap">
+    <span class="label">BODYBOX Music</span>
+    <h2>Train to <span>our sound</span></h2>
+    <p class="intro">Original BODYBOX tracks made for the gym. Hear a 30-second sample of each single. Full songs are coming to Spotify, Apple Music and YouTube.</p>
+    <div class="tracks">
+      <article class="track">
+        <img src="img/music-hwlp.jpg" alt="Heavy Weights, Light Plates single cover: a loaded barbell under a red light with chalk in the air" width="800" height="800" loading="lazy">
+        <div class="tb">
+          <span class="label">Single</span>
+          <h3>Heavy Weights, Light Plates</h3>
+          <p>The theme of the in-house comp. Load the bar and go.</p>
+          <div class="tplay" data-src="audio/hwlp-sample.mp3"><button type="button" aria-label="Play a 30-second sample of Heavy Weights, Light Plates"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg></button><span class="tbar"><i></i></span><span class="ttime">0:30</span></div>
+        </div>
+      </article>
+      <article class="track">
+        <img src="img/music-kdgt.jpg" alt="Keep Doing Great Things single cover: a blueprint going from a garage gym to the 6,000 square foot Rebuilt Training floor" width="800" height="800" loading="lazy">
+        <div class="tb">
+          <span class="label">Single</span>
+          <h3>Keep Doing Great Things</h3>
+          <p>From a garage to a 6,000 sq ft gym. The BODYBOX motto, made into a song.</p>
+          <div class="tplay" data-src="audio/kdgt-sample.mp3"><button type="button" aria-label="Play a 30-second sample of Keep Doing Great Things"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg></button><span class="tbar"><i></i></span><span class="ttime">0:30</span></div>
+        </div>
+      </article>
+      <article class="track">
+        <img src="img/music-staycalm.jpg" alt="Stay Calm single cover: an empty gym at sunrise with a barbell, a yoga mat and a cup of tea" width="800" height="800" loading="lazy">
+        <div class="tb">
+          <span class="label">Single</span>
+          <h3>Stay Calm</h3>
+          <p>For the cool-down, the stretch and the mornings before the work starts.</p>
+          <div class="tplay" data-src="audio/staycalm-sample.mp3"><button type="button" aria-label="Play a 30-second sample of Stay Calm"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg></button><span class="tbar"><i></i></span><span class="ttime">0:30</span></div>
+        </div>
+      </article>
+    </div>
+    <p class="note">Coming soon to Spotify, Apple Music and YouTube. #KeepDoingGreatThings</p>
+  </div>
+</section>
+
+<section class="coach" id="coach" data-page="team">
+  <div class="wrap">
+    <div>
+      <span class="label">Head coach &amp; programmer</span>
+      <h2>Reef<br><span>Warfield</span></h2>
+      <figure class="coachpic">
+        <img src="img/team/reef.jpg" alt="Reef Warfield in a Body Box shirt setting up under a loaded barbell for a back squat at a competition" width="1200" height="800">
+        <figcaption>Competing in Body Box colors. Photo: @awesnap</figcaption>
+      </figure>
+    </div>
+    <ul>
+      <li>Over 10 years dedicated to CrossFit and fitness, on the floor and behind the programming.</li>
+      <li>Started coaching out of a garage that became Body Box Garage, then competed under that name.</li>
+      <li>Has programmed and coached online comp athletes and in-person athletes, and hosted the BodyBox Throwdown 2020 online competition.</li>
+      <li>Competed at Wodapalooza 2023 and Fittest of the Coast 2025.</li>
+      <li>Head trainer, programmer and co-owner of <a href="https://rebuilttraining.com" target="_blank" rel="noopener">Rebuilt Training</a>.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="team" id="team" data-page="team">
+  <div class="wrap">
+    <span class="label">The community</span>
+    <h2>Team BODYBOX</h2>
+    <p class="intro">Garage gyms, class floors and competition days. These are the athletes who train the programming every week.</p>
+    <div class="gallery">
+      <figure><img src="img/team/coaching.jpg" alt="Coach talking an athlete through a workout on the gym floor" loading="lazy"></figure>
+      <figure><img src="img/team/team-studio.jpg" alt="Team BODYBOX athletes posing together in the gym" loading="lazy"></figure>
+      <figure><img src="img/team/lunge.jpg" alt="Athlete in a lunge with a dumbbell on her shoulder" loading="lazy"></figure>
+      <figure><img src="img/team/sled.jpg" alt="Two athletes pushing a loaded sled across a field" loading="lazy"></figure>
+      <figure><img src="img/team/games.jpg" alt="Athlete on the competition floor in an arena" loading="lazy"></figure>
+      <figure><img src="img/team/wallball.jpg" alt="Athlete driving a wall ball overhead during a competition" loading="lazy"></figure>
+      <figure><img src="img/team/murph.jpg" alt="Rebuilt Training members in matching shirts after Murph" loading="lazy"></figure>
+      <figure><img src="img/team/sandbag.jpg" alt="Athlete carrying a sandbag at a competition" loading="lazy"></figure>
+      <figure><img src="img/team/crew.jpg" alt="Four athletes smiling together at an outdoor event" loading="lazy"></figure>
+      <figure><img src="img/team/duo.jpg" alt="Two athletes ready on the competition field" loading="lazy"></figure>
+      <figure><img src="img/team/group-gym.jpg" alt="Group photo after a class at Rebuilt Training" loading="lazy"></figure>
+      <figure><img src="img/team/post-wod.jpg" alt="Two athletes celebrating on the floor after a workout" loading="lazy"></figure>
+      <figure><img src="img/team/smile.jpg" alt="Athlete smiling between heats" loading="lazy"></figure>
+      <figure><img src="img/team/group-bars.jpg" alt="Class celebrating together on the gym floor" loading="lazy"></figure>
+      <figure><img src="img/team/group-tall.jpg" alt="A packed Saturday class at Rebuilt Training" loading="lazy"></figure>
+    </div>
+  </div>
+</section>
+
+<section class="videos" id="videos" data-page="team">
   <div class="wrap">
     <span class="label">On YouTube</span>
     <h2>Watch the work</h2>
@@ -849,90 +944,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   </div>
 </section>
 
-<section class="music" id="music">
-  <div class="wrap">
-    <span class="label">BODYBOX Music</span>
-    <h2>Train to <span>our sound</span></h2>
-    <p class="intro">Original BODYBOX tracks made for the gym. Hear a 30-second sample of each single. Full songs are coming to Spotify, Apple Music and YouTube.</p>
-    <div class="tracks">
-      <article class="track">
-        <img src="img/music-hwlp.jpg" alt="Heavy Weights, Light Plates single cover: a loaded barbell under a red light with chalk in the air" width="800" height="800" loading="lazy">
-        <div class="tb">
-          <span class="label">Single</span>
-          <h3>Heavy Weights, Light Plates</h3>
-          <p>The theme of the in-house comp. Load the bar and go.</p>
-          <div class="tplay" data-src="audio/hwlp-sample.mp3"><button type="button" aria-label="Play a 30-second sample of Heavy Weights, Light Plates"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg></button><span class="tbar"><i></i></span><span class="ttime">0:30</span></div>
-        </div>
-      </article>
-      <article class="track">
-        <img src="img/music-kdgt.jpg" alt="Keep Doing Great Things single cover: a blueprint going from a garage gym to the 6,000 square foot Rebuilt Training floor" width="800" height="800" loading="lazy">
-        <div class="tb">
-          <span class="label">Single</span>
-          <h3>Keep Doing Great Things</h3>
-          <p>From a garage to a 6,000 sq ft gym. The BODYBOX motto, made into a song.</p>
-          <div class="tplay" data-src="audio/kdgt-sample.mp3"><button type="button" aria-label="Play a 30-second sample of Keep Doing Great Things"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg></button><span class="tbar"><i></i></span><span class="ttime">0:30</span></div>
-        </div>
-      </article>
-      <article class="track">
-        <img src="img/music-staycalm.jpg" alt="Stay Calm single cover: an empty gym at sunrise with a barbell, a yoga mat and a cup of tea" width="800" height="800" loading="lazy">
-        <div class="tb">
-          <span class="label">Single</span>
-          <h3>Stay Calm</h3>
-          <p>For the cool-down, the stretch and the mornings before the work starts.</p>
-          <div class="tplay" data-src="audio/staycalm-sample.mp3"><button type="button" aria-label="Play a 30-second sample of Stay Calm"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></svg></button><span class="tbar"><i></i></span><span class="ttime">0:30</span></div>
-        </div>
-      </article>
-    </div>
-    <p class="note">Coming soon to Spotify, Apple Music and YouTube. #KeepDoingGreatThings</p>
-  </div>
-</section>
-
-<section class="coach" id="coach">
-  <div class="wrap">
-    <div>
-      <span class="label">Head coach &amp; programmer</span>
-      <h2>Reef<br><span>Warfield</span></h2>
-      <figure class="coachpic">
-        <img src="img/team/reef.jpg" alt="Reef Warfield in a Body Box shirt setting up under a loaded barbell for a back squat at a competition" width="1200" height="800">
-        <figcaption>Competing in Body Box colors. Photo: @awesnap</figcaption>
-      </figure>
-    </div>
-    <ul>
-      <li>Over 10 years dedicated to CrossFit and fitness, on the floor and behind the programming.</li>
-      <li>Started coaching out of a garage that became Body Box Garage, then competed under that name.</li>
-      <li>Has programmed and coached online comp athletes and in-person athletes, and hosted the BodyBox Throwdown 2020 online competition.</li>
-      <li>Competed at Wodapalooza 2023 and Fittest of the Coast 2025.</li>
-      <li>Head trainer, programmer and co-owner of <a href="https://rebuilttraining.com" target="_blank" rel="noopener">Rebuilt Training</a>.</li>
-    </ul>
-  </div>
-</section>
-
-<section class="team" id="team">
-  <div class="wrap">
-    <span class="label">The community</span>
-    <h2>Team BODYBOX</h2>
-    <p class="intro">Garage gyms, class floors and competition days. These are the athletes who train the programming every week.</p>
-    <div class="gallery">
-      <figure><img src="img/team/coaching.jpg" alt="Coach talking an athlete through a workout on the gym floor" loading="lazy"></figure>
-      <figure><img src="img/team/team-studio.jpg" alt="Team BODYBOX athletes posing together in the gym" loading="lazy"></figure>
-      <figure><img src="img/team/lunge.jpg" alt="Athlete in a lunge with a dumbbell on her shoulder" loading="lazy"></figure>
-      <figure><img src="img/team/sled.jpg" alt="Two athletes pushing a loaded sled across a field" loading="lazy"></figure>
-      <figure><img src="img/team/games.jpg" alt="Athlete on the competition floor in an arena" loading="lazy"></figure>
-      <figure><img src="img/team/wallball.jpg" alt="Athlete driving a wall ball overhead during a competition" loading="lazy"></figure>
-      <figure><img src="img/team/murph.jpg" alt="Rebuilt Training members in matching shirts after Murph" loading="lazy"></figure>
-      <figure><img src="img/team/sandbag.jpg" alt="Athlete carrying a sandbag at a competition" loading="lazy"></figure>
-      <figure><img src="img/team/crew.jpg" alt="Four athletes smiling together at an outdoor event" loading="lazy"></figure>
-      <figure><img src="img/team/duo.jpg" alt="Two athletes ready on the competition field" loading="lazy"></figure>
-      <figure><img src="img/team/group-gym.jpg" alt="Group photo after a class at Rebuilt Training" loading="lazy"></figure>
-      <figure><img src="img/team/post-wod.jpg" alt="Two athletes celebrating on the floor after a workout" loading="lazy"></figure>
-      <figure><img src="img/team/smile.jpg" alt="Athlete smiling between heats" loading="lazy"></figure>
-      <figure><img src="img/team/group-bars.jpg" alt="Class celebrating together on the gym floor" loading="lazy"></figure>
-      <figure><img src="img/team/group-tall.jpg" alt="A packed Saturday class at Rebuilt Training" loading="lazy"></figure>
-    </div>
-  </div>
-</section>
-
-<section class="how" id="how">
+<section class="how" id="how" data-page="home">
   <div class="wrap">
     <div>
       <h3>Pick a track</h3>
@@ -948,8 +960,18 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
     </div>
   </div>
 </section>
+<section class="hubs" data-page="home">
+  <div class="wrap">
+    <a href="#programs"><b>Programs</b><span>Seven tracks, sample days for each</span></a>
+    <a href="#comp"><b>Comps</b><span>In-house Dec 12 and our online comps</span></a>
+    <a href="#app"><b>The app</b><span>Workouts, timers, board and challenges</span></a>
+    <a href="#music"><b>Music</b><span>Our tracks, 30-second samples</span></a>
+    <a href="#coach"><b>Coach &amp; Team</b><span>Reef, Team BODYBOX and videos</span></a>
+    <a href="#plans"><b>Join &amp; FAQ</b><span>Plans, free trial, book a class</span></a>
+  </div>
+</section>
 
-<section class="app" id="app">
+<section class="app" id="app" data-page="app">
   <div class="wrap">
     <div>
       <span class="label">One app for everything</span>
@@ -961,7 +983,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
         <li><h3>You're in</h3><p>Coach Reef approves your account and your programs open by themselves. Your day is under <b>Today</b>.</p></li>
       </ol>
       <div class="cta"><a class="btn" href="app2/">Open the app</a><a class="btn ghost" href="#trial">Get your code</a></div>
-      <p style="font-size:14px;opacity:.8;margin-top:10px">Save it to your home screen. iPhone: Share &gt; Add to Home Screen. Android: menu &gt; Add to Home screen.</p>
+      <p style="font-size:14px;opacity:.8;margin-top:10px">Save it to your home screen. iPhone: Share &gt; Add to Home Screen. Android: menu &gt; Add to Home screen. Open it from that icon and tap <b>Turn on</b> to get workout alerts (on iPhone, alerts only work from the Home Screen icon).</p>
     </div>
     <div class="phones" aria-label="App screens">
       <figure><img src="img/app/challenges.jpg" alt="App Challenges screen: a head-to-head challenge on Throwdown 20.1, a 2K row in progress and a finished 100 burpees with the winner starred" width="780" height="1688" loading="lazy"><figcaption><b>Challenges</b><span>Call someone out on a workout or a lift. You both log it and the app crowns the winner. Example names shown.</span></figcaption></figure>
@@ -992,7 +1014,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   </div>
 </section>
 
-<section class="plans" id="plans">
+<section class="plans" id="plans" data-page="join">
   <div class="wrap">
     <div>
       <span class="label">Your goal. Your program.</span>
@@ -1031,7 +1053,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   </div>
 </section>
 
-<section class="inperson" id="class">
+<section class="inperson" id="class" data-page="join">
   <div class="wrap">
     <div>
       <span class="label">Kenilworth, NJ</span>
@@ -1057,7 +1079,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   </div>
 </section>
 
-<section class="faq" id="faq">
+<section class="faq" id="faq" data-page="join">
   <div class="wrap">
     <div><span class="label">Before you start</span><h2>Questions</h2></div>
     <div class="qa">
@@ -1076,7 +1098,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   </div>
 </section>
 
-<section class="contact" id="contact">
+<section class="contact" id="contact" data-page="join">
   <div class="wrap">
     <div>
       <span class="label">Ready to start?</span>
@@ -1119,7 +1141,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
   chips.forEach(function(c){c.addEventListener('click',function(){pick(c.dataset.goal);});});
 
 
-  var tabs=[].slice.call(document.querySelectorAll('[role="tab"]'));
+  var tabs=[].slice.call(document.querySelectorAll('.samples [role="tab"]'));
   function show(id){
     tabs.forEach(function(t){
       var on=t.id==='t-'+id;
@@ -1167,6 +1189,30 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
     b.addEventListener('click',()=>{ if(a.paused){ if(cur&&cur!==a) cur.pause(); cur=a; a.play().catch(()=>{}); b.innerHTML=PAUSE; b.setAttribute('aria-label','Pause sample'); } else { a.pause(); b.innerHTML=PLAY; b.setAttribute('aria-label','Play sample'); } });
     a.addEventListener('pause',()=>{ b.innerHTML=PLAY; });
   });
+})();
+</script>
+<script>
+(function(){
+  var PAGE_FIRST={home:'top',programs:'programs',comps:'comp',app:'app',music:'music',team:'coach',join:'plans'};
+  function pageOf(el){ while(el&&el!==document.body){ if(el.dataset&&el.dataset.page) return el; el=el.parentElement; } return null; }
+  function route(scroll){
+    var id=(location.hash||'#top').slice(1), el=id&&document.getElementById(id), host=el&&pageOf(el);
+    var pg=host?host.dataset.page:'home';
+    var comp=null;
+    if(pg==='comps'){ comp=(id==='throwdown'||(el&&document.getElementById('throwdown').contains(el)))?'throwdown':'comp'; }
+    document.querySelectorAll('[data-page]').forEach(function(x){
+      var on=x.dataset.page===pg;
+      if(on&&comp&&(x.id==='comp'||x.id==='throwdown')) on=x.id===comp;
+      x.classList.toggle('on',on);
+    });
+    document.querySelectorAll('[data-ptab]').forEach(function(t){ t.setAttribute('aria-selected',String(t.dataset.ptab===comp)); });
+    document.querySelectorAll('nav [data-nav]').forEach(function(a){ if(a.dataset.nav===pg) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
+    var navA=document.querySelector('nav [data-nav="'+pg+'"]'); if(navA&&navA.scrollIntoView) try{navA.scrollIntoView({block:'nearest',inline:'center'});}catch(e){}
+    if(scroll===false) return;
+    if(!el||id===PAGE_FIRST[pg]||id==='top'||id==='throwdown') window.scrollTo(0,0); else el.scrollIntoView();
+  }
+  window.addEventListener('hashchange',function(){route();});
+  route(location.hash?undefined:false);
 })();
 </script>
 </body></html>
