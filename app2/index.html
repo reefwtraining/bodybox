@@ -3774,8 +3774,17 @@ async function start(u, coach){
   }
   try{
     let ks = [];
+    const m = await getDoc(doc(fs, 'members', u.uid)); const md = (m.exists() && m.data()) || {};
+    // Coach-added lifts (e.g. maxes copied from SugarWOD) go into this person's log once
+    if(Array.isArray(md.seedLog) && md.seedLog.length){ try{
+      let a = null; try{ a = JSON.parse(localStorage.getItem('bb-athlete') || 'null'); }catch(e){}
+      if(!a || !Array.isArray(a.log)) a = { v:1, unit:'lb', bar:45, log:[], scores:[], subs:[], name:'', evNotes:{}, unsync:[], done:[], personal:[], indr:{}, moves:{} };
+      const have = new Set(a.log.map(x => x.src).filter(Boolean)); let n = 0;
+      md.seedLog.forEach(e => { if(e && e.src && !have.has(e.src)){ a.log.push(Object.assign({}, e, { t: e.t || Date.now() })); n++; } });
+      if(n) localStorage.setItem('bb-athlete', JSON.stringify(a));
+    }catch(e){} }
     if(coach) ks = PROGS.map(p => p[0]);
-    else { const m = await getDoc(doc(fs, 'members', u.uid)); const md = (m.exists() && m.data()) || {}; ks = md.progs || [];
+    else { ks = md.progs || [];
       // Personal athletes: open their own profile + private days straight from their login (no PIN)
       if(ks.includes('personal') && md.meId && md.ka){ localStorage.setItem('bb-me', md.meId); localStorage.setItem('bb-ka-'+md.meId, md.ka); }
       else if(!ks.includes('personal')){ try{ const old = localStorage.getItem('bb-me'); if(old) localStorage.removeItem('bb-ka-'+old); }catch(e){} }
