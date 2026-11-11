@@ -26,6 +26,7 @@ button{font:inherit;color:inherit}
 
 /* top */
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.vidhint{display:block;color:var(--muted,#8F8B84);font-size:12px;line-height:1.35;margin-top:4px}.vidlink{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--gold);text-decoration:none;font-size:13px}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:10px}
 .brand{display:flex;align-items:center;gap:.32em;font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.04em}
@@ -620,6 +621,7 @@ Rest 2:00"></textarea></label>
       <label class="field"><span class="label">Reps</span><select id="logReps"></select></label>
     </div>
     <label class="field"><span class="label">Date</span><input id="logDate" type="date" required=""></label>
+    <label class="field"><span class="label">Video link (optional)</span><input id="logVid" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="300" placeholder="Paste your YouTube link"><small class="vidhint">Film it, post it to YouTube (unlisted is fine) and paste the link. Coach Reef reviews it.</small></label>
     <label class="field"><span class="label">Notes (optional)</span><textarea id="logNote" class="notein" maxlength="600" placeholder="How it moved, belt or no belt, what to try next time"></textarea></label>
     <p class="e1" id="logE1"></p>
     <p class="err" id="logErr"></p>
@@ -637,6 +639,7 @@ Rest 2:00"></textarea></label>
     <label class="field" id="scNumF"><span class="label" id="scNumL">Score</span><input id="scNum" type="number" inputmode="decimal" step="any" min="0"></label>
     <label class="field" id="scTxtF"><span class="label" id="scTxtL">Score</span><input id="scTxt" type="text"></label>
     <label class="field"><span class="label">Date</span><input id="scDate" type="date" required=""></label>
+    <label class="field"><span class="label">Video link (optional)</span><input id="scVid" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="300" placeholder="Paste your YouTube link"><small class="vidhint">Film it, post it to YouTube (unlisted is fine) and paste the link. Coach Reef reviews it.</small></label>
     <label class="field"><span class="label">Notes (optional)</span><textarea id="scNote" class="notein" maxlength="600" placeholder="Splits, scaling, how it felt"></textarea></label>
     <p class="err" id="scErr"></p>
     <div class="row"><button class="btn solid" type="submit">Save score</button><button class="btn" type="button" id="scCancel">Cancel</button></div>
@@ -660,9 +663,11 @@ Rest 2:00"></textarea></label>
 <div class="sheet" id="noteSheet" hidden="">
   <form class="card" id="noteForm" autocomplete="off">
     <span class="label" id="ntWhat">Logbook</span>
-    <h2>Notes</h2>
+    <h2>Notes &amp; video</h2>
     <textarea id="ntText" class="notein" maxlength="600" placeholder="How it felt, scaling, splits, what to change next time"></textarea>
-    <div class="row"><button class="btn solid" type="submit">Save note</button><button class="btn" type="button" id="ntCancel">Cancel</button></div>
+    <label class="field"><span class="label">Video link (optional)</span><input id="ntVid" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="300" placeholder="Paste your YouTube link"><small class="vidhint">Film it, post it to YouTube (unlisted is fine) and paste the link. Coach Reef reviews it.</small></label>
+    <p class="err" id="ntErr"></p>
+    <div class="row"><button class="btn solid" type="submit">Save</button><button class="btn" type="button" id="ntCancel">Cancel</button></div>
   </form>
 </div>
 
@@ -1478,7 +1483,7 @@ Rest 2:00"></textarea></label>
     const rows = es.slice().reverse().map(e => {
       const w = conv(e.w, e.u, A.unit), est = conv(e1rm(e.w, e.reps), e.u, A.unit);
       const nt = e.src ? (A.evNotes[e.src] || '') : (e.note || '');
-      return '<li><span class="d">'+niceDate(e.date)+'</span><span>'+fmtW(Math.round(w*10)/10)+' × '+e.reps+(e.reps>1?' <span class="d">≈ '+fmtW(Math.round(est))+' max</span>':'')+(e.src?' <span class="d">· from the board</span>':'')+(nt?'<span class="unote">'+esc(nt)+'</span>':'')+'</span>'+
+      return '<li><span class="d">'+niceDate(e.date)+'</span><span>'+fmtW(Math.round(w*10)/10)+' × '+e.reps+(e.reps>1?' <span class="d">≈ '+fmtW(Math.round(est))+' max</span>':'')+(e.src?' <span class="d">· from the board</span>':'')+(nt?'<span class="unote">'+esc(nt)+'</span>':'')+(e.vid?' '+vidLink(e.vid):'')+'</span>'+
              '<button type="button" data-del="'+e.id+'" class="'+(armed===e.id?'sure':'')+'">'+(armed===e.id?'Delete?':'Remove')+'</button></li>';
     }).join('');
     return '<div class="detail"><h3>'+esc(LIFTS[k])+'</h3>'+liftWarnings(k).map(w => '<p class="warnl">⚠ '+esc(w)+'</p>').join('')+goalBar(k)+chart+goalEditHtml(k)+
@@ -1500,9 +1505,11 @@ Rest 2:00"></textarea></label>
     const w = parseFloat($('logW').value), reps = +$('logReps').value;
     $('logE1').textContent = w > 0 && reps > 1 ? 'Estimated max: '+fmtW(Math.round(e1rm(w, reps)))+' '+A.unit : '';
   }
+  function cleanVid(s){ s = String(s||'').trim(); if(!s) return ''; if(!/^https?:\/\//i.test(s)) s = 'https://' + s; try{ const u = new URL(s); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u.href.slice(0,300) : null; }catch(e){ return null; } }
+  function vidLink(v){ return v ? '<a class="vidlink" href="'+esc(v)+'" target="_blank" rel="noopener">▶ Video</a>' : ''; }
   function openLog(lift){
     $('logLift').value = lift || openLift || 'back_squat'; $('logNewF').hidden = true;
-    $('logW').value = ''; $('logReps').value = '1'; $('logDate').value = todayStr(); $('logNote').value = '';
+    $('logW').value = ''; $('logReps').value = '1'; $('logDate').value = todayStr(); $('logNote').value = ''; $('logVid').value = '';
     $('logWLbl').textContent = 'Weight'+(perTxt($('logLift').value)||'')+' ('+A.unit+')'; $('logErr').textContent = ''; logPreview();
     $('logSheet').hidden = false; setTimeout(() => $('logW').focus(), 50);
   }
@@ -1516,8 +1523,9 @@ Rest 2:00"></textarea></label>
     if(!(w > 0)){ $('logErr').textContent = 'Enter the weight you lifted.'; return; }
     if(!date){ $('logErr').textContent = 'Pick the date of the lift.'; return; }
     const before = bestOf(lift);
-    const note = $('logNote').value.trim().slice(0,600);
-    A.log.push(Object.assign({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), lift, w, u: A.unit, reps, date, t: Date.now() }, note ? { note } : {}));
+    const note = $('logNote').value.trim().slice(0,600), vid = cleanVid($('logVid').value);
+    if(vid === null){ $('logErr').textContent = 'That video link doesn\'t look right. Copy it from YouTube and paste it again.'; return; }
+    A.log.push(Object.assign({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), lift, w, u: A.unit, reps, date, t: Date.now() }, note ? { note } : {}, vid ? { vid } : {}));
     saveA(); $('logSheet').hidden = true;
     const after = bestOf(lift);
     toastPR = before && after.val > before.val ? 'New '+LIFTS[lift]+' PR: '+fmtW(after.val)+' '+A.unit+' (+'+fmtW(Math.round((after.val-before.val)*10)/10)+')' : '';
@@ -1750,7 +1758,7 @@ Rest 2:00"></textarea></label>
   function ckParts(list){ return list.map((p, i) => Object.assign({}, p, i ? { restBefore: p.restBefore || 0 } : {})).map((p, i) => { if(!i) delete p.restBefore; return p; }); }
   function coachTimersHtml(){
     const T = window.__bbCoachTimers || []; if(!T.length) return '';
-    const B = window.__bbBadge || ''; return '<div class="part" style="margin-bottom:14px">'+(B ? '<div style="margin-bottom:8px">'+window.__bbBadgeHtml(B).replace('<span></span>','<span>'+esc(B)+'</span>')+'</div>' : '')+'<span class="tag">Your class timer'+(T.length>1?'s':'')+'</span>'+T.map(t =>
+    const B = window.__bbBadge || ''; return '<div class="part" style="margin-bottom:14px">'+(B && window.__bbBadgeHtml ? '<div style="margin-bottom:8px">'+window.__bbBadgeHtml(B).replace('<span></span>','<span>'+esc(B)+'</span>')+'</div>' : '')+'<span class="tag">Your class timer'+(T.length>1?'s':'')+'</span>'+T.map(t =>
       '<div class="logbar" style="margin-top:8px"><span><b>'+esc(t.name)+'</b><br><small style="color:var(--mute)">Your coach PIN: <b style="font-family:monospace;letter-spacing:3px;color:var(--fg)">'+esc(t.pin)+'</b> · only you can start it</small></span>'+
       '<a class="btn solid" href="'+esc(t.url)+'" target="_blank" rel="noopener" style="padding:8px 14px;text-decoration:none">Open</a></div>').join('')+
       '<p class="note" style="margin-top:8px">Open the timer, tap Unlock, enter your PIN once. It stays unlocked on that phone or TV.</p></div>';
@@ -1876,7 +1884,7 @@ Rest 2:00"></textarea></label>
     $('scTimeF').hidden = w.score !== 'time'; $('scCapF').hidden = !(w.score === 'time' && w.cap); $('scCap').checked = false;
     $('scNumF').hidden = !(w.score === 'more'); $('scNumL').textContent = w.scoreLabel || 'Score';
     $('scTxtF').hidden = w.score !== 'text'; $('scTxtL').textContent = w.scoreLabel || 'Score';
-    ['scTime','scNum','scTxt','scNote'].forEach(id => $(id).value = ''); $('scDate').value = todayStr(); $('scErr').textContent = '';
+    ['scTime','scNum','scTxt','scNote','scVid'].forEach(id => $(id).value = ''); $('scDate').value = todayStr(); $('scErr').textContent = '';
     $('scoreSheet').hidden = false;
   }
   $('scCap').onchange = () => { const c = $('scCap').checked; $('scTimeF').hidden = c; $('scNumF').hidden = !c; $('scNumL').textContent = c ? 'Total reps at the cap' : (scoreFor.scoreLabel||'Score'); };
@@ -1891,6 +1899,7 @@ Rest 2:00"></textarea></label>
     } else if(w.score === 'more'){ const n = parseFloat($('scNum').value); if(!(n >= 0)){ $('scErr').textContent = 'Enter your score.'; return; } rec.val = n; }
     else { const tx = $('scTxt').value.trim(); if(!tx){ $('scErr').textContent = 'Enter your score.'; return; } rec.txt = tx.slice(0,40); }
     const snote = $('scNote').value.trim().slice(0,600); if(snote) rec.note = snote;
+    const svid = cleanVid($('scVid').value); if(svid === null){ $('scErr').textContent = 'That video link doesn\'t look right. Copy it from YouTube and paste it again.'; return; } if(svid) rec.vid = svid;
     const before = bestScore(w.id);
     A.scores.push(rec); saveA(); $('scoreSheet').hidden = true;
     const after = bestScore(w.id);
@@ -2583,17 +2592,17 @@ Rest 2:00"></textarea></label>
   function logbookItems(){
     const out = [];
     A.log.forEach(e => { if(e.src || !LIFTS[e.lift]) return;
-      out.push({ kind:'lift', id:e.id, date:e.date, t:e.t||0, k:'Lift', w:LIFTS[e.lift], s:fmtW(Math.round(conv(e.w, e.u, A.unit)*10)/10)+' '+A.unit+' × '+e.reps, note:e.note||'' }); });
+      out.push({ kind:'lift', id:e.id, date:e.date, t:e.t||0, k:'Lift', w:LIFTS[e.lift], s:fmtW(Math.round(conv(e.w, e.u, A.unit)*10)/10)+' '+A.unit+' × '+e.reps, note:e.note||'', vid:e.vid||'' }); });
     A.scores.forEach(x => { const w = NW[x.w]; if(!w) return;
-      out.push({ kind:'named', id:x.id, date:x.date, t:x.t||0, k:'Named · '+(x.div||''), w:w.name, s:scoreText(x), note:x.note||'' }); });
+      out.push({ kind:'named', id:x.id, date:x.date, t:x.t||0, k:'Named · '+(x.div||''), w:w.name, s:scoreText(x), note:x.note||'', vid:x.vid||'' }); });
     if(meId && athById(meId)){
       const evIds = new Set(LB.results.filter(r => r.a === meId).map(r => r.e).concat(A.subs.filter(x => x.a === meId).map(x => x.e)));
       evIds.forEach(id => { const ev = evById(id); if(!ev) return;
         const r = LB.results.find(x => x.e === id && x.a === meId), sub = A.subs.find(x => x.e === id && x.a === meId), use = r || sub;
-        out.push({ kind:'ev', id, date:ev.date, t:(use && use.t)||0, k:'Board · '+use.d+(r?'':' · pending'), w:ev.name, s:lbScore(ev, use), note:A.evNotes[id]||'' }); });
+        out.push({ kind:'ev', id, date:ev.date, t:(use && use.t)||0, k:'Board · '+use.d+(r?'':' · pending'), w:ev.name, s:lbScore(ev, use), note:A.evNotes[id]||'', vid:(A.evVids||{})[id]||'' }); });
     }
-    (A.personal||[]).forEach(x => out.push({ kind:'own', id:x.id, date:x.date, t:x.t||0, k:x.kind==='mod'?'Modified · off the board':'Own workout', w:x.title, s:x.s||'', note:x.note||'' }));
-    Object.entries(A.indr||{}).forEach(([id,x]) => out.push({ kind:'ind', id, date:x.date, t:x.t||0, k:'Just for you', w:x.title||'Workout', s:x.s||'', note:x.note||'' }));
+    (A.personal||[]).forEach(x => out.push({ kind:'own', id:x.id, date:x.date, t:x.t||0, k:x.kind==='mod'?'Modified · off the board':'Own workout', w:x.title, s:x.s||'', note:x.note||'', vid:x.vid||'' }));
+    Object.entries(A.indr||{}).forEach(([id,x]) => out.push({ kind:'ind', id, date:x.date, t:x.t||0, k:'Just for you', w:x.title||'Workout', s:x.s||'', note:x.note||'', vid:x.vid||'' }));
     return out.sort((a,b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.t - a.t);
   }
   function logbookHtml(){
@@ -2605,31 +2614,47 @@ Rest 2:00"></textarea></label>
     const list = all.filter(x => lbkF === 'all' || x.kind === lbkF), show = lbkAll ? list : list.slice(0, 15);
     if(!list.length) return h + '<p class="how">Nothing here yet.</p>';
     h += '<ul class="logbook">'+show.map(x => '<li><span class="k">'+niceDate(x.date)+' · '+esc(x.k)+'</span><span class="s">'+esc(x.s)+'</span>'+
-      '<span class="w">'+esc(x.w)+'</span><button class="linkbtn" type="button" data-note="'+x.kind+'|'+esc(x.id)+'">'+(x.note?'Edit note':'+ Note')+'</button>'+
+      '<span class="w">'+esc(x.w)+'</span><span class="row" style="gap:10px">'+vidLink(x.vid)+'<button class="linkbtn" type="button" data-note="'+x.kind+'|'+esc(x.id)+'">'+(x.note||x.vid?'Edit note / video':'+ Note or video')+'</button></span>'+
       (x.note?'<span class="unote full">'+esc(x.note)+'</span>':'')+'</li>').join('')+'</ul>';
     if(list.length > show.length) h += '<div class="row" style="margin-top:8px"><button class="btn" type="button" id="lbkMore">Show all '+list.length+'</button></div>';
+    h += '<div class="row" style="margin-top:10px"><button class="btn" type="button" id="lbkCsv">Download as spreadsheet</button></div>';
     return h;
+  }
+  function downloadCsv(){
+    const q = v => { v = v == null ? '' : String(v); return /[",\n\r]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+    const rows = [['Date','Type','Lift or workout','Result','Weight','Unit','Reps','Estimated max','Notes','Video']];
+    const lifts = new Map(A.log.map(e => [e.id, e]));
+    logbookItems().slice().reverse().forEach(x => {
+      const e = x.kind === 'lift' ? lifts.get(x.id) : null;
+      rows.push([x.date, x.k, x.w, x.s, e ? fmtW(Math.round(conv(e.w, e.u, A.unit)*10)/10) : '', e ? A.unit : '', e ? e.reps : '', e ? fmtW(Math.round(conv(e1rm(e.w, e.reps), e.u, A.unit))) : '', x.note, x.vid]);
+    });
+    const csv = '\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n');
+    const nm = 'BODYBOX logbook '+todayStr()+'.csv', blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    try{ if(navigator.canShare && navigator.canShare({ files: [new File([blob], nm, { type: 'text/csv' })] }) && /iPhone|iPad|Android/i.test(navigator.userAgent)){ navigator.share({ files: [new File([blob], nm, { type: 'text/csv' })], title: 'My BODYBOX logbook' }).catch(() => {}); return; } }catch(e){}
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nm; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
   }
   function wireLogbook(v){
     v.querySelectorAll('[data-lbk]').forEach(b => b.onclick = () => { lbkF = b.dataset.lbk; lbkAll = false; render(); });
     const m = $('lbkMore'); if(m) m.onclick = () => { lbkAll = true; render(); };
+    const cv = $('lbkCsv'); if(cv) cv.onclick = downloadCsv;
     v.querySelectorAll('[data-note]').forEach(b => b.onclick = () => {
       const i = b.dataset.note.indexOf('|'); const kind = b.dataset.note.slice(0, i), id = b.dataset.note.slice(i+1);
       const it = logbookItems().find(x => x.kind === kind && x.id === id); if(!it) return;
-      noteFor = { kind, id }; $('ntWhat').textContent = niceDate(it.date)+' · '+it.w+' · '+it.s; $('ntText').value = it.note;
+      noteFor = { kind, id }; $('ntWhat').textContent = niceDate(it.date)+' · '+it.w+' · '+it.s; $('ntText').value = it.note; $('ntVid').value = it.vid || ''; $('ntErr').textContent = '';
       $('noteSheet').hidden = false; setTimeout(() => $('ntText').focus(), 50);
     });
   }
   $('ntCancel').onclick = () => { $('noteSheet').hidden = true; };
   $('noteForm').onsubmit = e => {
     e.preventDefault(); if(!noteFor) return;
-    const t = $('ntText').value.trim().slice(0,600), { kind, id } = noteFor;
-    const setN = o => { if(!o) return; if(t) o.note = t; else delete o.note; };
+    const t = $('ntText').value.trim().slice(0,600), { kind, id } = noteFor, vd = cleanVid($('ntVid').value);
+    if(vd === null){ $('ntErr').textContent = 'That video link doesn\'t look right. Copy it from YouTube and paste it again.'; return; }
+    const setN = o => { if(!o) return; if(t) o.note = t; else delete o.note; if(vd) o.vid = vd; else delete o.vid; };
     if(kind === 'lift') setN(A.log.find(x => x.id === id));
     else if(kind === 'named') setN(A.scores.find(x => x.id === id));
     else if(kind === 'own') setN((A.personal||[]).find(x => x.id === id));
     else if(kind === 'ind') setN((A.indr||{})[id]);
-    else { if(t) A.evNotes[id] = t; else delete A.evNotes[id]; }
+    else { if(t) A.evNotes[id] = t; else delete A.evNotes[id]; if(!A.evVids || typeof A.evVids !== 'object') A.evVids = {}; if(vd) A.evVids[id] = vd; else delete A.evVids[id]; }
     saveA(); $('noteSheet').hidden = true; noteFor = null; render();
   };
 
@@ -2947,7 +2972,7 @@ Rest 2:00"></textarea></label>
     const keep = x => !x.date || x.date >= since;
     const me = athById(meId) || {};
     const rep = { v:1, id: meId, name: me.name || A.name || '', t: Date.now(), unit: A.unit,
-      log: A.log.filter(keep).map(e => ({ id:e.id, lift:e.lift, w:e.w, u:e.u, reps:e.reps, date:e.date, t:e.t, note:e.note })),
+      log: A.log.filter(keep).map(e => ({ id:e.id, lift:e.lift, w:e.w, u:e.u, reps:e.reps, date:e.date, t:e.t, note:e.note, vid:e.vid })),
       moves: A.moves || {}, done: (A.done||[]).filter(keep), personal: (A.personal||[]).filter(keep),
       indr: Object.fromEntries(Object.entries(A.indr||{}).filter(([k,v]) => keep(v))), scores: A.scores.filter(keep).map(x => ({ w:x.w, date:x.date, s:scoreText(x) })),
       mod: (A.personal||[]).filter(x => x.kind === 'mod' && keep(x)).length,
@@ -3505,10 +3530,10 @@ Rest 2:00"></textarea></label>
       const ca = c.A;
       if(ca && typeof ca === 'object' && !Array.isArray(ca)){
         const fresh = !(A.log||[]).length && !(A.scores||[]).length && !(A.personal||[]).length;
-        ['log','scores','personal','done'].forEach(f => { if(Array.isArray(ca[f])){ if(!Array.isArray(A[f])) A[f] = []; n += union(A[f], ca[f], idk); } });
+        ['log','scores','personal','done'].forEach(f => { if(Array.isArray(ca[f])){ if(!Array.isArray(A[f])) A[f] = []; n += union(A[f], ca[f], idk); const rv = new Map(ca[f].filter(x => x && x.vid && x.id).map(x => [x.id, x.vid])); A[f].forEach(x => { if(x && !x.vid && rv.has(x.id)){ x.vid = rv.get(x.id); n++; } }); } });
         if(Array.isArray(ca.subs)){ if(!Array.isArray(A.subs)) A.subs = []; n += union(A.subs, ca.subs, x => x ? (x.e+'|'+x.a) : null); }
         if(Array.isArray(ca.unsync)){ union(A.unsync, ca.unsync, x => String(x)); }
-        ['evNotes','indr','moves'].forEach(f => { const o = ca[f]; if(o && typeof o === 'object' && !Array.isArray(o)){ if(!A[f] || typeof A[f] !== 'object') A[f] = {}; Object.keys(o).forEach(k => { if(!(k in A[f])){ A[f][k] = o[k]; n++; } }); } });
+        ['evNotes','evVids','indr','moves'].forEach(f => { const o = ca[f]; if(o && typeof o === 'object' && !Array.isArray(o)){ if(!A[f] || typeof A[f] !== 'object') A[f] = {}; Object.keys(o).forEach(k => { if(!(k in A[f])){ A[f][k] = o[k]; n++; } }); } });
         Object.keys(A.moves||{}).forEach(k => { if(!LIFTS[k]){ LIFTS[k] = A.moves[k]; LIFT_ORDER.push(k); } });
         if(!A.name && ca.name){ A.name = ca.name; n++; }
         if(fresh){ if(ca.unit) A.unit = ca.unit; if(ca.bar) A.bar = ca.bar; }
@@ -3762,6 +3787,36 @@ window.__bbBadgeHtml = b => b ? '<span class="cbadge'+(/^head/i.test(b)?' head':
 function badgeEl(b){ const s = document.createElement('span'); s.innerHTML = window.__bbBadgeHtml(b); const el = s.firstChild; if(el) el.querySelector('span').textContent = b; return el; }
 /* ---- coach-only staff config: who runs which class timer (PINs live only here, never in the code) ---- */
 async function staffCfg(){ try{ const s = await getDoc(doc(fs, 'data', 'users', 'coachcfg', 'timers')); return s.exists() ? JSON.parse(s.data().json) : { staff: {} }; }catch(e){ return { staff: {} }; } }
+/* ---- coach: videos athletes linked to their lifts and scores ---- */
+async function openVideos(members){
+  let box = document.getElementById('bbMembers'); if(!box){ box = document.createElement('div'); box.id = 'bbMembers'; document.body.appendChild(box); }
+  box.innerHTML = '<div class="mcard"><h3>Videos to review</h3><p style="color:#8F8B84;margin:0">Loading…</p></div>';
+  const rref = doc(fs, 'data', 'users', 'coachcfg', 'reviewed');
+  let seen = {}; try{ const s = await getDoc(rref); if(s.exists()) seen = JSON.parse(s.data().json) || {}; }catch(e){}
+  const nm = k => { try{ if(typeof LIFTS !== 'undefined' && LIFTS[k]) return LIFTS[k]; }catch(e){} return String(k||'').replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()); };
+  const wn = k => { try{ if(typeof NW !== 'undefined' && NW[k]) return NW[k].name; }catch(e){} return 'Named workout'; };
+  const en = k => { try{ if(typeof evById === 'function'){ const e = evById(k); if(e) return e.name; } }catch(e){} return 'Board workout'; };
+  const out = [];
+  await Promise.all(members.map(async m => { try{
+    const s = await getDoc(doc(fs, 'data', 'users', m.id, 'bodybox')); if(!s.exists()) return;
+    const A = (JSON.parse(s.data().json) || {}).A || {};
+    (A.log||[]).forEach(e => { if(e && e.vid) out.push({ key: m.id+'|'+e.id, who: m.name || m.email, date: e.date, what: nm(e.lift), s: e.w+' '+(e.u||'lb')+' × '+e.reps, vid: e.vid, note: e.note||'' }); });
+    (A.scores||[]).forEach(x => { if(x && x.vid) out.push({ key: m.id+'|'+x.id, who: m.name || m.email, date: x.date, what: wn(x.w), s: x.txt || (x.val!=null ? String(x.val) : ''), vid: x.vid, note: x.note||'' }); });
+    (A.personal||[]).forEach(x => { if(x && x.vid) out.push({ key: m.id+'|'+x.id, who: m.name || m.email, date: x.date, what: x.title||'Own workout', s: x.s||'', vid: x.vid, note: x.note||'' }); });
+    Object.entries(A.indr||{}).forEach(([k,x]) => { if(x && x.vid) out.push({ key: m.id+'|i'+k, who: m.name || m.email, date: x.date, what: x.title||'Extra work', s: x.s||'', vid: x.vid, note: x.note||'' }); });
+    Object.entries(A.evVids||{}).forEach(([k,v]) => { if(v) out.push({ key: m.id+'|e'+k, who: m.name || m.email, date: '', what: en(k), s: '', vid: v, note: (A.evNotes||{})[k]||'' }); });
+  }catch(e){} }));
+  out.sort((a,b) => (seen[a.key]?1:0) - (seen[b.key]?1:0) || (a.date < b.date ? 1 : -1));
+  const todo = out.filter(x => !seen[x.key]).length;
+  const row = x => '<div class="mrow"><div><b>'+esc(x.who)+' · '+esc(x.what)+'</b><small>'+esc([x.date, x.s].filter(Boolean).join(' · '))+'</small>'+(x.note?'<small>'+esc(x.note)+'</small>':'')+(seen[x.key]?'<small style="color:#6FBF73">Reviewed</small>':'')+'</div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><a href="'+esc(x.vid)+'" target="_blank" rel="noopener" style="background:#C8102E;color:#fff;border-radius:999px;padding:8px 12px;font:600 13px var(--body);text-decoration:none">Watch</a>'+
+    '<button class="ghost" data-rv="'+esc(x.key)+'">'+(seen[x.key]?'Undo':'Reviewed')+'</button></div></div>';
+  box.innerHTML = '<div class="mcard"><h3>Videos to review</h3><p style="color:#8F8B84;margin:0">'+(out.length ? todo+' new · '+(out.length-todo)+' reviewed' : 'No videos yet. Athletes add a YouTube link when they log a lift or a score, or later from their Logbook.')+'</p>'+
+    out.map(row).join('')+'<div class="mrow"><button class="ghost" id="vBack">Back to members</button><button class="ghost" id="vClose">Close</button></div></div>';
+  box.querySelector('#vBack').onclick = () => openMembers(); box.querySelector('#vClose').onclick = () => box.remove();
+  box.querySelectorAll('[data-rv]').forEach(b => b.onclick = async () => { const k = b.dataset.rv; if(seen[k]) delete seen[k]; else seen[k] = Date.now(); b.disabled = true;
+    try{ await setDoc(rref, { json: JSON.stringify(seen), at: serverTimestamp() }); }catch(e){} openVideos(members); });
+}
 /* ---- coach: approve members ---- */
 async function openMembers(){
   let box = document.getElementById('bbMembers'); if(box) box.remove();
@@ -3778,7 +3833,8 @@ async function openMembers(){
   box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p style="color:#8F8B84;margin:0">'+pend+' waiting for approval · '+(rows.length-pend)+' approved. Tap a program to turn it on or off for that person (red = on). No codes needed.</p>'+
     rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b>'+((r.coachBadge||(staffOf(r)&&staffOf(r).badge))?' '+window.__bbBadgeHtml(esc(r.coachBadge||staffOf(r).badge)).replace('<span></span>','<span>'+esc(r.coachBadge||staffOf(r).badge)+'</span>'):'')+'<small>'+esc(r.email)+'</small>'+(staffOf(r)?'<small style="color:#E8B44C">Coach · gets '+esc((staffOf(r).timers||[]).map(t => t.name).join(' + '))+' on approval</small>':'')+((r.wants&&r.wants.length)?'<small>Picked: '+esc(PLANS.filter(p => r.wants.includes(p.id)).map(p => p.name).join(' + '))+'</small>':'<small>Hasn\'t picked programs yet</small>')+((r.codeProgs&&r.codeProgs.length)?'<small>Code opens: '+esc(r.codeProgs.map(progName).join(', '))+'</small>':'')+'</div>'+
       (r.approved ? '<button class="ghost" data-off="'+r.id+'">Remove access</button>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>'+(r.approved ? '<div class="mprogs">'+PROGS.concat([PERSONAL]).map(p => '<button class="'+((r.progs||[]).includes(p[0])?'':'ghost')+'" data-prog="'+r.id+'|'+p[0]+'">'+p[1]+'</button>').join('')+'</div>' : '')).join('')+
-    '<div class="mrow" style="display:block"><b>Update content</b><small>Load a new content file from Claude (programming + leaderboard).</small>'+contentPicker()+'</div><div class="mrow"><button class="ghost" id="mClose">Close</button><button class="ghost" id="mOut">Sign out</button></div>';
+    '<div class="mrow"><div><b>Videos to review</b><small>Lifts and scores your athletes filmed and linked</small></div><button id="mVids">Open</button></div><div class="mrow" style="display:block"><b>Update content</b><small>Load a new content file from Claude (programming + leaderboard).</small>'+contentPicker()+'</div><div class="mrow"><button class="ghost" id="mClose">Close</button><button class="ghost" id="mOut">Sign out</button></div>';
+  box.querySelector('#mVids').onclick = () => openVideos(rows.filter(r => r.approved));
   box.querySelector('#mClose').onclick = () => box.remove(); box.querySelector('#mOut').onclick = () => signOut(auth); wirePicker(box);
   box.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { b.disabled = true; const r = rows.find(x => x.id === b.dataset.on) || {}; const st = staffOf(r); let progs = (r.progs && r.progs.length) ? r.progs : (r.codeProgs && r.codeProgs.length) ? r.codeProgs : progsForPlans(r.wants); if(st) progs = [...new Set(progs.concat(st.progs || []))]; const upd = { approved: true, approvedAt: serverTimestamp(), progs }; if(st){ upd.coachTimers = st.timers || []; upd.coachBadge = st.badge || ''; } try{ await updateDoc(doc(fs,'members',b.dataset.on), upd); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
   box.querySelectorAll('[data-prog]').forEach(b => b.onclick = async () => { const [id, k] = b.dataset.prog.split('|'); const r = rows.find(x => x.id === id); const cur = new Set(r.progs || []); cur.has(k) ? cur.delete(k) : cur.add(k); b.disabled = true; try{ await updateDoc(doc(fs,'members',id), { progs: [...cur] }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
