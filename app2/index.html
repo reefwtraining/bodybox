@@ -28,7 +28,10 @@ button{font:inherit;color:inherit}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:10px}
-.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.04em}
+.brand{display:flex;align-items:center;gap:.32em;font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.04em}
+.brand .gw{display:inline-flex;align-items:center;color:inherit}
+.brand .gw img{margin-right:1px}
+.brand .gw.r{color:var(--gold)}
 .brand img{height:30px;width:auto}
 .brand span{color:var(--gold)}
 .today{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right}
@@ -523,7 +526,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 <header class="top">
   <div class="gut"><div class="inner">
     <div class="bar">
-      <div class="brand"><img src="img/b-mark.png" alt="" width="126" height="202">BODY<span>BOX</span></div>
+      <div class="brand"><span class="gw"><img src="img/b-mark.png" alt="" width="126" height="202">ODY</span><span class="gw r"><img src="img/b-mark-red.png" alt="" width="126" height="202">OX</span></div>
       <span class="label" id="hdrLbl">Free preview</span>
     </div>
     <div class="progs" id="progs" role="group" aria-label="Pick a program"></div>
