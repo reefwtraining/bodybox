@@ -1750,7 +1750,7 @@ Rest 2:00"></textarea></label>
   function ckParts(list){ return list.map((p, i) => Object.assign({}, p, i ? { restBefore: p.restBefore || 0 } : {})).map((p, i) => { if(!i) delete p.restBefore; return p; }); }
   function coachTimersHtml(){
     const T = window.__bbCoachTimers || []; if(!T.length) return '';
-    return '<div class="part" style="margin-bottom:14px"><span class="tag">Coach · your class timer'+(T.length>1?'s':'')+'</span>'+T.map(t =>
+    const B = window.__bbBadge || ''; return '<div class="part" style="margin-bottom:14px">'+(B ? '<div style="margin-bottom:8px">'+window.__bbBadgeHtml(B).replace('<span></span>','<span>'+esc(B)+'</span>')+'</div>' : '')+'<span class="tag">Your class timer'+(T.length>1?'s':'')+'</span>'+T.map(t =>
       '<div class="logbar" style="margin-top:8px"><span><b>'+esc(t.name)+'</b><br><small style="color:var(--mute)">Your coach PIN: <b style="font-family:monospace;letter-spacing:3px;color:var(--fg)">'+esc(t.pin)+'</b> · only you can start it</small></span>'+
       '<a class="btn solid" href="'+esc(t.url)+'" target="_blank" rel="noopener" style="padding:8px 14px;text-decoration:none">Open</a></div>').join('')+
       '<p class="note" style="margin-top:8px">Open the timer, tap Unlock, enter your PIN once. It stays unlocked on that phone or TV.</p></div>';
@@ -3570,6 +3570,7 @@ Rest 2:00"></textarea></label>
 #bbGate .grow{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
 #bbGate .gspin{width:34px;height:34px;border:3px solid #2A2A2A;border-top-color:#C8102E;border-radius:50%;margin:0 auto;animation:bbspin 1s linear infinite}
 @keyframes bbspin{to{transform:rotate(360deg)}}
+.cbadge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;border-radius:999px;font:800 11px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;background:#C8102E;color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.12) inset}.cbadge.head{background:linear-gradient(135deg,#F2C14E,#C9931F);color:#1B1B1B}.cbadge svg{flex:none}.top .hdrbadge{margin:2px 0 8px}
 #bbCoachBtn{position:fixed;right:12px;bottom:84px;z-index:9000;background:#C8102E;color:#fff;border:0;border-radius:999px;padding:9px 14px;font:600 13px var(--body);box-shadow:0 4px 16px rgba(0,0,0,.5);cursor:pointer}
 #bbMembers{position:fixed;inset:0;z-index:19000;background:rgba(0,0,0,.85);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
 #bbMembers .mcard{background:#1B1B1B;border:1px solid #2A2A2A;border-radius:16px;max-width:520px;width:100%;padding:18px;display:grid;gap:12px}
@@ -3756,6 +3757,9 @@ function shims(u, coach){
   window.claude = { use: async n => map[n] || null };
 }
 
+const STAR_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>';
+window.__bbBadgeHtml = b => b ? '<span class="cbadge'+(/^head/i.test(b)?' head':'')+'">'+STAR_SVG+'<span></span></span>' : '';
+function badgeEl(b){ const s = document.createElement('span'); s.innerHTML = window.__bbBadgeHtml(b); const el = s.firstChild; if(el) el.querySelector('span').textContent = b; return el; }
 /* ---- coach-only staff config: who runs which class timer (PINs live only here, never in the code) ---- */
 async function staffCfg(){ try{ const s = await getDoc(doc(fs, 'data', 'users', 'coachcfg', 'timers')); return s.exists() ? JSON.parse(s.data().json) : { staff: {} }; }catch(e){ return { staff: {} }; } }
 /* ---- coach: approve members ---- */
@@ -3768,15 +3772,15 @@ async function openMembers(){
   catch(e){ box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p>Couldn\'t load members. If you just created your coach account, open the verification email Firebase sent you, then reopen the app.</p><button class="ghost" id="mClose">Close</button>'; box.querySelector('#mClose').onclick = () => box.remove(); return; }
   rows = rows.filter(r => !COACHES.includes((r.email||'').toLowerCase()));
   const CFG = await staffCfg(), staffOf = r => (CFG.staff || {})[(r.email||'').toLowerCase()] || null;
-  for(const r of rows){ const st = staffOf(r); if(r.approved && st && JSON.stringify(r.coachTimers||[]) !== JSON.stringify(st.timers||[])){ try{ await updateDoc(doc(fs,'members',r.id), { coachTimers: st.timers || [] }); r.coachTimers = st.timers; }catch(e){} } }
+  for(const r of rows){ const st = staffOf(r); if(r.approved && st && (JSON.stringify(r.coachTimers||[]) !== JSON.stringify(st.timers||[]) || (r.coachBadge||'') !== (st.badge||''))){ try{ await updateDoc(doc(fs,'members',r.id), { coachTimers: st.timers || [], coachBadge: st.badge || '' }); r.coachTimers = st.timers; r.coachBadge = st.badge; }catch(e){} } }
   rows.sort((a,b) => (a.approved===b.approved ? (a.name||'').localeCompare(b.name||'') : a.approved ? 1 : -1));
   const pend = rows.filter(r => !r.approved).length;
   box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p style="color:#8F8B84;margin:0">'+pend+' waiting for approval · '+(rows.length-pend)+' approved. Tap a program to turn it on or off for that person (red = on). No codes needed.</p>'+
-    rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small>'+(staffOf(r)?'<small style="color:#E8B44C">Coach · gets '+esc((staffOf(r).timers||[]).map(t => t.name).join(' + '))+' on approval</small>':'')+((r.wants&&r.wants.length)?'<small>Picked: '+esc(PLANS.filter(p => r.wants.includes(p.id)).map(p => p.name).join(' + '))+'</small>':'<small>Hasn\'t picked programs yet</small>')+((r.codeProgs&&r.codeProgs.length)?'<small>Code opens: '+esc(r.codeProgs.map(progName).join(', '))+'</small>':'')+'</div>'+
+    rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b>'+((r.coachBadge||(staffOf(r)&&staffOf(r).badge))?' '+window.__bbBadgeHtml(esc(r.coachBadge||staffOf(r).badge)).replace('<span></span>','<span>'+esc(r.coachBadge||staffOf(r).badge)+'</span>'):'')+'<small>'+esc(r.email)+'</small>'+(staffOf(r)?'<small style="color:#E8B44C">Coach · gets '+esc((staffOf(r).timers||[]).map(t => t.name).join(' + '))+' on approval</small>':'')+((r.wants&&r.wants.length)?'<small>Picked: '+esc(PLANS.filter(p => r.wants.includes(p.id)).map(p => p.name).join(' + '))+'</small>':'<small>Hasn\'t picked programs yet</small>')+((r.codeProgs&&r.codeProgs.length)?'<small>Code opens: '+esc(r.codeProgs.map(progName).join(', '))+'</small>':'')+'</div>'+
       (r.approved ? '<button class="ghost" data-off="'+r.id+'">Remove access</button>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>'+(r.approved ? '<div class="mprogs">'+PROGS.concat([PERSONAL]).map(p => '<button class="'+((r.progs||[]).includes(p[0])?'':'ghost')+'" data-prog="'+r.id+'|'+p[0]+'">'+p[1]+'</button>').join('')+'</div>' : '')).join('')+
     '<div class="mrow" style="display:block"><b>Update content</b><small>Load a new content file from Claude (programming + leaderboard).</small>'+contentPicker()+'</div><div class="mrow"><button class="ghost" id="mClose">Close</button><button class="ghost" id="mOut">Sign out</button></div>';
   box.querySelector('#mClose').onclick = () => box.remove(); box.querySelector('#mOut').onclick = () => signOut(auth); wirePicker(box);
-  box.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { b.disabled = true; const r = rows.find(x => x.id === b.dataset.on) || {}; const st = staffOf(r); let progs = (r.progs && r.progs.length) ? r.progs : (r.codeProgs && r.codeProgs.length) ? r.codeProgs : progsForPlans(r.wants); if(st) progs = [...new Set(progs.concat(st.progs || []))]; const upd = { approved: true, approvedAt: serverTimestamp(), progs }; if(st) upd.coachTimers = st.timers || []; try{ await updateDoc(doc(fs,'members',b.dataset.on), upd); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
+  box.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { b.disabled = true; const r = rows.find(x => x.id === b.dataset.on) || {}; const st = staffOf(r); let progs = (r.progs && r.progs.length) ? r.progs : (r.codeProgs && r.codeProgs.length) ? r.codeProgs : progsForPlans(r.wants); if(st) progs = [...new Set(progs.concat(st.progs || []))]; const upd = { approved: true, approvedAt: serverTimestamp(), progs }; if(st){ upd.coachTimers = st.timers || []; upd.coachBadge = st.badge || ''; } try{ await updateDoc(doc(fs,'members',b.dataset.on), upd); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
   box.querySelectorAll('[data-prog]').forEach(b => b.onclick = async () => { const [id, k] = b.dataset.prog.split('|'); const r = rows.find(x => x.id === id); const cur = new Set(r.progs || []); cur.has(k) ? cur.delete(k) : cur.add(k); b.disabled = true; try{ await updateDoc(doc(fs,'members',id), { progs: [...cur] }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
   box.querySelectorAll('[data-off]').forEach(b => b.onclick = async () => { b.disabled = true; try{ await updateDoc(doc(fs,'members',b.dataset.off), { approved: false }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
 }
@@ -3821,8 +3825,8 @@ async function start(u, coach){
       md.seedLog.forEach(e => { if(e && e.src && !have.has(e.src)){ a.log.push(Object.assign({}, e, { t: e.t || Date.now() })); n++; } });
       if(n) localStorage.setItem('bb-athlete', JSON.stringify(a));
     }catch(e){} }
-    window.__bbCoachTimers = Array.isArray(md.coachTimers) ? md.coachTimers : [];
-    if(coach){ const st = ((await staffCfg()).staff || {})[(u.email||'').toLowerCase()]; if(st) window.__bbCoachTimers = st.timers || []; }
+    window.__bbCoachTimers = Array.isArray(md.coachTimers) ? md.coachTimers : []; window.__bbBadge = md.coachBadge || '';
+    if(coach){ const st = ((await staffCfg()).staff || {})[(u.email||'').toLowerCase()]; if(st){ window.__bbCoachTimers = st.timers || []; window.__bbBadge = st.badge || ''; } }
     if(coach) ks = PROGS.map(p => p[0]);
     else { ks = md.progs || [];
       // Personal athletes: open their own profile + private days straight from their login (no PIN)
@@ -3842,6 +3846,7 @@ async function start(u, coach){
   const src = document.getElementById('app').textContent;
   const sc = document.createElement('script'); sc.textContent = src; document.body.appendChild(sc);
   G.hidden = true;
+  try{ const bb = badgeEl(window.__bbBadge), bar = document.querySelector('.top .bar'); if(bb && bar){ const w = document.createElement('div'); w.className = 'hdrbadge'; w.appendChild(bb); bar.after(w); } }catch(e){}
   if(coach){ const b = document.createElement('button'); b.id = 'bbCoachBtn'; b.type = 'button'; b.textContent = 'Members'; b.onclick = openMembers; document.body.appendChild(b); }
   window.__bbSignOut = () => signOut(auth);
 }
