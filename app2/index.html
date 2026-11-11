@@ -765,6 +765,8 @@ Rest 2:00"></textarea></label>
   const PRISTINE_BODY = document.body.innerHTML;
   const RESET_CSS = (document.head && document.head.querySelector('style')) ? document.head.querySelector('style').textContent : '';
   const D = JSON.parse(document.getElementById('data').textContent);
+// Comp practice workouts live on the website and in emails, not in the app.
+if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(c.title||''));
   const ORDER = ['class','comp','build','cardio','garage','shiit','yoga'];
   const store = {
     get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
@@ -935,7 +937,8 @@ Rest 2:00"></textarea></label>
     const p = D.programs[prog]; const entry = (D.days[day]||{})[prog];
     const v = document.getElementById('view');
     const un = meId && IK.mine ? unreadCount() : 0;
-    let h = (un ? '<div class="msgban"><span><b>'+un+' new message'+(un>1?'s':'')+'</b> from your coach</span><button class="btn solid" type="button" data-goinbox="1" style="padding:7px 12px">Read</button></div>' : '') + (isCoachKey() ? '<div class="row" style="margin:0 0 10px"><button class="linkbtn" type="button" data-hub="1">Coach hub →</button></div>' : '') + newsHtml() + memberHtml2() + '<p class="label ex-h">'+(memProgs().length?'Example days from every program':'Free preview · one example day from each program')+'</p><div class="progs" id="progs2" role="group" aria-label="Pick a program" style="margin-bottom:10px"></div><div class="head"><span class="sched">'+esc(p.sched)+'</span><h1>'+esc(p.name)+'</h1>';
+    const realMem = memProgs().length && !(memSlots.size && [...memSlots].every(x => x === 'sample'));
+    let h = (un ? '<div class="msgban"><span><b>'+un+' new message'+(un>1?'s':'')+'</b> from your coach</span><button class="btn solid" type="button" data-goinbox="1" style="padding:7px 12px">Read</button></div>' : '') + (isCoachKey() ? '<div class="row" style="margin:0 0 10px"><button class="linkbtn" type="button" data-hub="1">Coach hub →</button></div>' : '') + newsHtml() + memberHtml2(); const memOnly = h; h += '<p class="label ex-h">'+(memProgs().length?'Example days from every program':'Free preview · one example day from each program')+'</p><div class="progs" id="progs2" role="group" aria-label="Pick a program" style="margin-bottom:10px"></div><div class="head"><span class="sched">'+esc(p.sched)+'</span><h1>'+esc(p.name)+'</h1>';
     if(p.type==='full'){
       h += '</div><p class="about">'+esc(p.about)+'</p>';
       if(entry){
@@ -963,6 +966,7 @@ Rest 2:00"></textarea></label>
         h += '<button class="btn coachbtn" type="button" id="coachTimer">'+(isCoach()?'Start class timer · '+timerSummary(entry.timer):'Coach timer (PIN)')+'</button>';
       }
     }
+    if(realMem) h = memOnly; // members see only their own training; example days are for the website and emails
     h += dirtyBar();
     v.innerHTML = h;
     renderProgs(); wireNews(v); wireDirty(); wireMember(v);
