@@ -3762,16 +3762,17 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWith
 import { initializeFirestore, persistentLocalCache, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, serverTimestamp, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const COACHES = ['reefwtraining@gmail.com'];
-const PROGS = [['comp','Athlete Comp','WGC534'],['build','Building','RMXGZJ'],['cardio','Cardio','WQH7V7'],['shiit','S.H.I.I.T','56EG63'],['rt','RT Movement','VXW86K']];
+const PROGS = [['comp','Athlete Comp','WGC534'],['build','Building','RMXGZJ'],['cardio','Cardio','WQH7V7'],['shiit','S.H.I.I.T','56EG63'],['rt','RT Movement','VXW86K'],['garage','Garage Box','ZUBVXM']];
 const PLANS = [
   { id:'comp',   name:'Athlete Comp',      price:'$35/mo', progs:['comp'] },
   { id:'build',  name:'Body Box Building', price:'$35/mo', progs:['build'] },
   { id:'cardio', name:'Cardio',            price:'$35/mo', progs:['cardio'] },
+  { id:'garage', name:'Garage Box',        price:'$25/mo', progs:['garage'], note:'Train anywhere: home, garage, building or hotel gym' },
   { id:'all3',   name:'All 3 Programs',    price:'$69/mo', progs:['comp','build','cardio'], best:true },
   { id:'coach',  name:'Personal Coaching', price:'$129/mo', progs:['comp','build','cardio','shiit','rt','personal'], note:'All 3 programs plus programming built for you by Coach Reef' }
 ];
 const PERSONAL = ['personal','Personal (from Coach Reef)'];
-const CODE_PROGS = Object.assign({ AK4MVX:['comp','build','cardio','shiit'], U9PPH7:['comp','build','cardio','shiit','rt','personal'] }, Object.fromEntries(PROGS.map(p => [p[2], [p[0]]])));
+const CODE_PROGS = Object.assign({ AK4MVX:['comp','build','cardio','shiit'], U9PPH7:['comp','build','cardio','shiit','rt','personal'], KQXBAC:['garage','cardio'] /* Vic: Garage Box + Cardio */ }, Object.fromEntries(PROGS.map(p => [p[2], [p[0]]])));
 const progName = k => (PROGS.concat([PERSONAL]).find(p => p[0] === k) || [k,k])[1];
 const progsForPlans = ids => [...new Set(PLANS.filter(p => (ids||[]).includes(p.id)).flatMap(p => p.progs))];
 const codesFor = ks => PROGS.filter(p => (ks||[]).includes(p[0])).map(p => p[2]);
