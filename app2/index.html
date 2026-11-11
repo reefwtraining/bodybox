@@ -1748,9 +1748,16 @@ Rest 2:00"></textarea></label>
   const pieceSecs = p => buildSegments([p]).slice(1).reduce((a, s) => a + s.secs, 0);
   const pieceDesc = p => p.type === 'fortime' ? (p.nocap ? 'counts up, no cap' : 'counts up to '+p.cap+':00') : mmss(pieceSecs(p))+' total';
   function ckParts(list){ return list.map((p, i) => Object.assign({}, p, i ? { restBefore: p.restBefore || 0 } : {})).map((p, i) => { if(!i) delete p.restBefore; return p; }); }
+  function coachTimersHtml(){
+    const T = window.__bbCoachTimers || []; if(!T.length) return '';
+    return '<div class="part" style="margin-bottom:14px"><span class="tag">Coach · your class timer'+(T.length>1?'s':'')+'</span>'+T.map(t =>
+      '<div class="logbar" style="margin-top:8px"><span><b>'+esc(t.name)+'</b><br><small style="color:var(--mute)">Your coach PIN: <b style="font-family:monospace;letter-spacing:3px;color:var(--fg)">'+esc(t.pin)+'</b> · only you can start it</small></span>'+
+      '<a class="btn solid" href="'+esc(t.url)+'" target="_blank" rel="noopener" style="padding:8px 14px;text-decoration:none">Open</a></div>').join('')+
+      '<p class="note" style="margin-top:8px">Open the timer, tap Unlock, enter your PIN once. It stays unlocked on that phone or TV.</p></div>';
+  }
   function renderClock(){
     const v = $('view'), c = CK, cur = ckPiece();
-    let h = '<div class="head"><span class="sched">Your own clock · :10 countdown</span><h1>Build a timer</h1><p>Pick a format, set it, and press start. Add more pieces to run them back to back with rest in between.</p></div><div class="ck">';
+    let h = coachTimersHtml() + '<div class="head"><span class="sched">Your own clock · :10 countdown</span><h1>Build a timer</h1><p>Pick a format, set it, and press start. Add more pieces to run them back to back with rest in between.</p></div><div class="ck">';
     if(ckSaved.length) h += '<div><span class="label">My timers · saved on this phone</span><div class="saved" style="margin-top:6px">'+ckSaved.map((t, i) => '<span><button type="button" data-ckrun="'+i+'">▶ '+esc(t.name)+'</button><button type="button" data-ckdel="'+i+'" aria-label="Delete '+esc(t.name)+'">'+(ckArmed === i ? 'Delete?' : '×')+'</button></span>').join('')+'</div></div>';
     h += '<div><span class="label">Quick start</span><div class="pchips" style="margin-top:6px">'+[['tabata','Tabata 8 × :20/:10'],['emom10','EMOM 10'],['e2mom','E2MOM × 5'],['amrap12','AMRAP 12'],['amrap20','AMRAP 20'],['ft20','For time · 20 cap']].map(q => '<button type="button" data-ckq="'+q[0]+'">'+q[1]+'</button>').join('')+'</div></div>';
     h += '<div><span class="label">Format</span><div class="pchips" role="group" aria-label="Format" style="margin-top:6px">'+Object.keys(CK_TYPES).map(k => '<button type="button" data-ckt="'+k+'" aria-pressed="'+(c.type===k)+'">'+CK_TYPES[k]+'</button>').join('')+'</div></div>';
@@ -2233,6 +2240,7 @@ Rest 2:00"></textarea></label>
         '<p class="err" id="liErr"></p><div class="row"><button class="btn solid" type="submit">Sign in</button></div>'+
         '<p>No PIN yet? Ask a coach to set up your login with your email and a 4-digit PIN.</p><div class="row"><button class="linkbtn" type="button" data-plans="1">New here? See plans & join</button></div></form>';
     }
+    pre = coachTimersHtml() + pre;
     if(isCoachKey()) pre = '<div class="row" style="margin:0 0 12px"><button class="btn solid" type="button" data-hub="1">Coach hub</button></div>' + pre;
     renderNumbers(pre, v => {
       v.querySelectorAll('[data-hub]').forEach(b => b.onclick = () => { coachAth = null; setTab('coach'); });
@@ -3674,7 +3682,9 @@ function showPick(u, ref, d){
     '<div class="gplans">'+PLANS.map(p => '<label class="gplan'+(p.best?' best':'')+'"><input type="checkbox" value="'+p.id+'"'+(cur.has(p.id)?' checked':'')+'><span><b>'+esc(p.name)+'</b>'+(p.best?' <em>Best value</em>':'')+'<small>'+esc(p.note || 'Daily programming in the app, scores, timers and the leaderboard')+'</small></span><i>'+esc(p.price)+'</i></label>').join('')+'</div>'+
     '<label for="gCode" style="margin-top:6px">Program code</label><input id="gCode" autocomplete="off" autocapitalize="characters" placeholder="e.g. AB12CD" style="text-transform:uppercase;letter-spacing:3px" value="'+esc(((d&&d.codes)||[]).join(' '))+'"><small style="color:#8F8B84;font-size:12px">Got more than one? Put a space between them. No code yet? Ask Coach Reef.</small>'+
     '<p class="gerr" id="gErr"></p><button class="gbtn" id="gGo" type="button">Unlock my programs</button>'+
+    '<p style="font-size:13px;margin-top:4px">Coach at Rebuilt Training? <button class="glink" id="gStaff" type="button" style="display:inline;padding:0">Tap here instead</button></p>'+
     '<p style="font-size:13px">Signed in as '+esc(u.email)+'</p><div class="grow"><button class="glink" id="gOut" type="button">Sign out</button></div>');
+  document.getElementById('gStaff').onclick = async () => { try{ await updateDoc(ref, { wants: ['staff'], codes: [], codeProgs: [], wantsAt: serverTimestamp(), repick: false }); }catch(e){ document.getElementById('gErr').textContent = 'Couldn\'t save. Check your internet and try again.'; return; } showWaiting(u, ref, Object.assign({}, d, { wants: ['staff'], codes: [], codeProgs: [] })); };
   const boxes = [...G.querySelectorAll('.gplan input')];
   boxes.forEach(b => b.onchange = () => { if(b.checked && b.value === 'all3') boxes.forEach(x => { if(['comp','build','cardio','coach'].includes(x.value)) x.checked = false; });
     if(b.checked && b.value === 'coach') boxes.forEach(x => { if(x.value !== 'coach') x.checked = false; });
@@ -3696,7 +3706,7 @@ function showPick(u, ref, d){
 }
 function showWaiting(u, ref, d){
   if(!d || !(d.wants && d.wants.length) || d.repick){ showPick(u, ref, d); return; }
-  const names = PLANS.filter(p => d.wants.includes(p.id)).map(p => p.name).join(' + ');
+  const names = d.wants.includes('staff') ? 'Coach access' : PLANS.filter(p => d.wants.includes(p.id)).map(p => p.name).join(' + ');
   const opens = (d.codeProgs || []).map(progName).join(', ');
   card('<h2>Almost in</h2><p>You picked <b style="color:#F4F2EE">'+esc(names)+'</b>.</p>'+
     (opens ? '<p>Your code opens: <b style="color:#F4F2EE">'+esc(opens)+'</b>.</p>' : '')+
@@ -3746,6 +3756,8 @@ function shims(u, coach){
   window.claude = { use: async n => map[n] || null };
 }
 
+/* ---- coach-only staff config: who runs which class timer (PINs live only here, never in the code) ---- */
+async function staffCfg(){ try{ const s = await getDoc(doc(fs, 'data', 'users', 'coachcfg', 'timers')); return s.exists() ? JSON.parse(s.data().json) : { staff: {} }; }catch(e){ return { staff: {} }; } }
 /* ---- coach: approve members ---- */
 async function openMembers(){
   let box = document.getElementById('bbMembers'); if(box) box.remove();
@@ -3755,14 +3767,16 @@ async function openMembers(){
   try{ const s = await getDocs(collection(fs, 'members')); s.forEach(d => rows.push(Object.assign({ id: d.id }, d.data()))); }
   catch(e){ box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p>Couldn\'t load members. If you just created your coach account, open the verification email Firebase sent you, then reopen the app.</p><button class="ghost" id="mClose">Close</button>'; box.querySelector('#mClose').onclick = () => box.remove(); return; }
   rows = rows.filter(r => !COACHES.includes((r.email||'').toLowerCase()));
+  const CFG = await staffCfg(), staffOf = r => (CFG.staff || {})[(r.email||'').toLowerCase()] || null;
+  for(const r of rows){ const st = staffOf(r); if(r.approved && st && JSON.stringify(r.coachTimers||[]) !== JSON.stringify(st.timers||[])){ try{ await updateDoc(doc(fs,'members',r.id), { coachTimers: st.timers || [] }); r.coachTimers = st.timers; }catch(e){} } }
   rows.sort((a,b) => (a.approved===b.approved ? (a.name||'').localeCompare(b.name||'') : a.approved ? 1 : -1));
   const pend = rows.filter(r => !r.approved).length;
   box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p style="color:#8F8B84;margin:0">'+pend+' waiting for approval · '+(rows.length-pend)+' approved. Tap a program to turn it on or off for that person (red = on). No codes needed.</p>'+
-    rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small>'+((r.wants&&r.wants.length)?'<small>Picked: '+esc(PLANS.filter(p => r.wants.includes(p.id)).map(p => p.name).join(' + '))+'</small>':'<small>Hasn\'t picked programs yet</small>')+((r.codeProgs&&r.codeProgs.length)?'<small>Code opens: '+esc(r.codeProgs.map(progName).join(', '))+'</small>':'')+'</div>'+
+    rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small>'+(staffOf(r)?'<small style="color:#E8B44C">Coach · gets '+esc((staffOf(r).timers||[]).map(t => t.name).join(' + '))+' on approval</small>':'')+((r.wants&&r.wants.length)?'<small>Picked: '+esc(PLANS.filter(p => r.wants.includes(p.id)).map(p => p.name).join(' + '))+'</small>':'<small>Hasn\'t picked programs yet</small>')+((r.codeProgs&&r.codeProgs.length)?'<small>Code opens: '+esc(r.codeProgs.map(progName).join(', '))+'</small>':'')+'</div>'+
       (r.approved ? '<button class="ghost" data-off="'+r.id+'">Remove access</button>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>'+(r.approved ? '<div class="mprogs">'+PROGS.concat([PERSONAL]).map(p => '<button class="'+((r.progs||[]).includes(p[0])?'':'ghost')+'" data-prog="'+r.id+'|'+p[0]+'">'+p[1]+'</button>').join('')+'</div>' : '')).join('')+
     '<div class="mrow" style="display:block"><b>Update content</b><small>Load a new content file from Claude (programming + leaderboard).</small>'+contentPicker()+'</div><div class="mrow"><button class="ghost" id="mClose">Close</button><button class="ghost" id="mOut">Sign out</button></div>';
   box.querySelector('#mClose').onclick = () => box.remove(); box.querySelector('#mOut').onclick = () => signOut(auth); wirePicker(box);
-  box.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { b.disabled = true; const r = rows.find(x => x.id === b.dataset.on) || {}; const progs = (r.progs && r.progs.length) ? r.progs : (r.codeProgs && r.codeProgs.length) ? r.codeProgs : progsForPlans(r.wants); try{ await updateDoc(doc(fs,'members',b.dataset.on), { approved: true, approvedAt: serverTimestamp(), progs }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
+  box.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { b.disabled = true; const r = rows.find(x => x.id === b.dataset.on) || {}; const st = staffOf(r); let progs = (r.progs && r.progs.length) ? r.progs : (r.codeProgs && r.codeProgs.length) ? r.codeProgs : progsForPlans(r.wants); if(st) progs = [...new Set(progs.concat(st.progs || []))]; const upd = { approved: true, approvedAt: serverTimestamp(), progs }; if(st) upd.coachTimers = st.timers || []; try{ await updateDoc(doc(fs,'members',b.dataset.on), upd); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
   box.querySelectorAll('[data-prog]').forEach(b => b.onclick = async () => { const [id, k] = b.dataset.prog.split('|'); const r = rows.find(x => x.id === id); const cur = new Set(r.progs || []); cur.has(k) ? cur.delete(k) : cur.add(k); b.disabled = true; try{ await updateDoc(doc(fs,'members',id), { progs: [...cur] }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
   box.querySelectorAll('[data-off]').forEach(b => b.onclick = async () => { b.disabled = true; try{ await updateDoc(doc(fs,'members',b.dataset.off), { approved: false }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
 }
@@ -3807,6 +3821,8 @@ async function start(u, coach){
       md.seedLog.forEach(e => { if(e && e.src && !have.has(e.src)){ a.log.push(Object.assign({}, e, { t: e.t || Date.now() })); n++; } });
       if(n) localStorage.setItem('bb-athlete', JSON.stringify(a));
     }catch(e){} }
+    window.__bbCoachTimers = Array.isArray(md.coachTimers) ? md.coachTimers : [];
+    if(coach){ const st = ((await staffCfg()).staff || {})[(u.email||'').toLowerCase()]; if(st) window.__bbCoachTimers = st.timers || []; }
     if(coach) ks = PROGS.map(p => p[0]);
     else { ks = md.progs || [];
       // Personal athletes: open their own profile + private days straight from their login (no PIN)
