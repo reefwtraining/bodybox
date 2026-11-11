@@ -124,6 +124,14 @@ nav a:hover{color:var(--gold)}
 .comp .cgrid div{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
 .comp .cgrid h3{margin:0 0 6px;font-size:22px;text-transform:uppercase}
 .comp .cgrid p{margin:0;color:var(--muted);font-size:15px}
+.comp .prac{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.comp .prac article{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.comp .prac .tag{display:inline-block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.comp .prac h3{margin:0 0 8px;font-size:24px;text-transform:uppercase}
+.comp .prac p,.comp .prac li{color:var(--muted);font-size:15px}
+.comp .prac ol{margin:8px 0;padding-left:20px}
+.comp .prac .soon{opacity:.85;border-style:dashed}
+@media (max-width:820px){.comp .prac{grid-template-columns:1fr}}
 .comp .sched{list-style:none;margin:6px 0 0;padding:0;font-size:15px;color:var(--muted)}
 .comp .sched li{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding:6px 0}
 .comp .sched li b{color:var(--chalk);font-weight:600}
@@ -702,7 +710,29 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
     <div class="cgrid">
       <div><h3>Teams</h3><p>1 RX athlete + 1 Scaled or Scaled+ partner. Any mix of men and women. Scaled+ is for newer athletes, or anyone who scales weights and movements. You declare it at check-in.</p></div>
       <div><h3>The day</h3><ul class="sched"><li><span>Check-in</span><b>8:30 AM</b></li><li><span>First heat</span><b>9:05 AM</b></li><li><span>Format</span><b>3 workouts</b></li><li><span>Awards</span><b>About 12:40 PM</b></li></ul></div>
-      <div><h3>Get ready</h3><p>Class workouts in the weeks before the comp are your practice. Practice workouts are also in the BODYBOX app under Named. Spots are limited, first come, first served.</p></div>
+      <div><h3>Get ready</h3><p>Class workouts in the weeks before the comp are your practice, plus two team practice workouts below to learn to work with your partner. Spots are limited, first come, first served.</p></div>
+    </div>
+    <div>
+      <span class="label">Team practice workouts · not the comp workouts</span>
+      <div class="prac" style="margin-top:10px">
+        <article>
+          <span class="tag">Practice 1 · Out now</span>
+          <h3>In Sync</h3>
+          <p><b style="color:var(--chalk)">12-min EMOM, 3 rounds of 4 stations.</b> Both partners work every minute.</p>
+          <ol>
+            <li>Jump rope: RX 30 double-unders · Scaled 40 single-unders · Scaled+ 40 single-unders</li>
+            <li>DB front-rack reverse lunges, follow the leader, 10 each: RX 2×35/25 · Scaled 2×20/15 · Scaled+ 2×15/10 lb</li>
+            <li>Barbell RDL, 8 each: RX 135/95 · Scaled 95/65 · Scaled+ 75/55 lb</li>
+            <li>Max synchro burpees</li>
+          </ol>
+          <p><b style="color:var(--chalk)">Score:</b> total synchro burpees.</p>
+        </article>
+        <article class="soon" id="prac2">
+          <span class="tag">Practice 2 · Drops Monday, Nov 23</span>
+          <h3>Ladder Relay</h3>
+          <p>A partner ladder where you tag after every rung. The full workout goes up here on Monday, Nov 23.</p>
+        </article>
+      </div>
     </div>
     <div class="cta" style="margin-top:0"><a class="btn" href="https://comp.streamfit.com/competition/view/569" target="_blank" rel="noopener">Register on StreamFit ↗</a><a class="btn ghost" href="#class">Not a member? Book a class</a></div>
   </div>
