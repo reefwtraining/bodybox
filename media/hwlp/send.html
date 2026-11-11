@@ -1,0 +1,6 @@
+<!doctype html><meta charset="utf-8"><title>send</title><body>sending…<script>
+(async()=>{const names=['1.mp4','2.jpg','3.jpg','4.jpg','5.jpg','6.jpg','7.jpg'];const out=[];
+for(const n of names){const r=await fetch(n);const b=await r.blob();out.push({name:'hwlp-'+n,type:b.type||(n.endsWith('mp4')?'video/mp4':'image/jpeg'),buf:await b.arrayBuffer()});}
+const t=window.opener; if(!t){document.body.textContent='no opener';return;}
+t.postMessage({bbFiles:out},'*'); document.body.textContent='sent '+out.length; setTimeout(()=>window.close(),1500);})();
+</script>
