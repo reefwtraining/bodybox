@@ -3573,8 +3573,8 @@ const PLANS = [
   { id:'all3',   name:'All 3 Programs',    price:'$69/mo', progs:['comp','build','cardio'], best:true },
   { id:'coach',  name:'Personal Coaching', price:'$129/mo', progs:['comp','build','cardio'], note:'All 3 programs plus programming built for you by Coach Reef' }
 ];
-// Stripe payment links (fill in when live). Empty = Coach Reef emails a payment link.
-const PAYLINKS = { comp:'', build:'', cardio:'', all3:'', coach:'' };
+const CODE_PROGS = Object.assign({ AK4MVX:['comp','build','cardio','shiit'] }, Object.fromEntries(PROGS.map(p => [p[2], [p[0]]])));
+const progName = k => (PROGS.find(p => p[0] === k) || [k,k])[1];
 const progsForPlans = ids => [...new Set(PLANS.filter(p => (ids||[]).includes(p.id)).flatMap(p => p.progs))];
 const codesFor = ks => PROGS.filter(p => (ks||[]).includes(p[0])).map(p => p[2]);
 const cfg = {
@@ -3645,9 +3645,10 @@ async function ensureMember(u, nm){
 let waitUnsub = null, started = false;
 function showPick(u, ref, d){
   const cur = new Set((d && d.wants) || []);
-  card('<h2>Pick your programs</h2><p>Every program starts with a 7-day free trial. You won\'t be charged until day 8, and you can cancel any time before.</p>'+
+  card('<h2>Pick your programs</h2><p>Choose what you want to train, then enter the program code Coach Reef gave you.</p>'+
     '<div class="gplans">'+PLANS.map(p => '<label class="gplan'+(p.best?' best':'')+'"><input type="checkbox" value="'+p.id+'"'+(cur.has(p.id)?' checked':'')+'><span><b>'+esc(p.name)+'</b>'+(p.best?' <em>Best value</em>':'')+'<small>'+esc(p.note || 'Daily programming in the app, scores, timers and the leaderboard')+'</small></span><i>'+esc(p.price)+'</i></label>').join('')+'</div>'+
-    '<p class="gerr" id="gErr"></p><button class="gbtn" id="gGo" type="button">Start my free trial</button>'+
+    '<label for="gCode" style="margin-top:6px">Program code</label><input id="gCode" autocomplete="off" autocapitalize="characters" placeholder="e.g. AB12CD" style="text-transform:uppercase;letter-spacing:3px" value="'+esc(((d&&d.codes)||[]).join(' '))+'"><small style="color:#8F8B84;font-size:12px">Got more than one? Put a space between them. No code yet? Ask Coach Reef.</small>'+
+    '<p class="gerr" id="gErr"></p><button class="gbtn" id="gGo" type="button">Unlock my programs</button>'+
     '<p style="font-size:13px">Signed in as '+esc(u.email)+'</p><div class="grow"><button class="glink" id="gOut" type="button">Sign out</button></div>');
   const boxes = [...G.querySelectorAll('.gplan input')];
   boxes.forEach(b => b.onchange = () => { if(b.checked && b.value === 'all3') boxes.forEach(x => { if(['comp','build','cardio','coach'].includes(x.value)) x.checked = false; });
@@ -3656,20 +3657,25 @@ function showPick(u, ref, d){
   document.getElementById('gOut').onclick = () => signOut(auth);
   document.getElementById('gGo').onclick = async () => {
     const wants = boxes.filter(b => b.checked).map(b => b.value);
-    if(!wants.length){ document.getElementById('gErr').textContent = 'Pick at least one program.'; return; }
+    const err = document.getElementById('gErr');
+    if(!wants.length){ err.textContent = 'Pick at least one program.'; return; }
+    const codes = [...new Set(document.getElementById('gCode').value.toUpperCase().split(/[\s,]+/).filter(Boolean))];
+    if(!codes.length){ err.textContent = 'Enter your program code.'; return; }
+    const bad = codes.filter(c => !CODE_PROGS[c]);
+    if(bad.length){ err.textContent = (bad.length > 1 ? 'These codes don\'t work: ' : 'That code doesn\'t work: ') + bad.join(', ') + '. Check it and try again.'; return; }
+    const codeProgs = [...new Set(codes.flatMap(c => CODE_PROGS[c]))];
     const btn = document.getElementById('gGo'); btn.disabled = true;
-    try{ await updateDoc(ref, { wants, wantsAt: serverTimestamp() }); }catch(e){ document.getElementById('gErr').textContent = 'Couldn\'t save. Check your internet and try again.'; btn.disabled = false; return; }
-    const link = wants.length === 1 ? PAYLINKS[wants[0]] : '';
-    if(link) location.href = link + (link.includes('?') ? '&' : '?') + 'prefilled_email=' + encodeURIComponent(u.email) + '&client_reference_id=' + encodeURIComponent(u.uid);
+    try{ await updateDoc(ref, { wants, codes, codeProgs, wantsAt: serverTimestamp(), repick: false }); }catch(e){ err.textContent = 'Couldn\'t save. Check your internet and try again.'; btn.disabled = false; return; }
+    showWaiting(u, ref, Object.assign({}, d, { wants, codes, codeProgs }));
   };
 }
 function showWaiting(u, ref, d){
   if(!d || !(d.wants && d.wants.length) || d.repick){ showPick(u, ref, d); return; }
   const names = PLANS.filter(p => d.wants.includes(p.id)).map(p => p.name).join(' + ');
-  const anyLink = d.wants.length === 1 && PAYLINKS[d.wants[0]];
+  const opens = (d.codeProgs || []).map(progName).join(', ');
   card('<h2>Almost in</h2><p>You picked <b style="color:#F4F2EE">'+esc(names)+'</b>.</p>'+
-    (anyLink ? '<p>Finish your free trial sign-up to open your programs.</p><a class="gbtn" style="text-align:center;text-decoration:none" href="'+esc(PAYLINKS[d.wants[0]])+'?prefilled_email='+encodeURIComponent(u.email)+'&client_reference_id='+encodeURIComponent(u.uid)+'">Start my free trial</a>'
-             : '<p>Coach Reef will turn on your programs. This page opens by itself once you\'re in.</p>')+
+    (opens ? '<p>Your code opens: <b style="color:#F4F2EE">'+esc(opens)+'</b>.</p>' : '')+
+    '<p>Coach Reef just needs to approve your account. This page opens by itself once you\'re in.</p>'+
     '<p style="font-size:13px">Signed in as '+esc(u.email)+'</p><div class="grow"><button class="glink" id="gRe" type="button">Change programs</button><button class="glink" id="gOut" type="button">Sign out</button></div>');
   document.getElementById('gOut').onclick = () => signOut(auth);
   document.getElementById('gRe').onclick = () => showPick(u, ref, d);
@@ -3727,11 +3733,11 @@ async function openMembers(){
   rows.sort((a,b) => (a.approved===b.approved ? (a.name||'').localeCompare(b.name||'') : a.approved ? 1 : -1));
   const pend = rows.filter(r => !r.approved).length;
   box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p style="color:#8F8B84;margin:0">'+pend+' waiting for approval · '+(rows.length-pend)+' approved. Tap a program to turn it on or off for that person (red = on). No codes needed.</p>'+
-    rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small>'+((r.wants&&r.wants.length)?'<small>Picked: '+esc(PLANS.filter(p => r.wants.includes(p.id)).map(p => p.name).join(' + '))+'</small>':'<small>Hasn\'t picked programs yet</small>')+(r.billing?'<small>Billing: '+esc(r.billing)+'</small>':'')+'</div>'+
+    rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small>'+((r.wants&&r.wants.length)?'<small>Picked: '+esc(PLANS.filter(p => r.wants.includes(p.id)).map(p => p.name).join(' + '))+'</small>':'<small>Hasn\'t picked programs yet</small>')+((r.codeProgs&&r.codeProgs.length)?'<small>Code opens: '+esc(r.codeProgs.map(progName).join(', '))+'</small>':'')+'</div>'+
       (r.approved ? '<button class="ghost" data-off="'+r.id+'">Remove access</button>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>'+(r.approved ? '<div class="mprogs">'+PROGS.map(p => '<button class="'+((r.progs||[]).includes(p[0])?'':'ghost')+'" data-prog="'+r.id+'|'+p[0]+'">'+p[1]+'</button>').join('')+'</div>' : '')).join('')+
     '<div class="mrow" style="display:block"><b>Update content</b><small>Load a new content file from Claude (programming + leaderboard).</small>'+contentPicker()+'</div><div class="mrow"><button class="ghost" id="mClose">Close</button><button class="ghost" id="mOut">Sign out</button></div>';
   box.querySelector('#mClose').onclick = () => box.remove(); box.querySelector('#mOut').onclick = () => signOut(auth); wirePicker(box);
-  box.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { b.disabled = true; const r = rows.find(x => x.id === b.dataset.on) || {}; const progs = (r.progs && r.progs.length) ? r.progs : progsForPlans(r.wants); try{ await updateDoc(doc(fs,'members',b.dataset.on), { approved: true, approvedAt: serverTimestamp(), progs }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
+  box.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { b.disabled = true; const r = rows.find(x => x.id === b.dataset.on) || {}; const progs = (r.progs && r.progs.length) ? r.progs : (r.codeProgs && r.codeProgs.length) ? r.codeProgs : progsForPlans(r.wants); try{ await updateDoc(doc(fs,'members',b.dataset.on), { approved: true, approvedAt: serverTimestamp(), progs }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
   box.querySelectorAll('[data-prog]').forEach(b => b.onclick = async () => { const [id, k] = b.dataset.prog.split('|'); const r = rows.find(x => x.id === id); const cur = new Set(r.progs || []); cur.has(k) ? cur.delete(k) : cur.add(k); b.disabled = true; try{ await updateDoc(doc(fs,'members',id), { progs: [...cur] }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
   box.querySelectorAll('[data-off]').forEach(b => b.onclick = async () => { b.disabled = true; try{ await updateDoc(doc(fs,'members',b.dataset.off), { approved: false }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
 }
