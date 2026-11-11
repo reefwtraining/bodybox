@@ -4003,9 +4003,9 @@ function initChat(u, coach){
   const dot = () => { const n = totalUnread(), i = btn.querySelector('i'); i.style.display = n ? 'block' : 'none'; i.textContent = n > 9 ? '9+' : String(n); };
   onSnapshot(query(collection(fs,'chat'), orderBy('at','desc'), limit(150)), s => { T.team = s.docs.map(d => Object.assign({ id:d.id, ref:d.ref }, d.data())).reverse(); dot(); if(open) draw(); }, () => {});
   if(coach){
-    onSnapshot(query(collectionGroup(fs,'msgs'), orderBy('at','desc'), limit(400)), s => {
+    onSnapshot(collectionGroup(fs,'msgs'), s => {
       const dm = {}; s.docs.forEach(d => { const k = d.ref.parent.parent.id; (dm[k] = dm[k] || []).push(Object.assign({ id:d.id, ref:d.ref }, d.data())); });
-      Object.values(dm).forEach(a => a.reverse()); T.dm = dm; dot(); if(open) draw(); }, () => {});
+      Object.values(dm).forEach(a => a.sort((x,y) => t2(x) - t2(y))); T.dm = dm; dot(); if(open) draw(); }, () => {});
     getDocs(collection(fs,'members')).then(s => { roster = s.docs.map(d => Object.assign({ id:d.id }, d.data())).filter(m => m.approved && m.id !== me); if(open) draw(); }).catch(() => {});
   } else {
     onSnapshot(query(collection(fs,'dms',me,'msgs'), orderBy('at','desc'), limit(150)), s => { T.dm[me] = s.docs.map(d => Object.assign({ id:d.id, ref:d.ref }, d.data())).reverse(); dot(); if(open) draw(); }, () => {});
