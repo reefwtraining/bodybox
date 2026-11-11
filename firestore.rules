@@ -61,6 +61,29 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
+    // Team chat. Everyone approved reads and posts; you can delete your own, coaches any.
+    match /chat/{id} {
+      allow read: if isCoach() || approved();
+      allow create: if (isCoach() || approved())
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'badge', 'text', 'at'])
+        && request.resource.data.text is string && request.resource.data.text.size() <= 600;
+      allow delete: if isCoach() || (signedIn() && resource.data.uid == request.auth.uid);
+    }
+
+    // One-on-one with Coach Reef. Only that athlete and the coaches.
+    match /dms/{uid}/msgs/{id} {
+      allow read: if isCoach() || (isMe(uid) && approved());
+      allow create: if (isCoach() || (isMe(uid) && approved()))
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'badge', 'text', 'at'])
+        && request.resource.data.text is string && request.resource.data.text.size() <= 600;
+      allow delete: if isCoach() || (signedIn() && resource.data.uid == request.auth.uid);
+    }
+    match /{path=**}/msgs/{id} {
+      allow read: if isCoach();
+    }
+
     // Each person's own logs, scores, profile. Coaches (Reef + Claude's coach login) can read and enter data for anyone.
     match /data/users/{uid}/{docId} {
       allow read, write: if isMe(uid) && (approved() || isCoach());

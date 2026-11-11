@@ -3736,6 +3736,34 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 @keyframes bbspin{to{transform:rotate(360deg)}}
 .cbadge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;border-radius:999px;font:800 11px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;background:#C8102E;color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.12) inset}.cbadge.head{background:linear-gradient(135deg,#F2C14E,#C9931F);color:#1B1B1B}.cbadge svg{flex:none}.top .hdrbadge{margin:2px 0 8px}
 #bbCoachBtn{position:fixed;right:12px;bottom:84px;z-index:9000;background:#C8102E;color:#fff;border:0;border-radius:999px;padding:9px 14px;font:600 13px var(--body);box-shadow:0 4px 16px rgba(0,0,0,.5);cursor:pointer}
+#bbChatBtn{position:relative;margin-left:auto;margin-right:10px;background:none;border:1px solid #2A2A2A;border-radius:999px;color:#F4F2EE;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;flex:none}
+#bbChatBtn svg{width:20px;height:20px}
+#bbChatBtn i{position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:#C8102E;color:#fff;font:700 10px/16px var(--body);font-style:normal;padding:0 4px;display:none}
+#bbChat{position:fixed;inset:0;z-index:19500;background:#111;display:flex;flex-direction:column;color:#F4F2EE;font-family:var(--body)}
+#bbChat[hidden]{display:none}
+#bbChat .ch-top{display:flex;align-items:center;gap:10px;padding:max(12px,env(safe-area-inset-top)) 14px 10px;border-bottom:1px solid #2A2A2A}
+#bbChat .ch-top h3{font-family:var(--display);font-weight:400;font-size:24px;margin:0;flex:1;text-transform:uppercase}
+#bbChat .ch-x{background:none;border:1px solid #2A2A2A;color:#F4F2EE;border-radius:999px;padding:7px 14px;font:600 14px var(--body);cursor:pointer}
+#bbChat .ch-tabs{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid #2A2A2A;overflow-x:auto}
+#bbChat .ch-tabs button{flex:none;background:#1B1B1B;border:1px solid #2A2A2A;color:#F4F2EE;border-radius:999px;padding:8px 14px;font:600 14px var(--body);cursor:pointer;position:relative}
+#bbChat .ch-tabs button[aria-pressed=true]{background:#F4F2EE;color:#111}
+#bbChat .ch-tabs button b{margin-left:6px;background:#C8102E;color:#fff;border-radius:8px;padding:0 6px;font-size:11px}
+#bbChat .ch-list{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+#bbChat .ch-msg{max-width:82%;align-self:flex-start;background:#1B1B1B;border:1px solid #2A2A2A;border-radius:14px 14px 14px 4px;padding:8px 12px}
+#bbChat .ch-msg.me{align-self:flex-end;background:#C8102E;border-color:#C8102E;border-radius:14px 14px 4px 14px}
+#bbChat .ch-who{font-size:12px;color:#8F8B84;margin-bottom:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#bbChat .ch-msg.me .ch-who{color:#ffd9dd}
+#bbChat .ch-who .cbadge{padding:2px 7px 2px 5px;font-size:9px}
+#bbChat .ch-text{white-space:pre-wrap;word-wrap:break-word;font-size:16px;line-height:1.4}
+#bbChat .ch-del{background:none;border:0;color:inherit;opacity:.6;font-size:11px;cursor:pointer;padding:0;margin-left:auto}
+#bbChat .ch-empty{color:#8F8B84;text-align:center;margin:auto;padding:20px;max-width:34ch}
+#bbChat form{display:flex;gap:8px;padding:10px 14px max(12px,env(safe-area-inset-bottom));border-top:1px solid #2A2A2A}
+#bbChat textarea{flex:1;resize:none;background:#1B1B1B;border:1px solid #2A2A2A;border-radius:20px;color:#F4F2EE;font:16px var(--body);padding:10px 14px;max-height:120px}
+#bbChat form button{background:#C8102E;border:0;border-radius:999px;color:#fff;font:700 15px var(--body);padding:0 18px;cursor:pointer}
+#bbChat .ch-people{display:grid;gap:8px}
+#bbChat .ch-people button{display:flex;justify-content:space-between;align-items:center;background:#1B1B1B;border:1px solid #2A2A2A;border-radius:12px;color:#F4F2EE;padding:12px 14px;font:600 15px var(--body);cursor:pointer;text-align:left}
+#bbChat .ch-people small{color:#8F8B84;font-weight:400;display:block;font-size:13px}
+#bbChat .ch-people b{background:#C8102E;color:#fff;border-radius:8px;padding:1px 7px;font-size:12px}
 #bbMembers{position:fixed;inset:0;z-index:19000;background:rgba(0,0,0,.85);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
 #bbMembers .mcard{background:#1B1B1B;border:1px solid #2A2A2A;border-radius:16px;max-width:520px;width:100%;padding:18px;display:grid;gap:12px}
 #bbMembers h3{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
@@ -3759,7 +3787,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, updateProfile, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { initializeFirestore, persistentLocalCache, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, serverTimestamp, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, serverTimestamp, query, where, deleteDoc, orderBy, limit, addDoc, collectionGroup } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const COACHES = ['reefwtraining@gmail.com'];
 const PROGS = [['comp','Athlete Comp','WGC534'],['build','Building','RMXGZJ'],['cardio','Cardio','WQH7V7'],['shiit','S.H.I.I.T','56EG63'],['rt','RT Movement','VXW86K'],['garage','Garage Box','ZUBVXM']];
@@ -3956,6 +3984,75 @@ function initSocial(u, coach){
     else await setDoc(ref, { k, uid: u.uid, name, at: Date.now() });
   };
 }
+/* ---- chat: team chat + one-on-one with Coach Reef ---- */
+function initChat(u, coach){
+  const S = window.__bbSoc || {}; const me = u.uid, myName = (S.name || 'Me'), myBadge = window.__bbBadge || '';
+  const bar = document.querySelector('.top .bar'); if(!bar) return;
+  const btn = document.createElement('button'); btn.id = 'bbChatBtn'; btn.type = 'button'; btn.setAttribute('aria-label','Chat');
+  btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg><i></i>';
+  const lbl = document.getElementById('hdrLbl'); bar.insertBefore(btn, lbl || null);
+  const box = document.createElement('div'); box.id = 'bbChat'; box.hidden = true; document.body.appendChild(box);
+  const RK = 'bb-chat-read-' + me; let read = {}; try{ read = JSON.parse(localStorage.getItem(RK) || '{}') || {}; }catch(e){}
+  const saveRead = () => { try{ localStorage.setItem(RK, JSON.stringify(read)); }catch(e){} };
+  const T = { team: [], dm: {} }; let view = 'team', open = false, roster = [];
+  const t2 = m => typeof m.at === 'number' ? m.at : 0;
+  const unreadOf = (k, arr) => (arr||[]).filter(m => m.uid !== me && t2(m) > (read[k]||0)).length;
+  const totalUnread = () => unreadOf('team', T.team) + (coach ? Object.keys(T.dm).reduce((n,k) => n + unreadOf('dm:'+k, T.dm[k]), 0) : unreadOf('dm:'+me, T.dm[me]));
+  const badgeH = b => b && window.__bbBadgeHtml ? window.__bbBadgeHtml(b).replace('<span></span>','<span>'+esc(b)+'</span>') : '';
+  const when = ms => { const d = new Date(ms), n = new Date(); const tm = d.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }); return d.toDateString() === n.toDateString() ? tm : d.toLocaleDateString([], { month:'short', day:'numeric' }) + ' ' + tm; };
+  const dot = () => { const n = totalUnread(), i = btn.querySelector('i'); i.style.display = n ? 'block' : 'none'; i.textContent = n > 9 ? '9+' : String(n); };
+  onSnapshot(query(collection(fs,'chat'), orderBy('at','desc'), limit(150)), s => { T.team = s.docs.map(d => Object.assign({ id:d.id, ref:d.ref }, d.data())).reverse(); dot(); if(open) draw(); }, () => {});
+  if(coach){
+    onSnapshot(query(collectionGroup(fs,'msgs'), orderBy('at','desc'), limit(400)), s => {
+      const dm = {}; s.docs.forEach(d => { const k = d.ref.parent.parent.id; (dm[k] = dm[k] || []).push(Object.assign({ id:d.id, ref:d.ref }, d.data())); });
+      Object.values(dm).forEach(a => a.reverse()); T.dm = dm; dot(); if(open) draw(); }, () => {});
+    getDocs(collection(fs,'members')).then(s => { roster = s.docs.map(d => Object.assign({ id:d.id }, d.data())).filter(m => m.approved && m.id !== me); if(open) draw(); }).catch(() => {});
+  } else {
+    onSnapshot(query(collection(fs,'dms',me,'msgs'), orderBy('at','desc'), limit(150)), s => { T.dm[me] = s.docs.map(d => Object.assign({ id:d.id, ref:d.ref }, d.data())).reverse(); dot(); if(open) draw(); }, () => {});
+  }
+  function msgs(list, k){
+    if(!list || !list.length) return '<div class="ch-empty">'+(k === 'team' ? 'Say hi to the team. Everyone on BODYBOX sees this chat.' : coach ? 'No messages yet.' : 'Message Coach Reef here. Only you and your coach see this.')+'</div>';
+    return list.map(m => '<div class="ch-msg'+(m.uid === me ? ' me' : '')+'"><div class="ch-who"><span>'+esc(m.uid === me ? 'You' : (m.name||''))+'</span>'+badgeH(m.badge)+'<span>· '+(m.at ? when(m.at) : '')+'</span>'+((m.uid === me || coach) ? '<button class="ch-del" data-del="'+esc(m.id)+'" type="button">Delete</button>' : '')+'</div><div class="ch-text">'+esc(m.text||'')+'</div></div>').join('');
+  }
+  function draw(){
+    let tabs = '<button type="button" data-v="team" aria-pressed="'+(view==='team')+'">Team'+(unreadOf('team',T.team)?'<b>'+unreadOf('team',T.team)+'</b>':'')+'</button>';
+    let body = '', canSend = true, title = 'Chat';
+    if(coach){
+      tabs += '<button type="button" data-v="people" aria-pressed="'+(view!=='team')+'">Athletes'+((totalUnread()-unreadOf('team',T.team))?'<b>'+(totalUnread()-unreadOf('team',T.team))+'</b>':'')+'</button>';
+      if(view === 'team') body = msgs(T.team, 'team');
+      else if(view === 'people'){
+        canSend = false;
+        const ids = [...new Set(roster.map(r => r.id).concat(Object.keys(T.dm)))];
+        const nm = id => ((roster.find(r => r.id === id)||{}).name) || ((T.dm[id]||[]).find(m => m.uid === id)||{}).name || 'Athlete';
+        ids.sort((a,b) => (t2((T.dm[b]||[]).slice(-1)[0]||{}) - t2((T.dm[a]||[]).slice(-1)[0]||{})));
+        body = ids.length ? '<div class="ch-people">'+ids.map(id => { const l = (T.dm[id]||[]).slice(-1)[0], n = unreadOf('dm:'+id, T.dm[id]);
+          return '<button type="button" data-dm="'+esc(id)+'"><span>'+esc(nm(id))+'<small>'+(l ? esc((l.uid===me?'You: ':'')+String(l.text||'').slice(0,60)) : 'Start a conversation')+'</small></span>'+(n?'<b>'+n+'</b>':'')+'</button>'; }).join('')+'</div>' : '<div class="ch-empty">Approved athletes show up here.</div>';
+      } else { const id = view.slice(3); title = ((roster.find(r => r.id === id)||{}).name) || 'Athlete'; body = msgs(T.dm[id], 'dm'); }
+    } else {
+      tabs += '<button type="button" data-v="dm:'+me+'" aria-pressed="'+(view!=='team')+'">Coach Reef'+(unreadOf('dm:'+me,T.dm[me])?'<b>'+unreadOf('dm:'+me,T.dm[me])+'</b>':'')+'</button>';
+      body = view === 'team' ? msgs(T.team,'team') : msgs(T.dm[me],'dm');
+    }
+    const draft = (box.querySelector('textarea')||{}).value || '';
+    box.innerHTML = '<div class="ch-top">'+(coach && view.startsWith('dm:') ? '<button class="ch-x" type="button" data-v="people">← Back</button>' : '')+'<h3>'+esc(title)+'</h3><button class="ch-x" type="button" id="chClose">Close</button></div>'+
+      '<div class="ch-tabs">'+tabs+'</div><div class="ch-list" id="chList">'+body+'</div>'+
+      (canSend ? '<form id="chForm"><textarea rows="1" maxlength="600" placeholder="Message" aria-label="Message"></textarea><button type="submit">Send</button></form>' : '');
+    const ta = box.querySelector('textarea'); if(ta){ ta.value = draft; ta.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); box.querySelector('#chForm').requestSubmit(); } }); }
+    const L = box.querySelector('#chList'); L.scrollTop = L.scrollHeight;
+    const key = view === 'team' ? 'team' : view.startsWith('dm:') ? view : null;
+    if(key){ const arr = key === 'team' ? T.team : T.dm[key.slice(3)]; const last = (arr||[]).reduce((m,x) => Math.max(m, t2(x)), 0); if(last > (read[key]||0)){ read[key] = last; saveRead(); dot(); } }
+    box.querySelector('#chClose').onclick = () => { open = false; box.hidden = true; };
+    box.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { view = b.dataset.v; draw(); });
+    box.querySelectorAll('[data-dm]').forEach(b => b.onclick = () => { view = 'dm:' + b.dataset.dm; draw(); });
+    box.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { const all = T.team.concat(...Object.values(T.dm)); const m = all.find(x => x.id === b.dataset.del); if(m && confirm('Delete this message?')){ try{ await deleteDoc(m.ref); }catch(e){} } });
+    const f = box.querySelector('#chForm');
+    if(f) f.onsubmit = async e => { e.preventDefault(); const t = ta.value.trim().slice(0,600); if(!t) return; const b = f.querySelector('button'); b.disabled = true;
+      const msg = { uid: me, name: myName, badge: myBadge, text: t, at: Date.now() };
+      try{ if(view === 'team') await addDoc(collection(fs,'chat'), msg); else await addDoc(collection(fs,'dms', view.slice(3), 'msgs'), msg); ta.value = ''; }catch(err){ alert('Could not send. Check your internet and try again.'); }
+      b.disabled = false; };
+  }
+  btn.onclick = () => { open = true; box.hidden = false; draw(); };
+  dot();
+}
 /* ---- coach-only staff config: who runs which class timer (PINs live only here, never in the code) ---- */
 async function staffCfg(){ try{ const s = await getDoc(doc(fs, 'data', 'users', 'coachcfg', 'timers')); return s.exists() ? JSON.parse(s.data().json) : { staff: {} }; }catch(e){ return { staff: {} }; } }
 /* ---- coach: videos athletes linked to their lifts and scores ---- */
@@ -4077,6 +4174,7 @@ async function start(u, coach){
   if(coach){ const b = document.createElement('button'); b.id = 'bbCoachBtn'; b.type = 'button'; b.textContent = 'Members'; b.onclick = openMembers; document.body.appendChild(b); }
   window.__bbSignOut = () => signOut(auth);
   try{ initSocial(u, coach); }catch(e){}
+  try{ initChat(u, coach); }catch(e){}
 }
 </script>
 
