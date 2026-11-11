@@ -26,6 +26,7 @@ button{font:inherit;color:inherit}
 
 /* top */
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.chlist{display:grid;gap:10px;margin:0 0 18px}.chcard{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px;background:var(--panel)}.chcard.hot{border-color:var(--gold)}.chcard.done{opacity:.85}.chhead{font-size:13px;color:var(--muted)}.chhead b{color:var(--chalk)}.chwhat{font-family:var(--display);font-size:22px;text-transform:uppercase;line-height:1.05}.chrule{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}.chmsg{font-style:italic;font-size:14px}.chvs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}.chv{font-family:var(--display);color:var(--muted)}.chside{display:grid;gap:2px;text-align:center;border:1px solid var(--line);border-radius:10px;padding:8px}.chside small{color:var(--muted);font-size:12px}.chside b{font-family:var(--mono);font-size:18px}.chside.win{border-color:#F2C14E}.chstar{color:#F2C14E;font-size:12px;font-weight:800}.socrow{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-left:34px}.socrow small{color:var(--muted);font-size:12px}.res-ed .socrow button.gj.on{background:#C8102E;border-color:#C8102E;color:#fff}.res-ed .socrow button.chb{border-style:dashed}
 .phchart{display:grid;gap:12px;margin:4px 0 18px}.phrow{display:grid;gap:6px}.phtop{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:14px}.phtop span{font-family:var(--mono);font-size:13px;color:var(--muted)}.phtop em{font-style:normal;font-weight:700;margin-left:6px}.phtop em.up{color:#6FBF73}.phtop em.down{color:#ff8a7a}.phbar{position:relative;display:block;height:10px;border-radius:6px;background:var(--panel);border:1px solid var(--line);overflow:hidden}.phmid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--muted)}.phfill{position:absolute;top:0;bottom:0}.phfill.up{background:#6FBF73}.phfill.down{background:#E5534B}.phnew{font-size:12px;color:var(--muted)}
 .vidhint{display:block;color:var(--muted,#8F8B84);font-size:12px;line-height:1.35;margin-top:4px}.vidlink{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--gold);text-decoration:none;font-size:13px}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
@@ -2043,7 +2044,7 @@ Rest 2:00"></textarea></label>
     h += '<div class="divs" role="group" aria-label="Division">'+LB.divs.map(d => '<button class="prog" type="button" data-lbdiv="'+esc(d)+'" aria-pressed="'+(d===lbDiv)+'">'+esc(d)+'</button>').join('')+'</div>' + sexPills();
     if(!pl.length) h += '<div class="empty"><b>No '+esc(lbDiv)+' scores</b>'+(canEditLB?'Add them below.':'Check back after tonight\'s update.')+'</div>';
     else h += '<ul class="res-ed">'+pl.map(x => '<li><span class="pl">'+x.place+'</span><span>'+esc(athName(x.r.a))+'</span><span class="sc">'+esc(lbScore(ev, x.r))+(x.r.pending?' <span class="pending">· pending</span>':'')+'</span>'+
-         (canEditLB ? '<button type="button" data-rdel="'+x.r.id+'" class="'+(lbArmed===x.r.id?'sure':'')+'">'+(lbArmed===x.r.id?'Delete?':'Remove')+'</button>' : '<span></span>')+'</li>').join('')+'</ul>';
+         (canEditLB ? '<button type="button" data-rdel="'+x.r.id+'" class="'+(lbArmed===x.r.id?'sure':'')+'">'+(lbArmed===x.r.id?'Delete?':'Remove')+'</button>' : '<span></span>')+cheerHtml('ev:'+ev.id+':'+x.r.a, ((SOC()&&SOC().people||[]).find(p => p.a && p.a === x.r.a)||{}).uid)+'</li>').join('')+'</ul>';
     if(canEditLB){
       const names = LB.athletes.slice().sort((a,b) => a.name.localeCompare(b.name));
       h += '<div class="coach"><span class="label">Coach tools · '+esc(lbDiv)+'</span><h3>Add a score</h3>'+
@@ -2251,7 +2252,7 @@ Rest 2:00"></textarea></label>
         '<p class="err" id="liErr"></p><div class="row"><button class="btn solid" type="submit">Sign in</button></div>'+
         '<p>No PIN yet? Ask a coach to set up your login with your email and a 4-digit PIN.</p><div class="row"><button class="linkbtn" type="button" data-plans="1">New here? See plans & join</button></div></form>';
     }
-    pre = coachTimersHtml() + pre;
+    pre = coachTimersHtml() + challengesHtml() + pre;
     if(isCoachKey()) pre = '<div class="row" style="margin:0 0 12px"><button class="btn solid" type="button" data-hub="1">Coach hub</button></div>' + pre;
     renderNumbers(pre, v => {
       v.querySelectorAll('[data-hub]').forEach(b => b.onclick = () => { coachAth = null; setTab('coach'); });
@@ -2607,6 +2608,107 @@ Rest 2:00"></textarea></label>
     Object.entries(A.indr||{}).forEach(([id,x]) => out.push({ kind:'ind', id, date:x.date, t:x.t||0, k:'Just for you', w:x.title||'Workout', s:x.s||'', note:x.note||'', vid:x.vid||'' }));
     return out.sort((a,b) => a.date < b.date ? 1 : a.date > b.date ? -1 : b.t - a.t);
   }
+  /* ---------- social: head-to-head challenges + good job ---------- */
+  const SOC = () => window.__bbSoc || null;
+  window.__bbRerender = () => { try{ if(!document.getElementById('chSheet') && !document.querySelector('.sheet:not([hidden]) input:focus, .sheet:not([hidden]) textarea:focus')) render(); }catch(e){} };
+  const CH_RULE = { time:'Fastest time wins', more:'Most reps wins', load:'Heaviest wins', text:'Compare scores' };
+  const CH_DAYS = 7;
+  function chState(c){ if(c.status === 'open' || c.status === 'accepted'){ if(Date.now() > (c.due || 0)) return 'expired'; } return c.status; }
+  function chScoreTxt(c, s){ if(!s) return ''; const k = c.what.score; return k === 'time' ? mmss(s.v) : k === 'load' ? fmtW(s.v)+' '+(s.u||'lb') : k === 'more' ? fmtW(s.v)+' reps' : (s.txt||''); }
+  function chWinner(c){
+    const a = (c.scores||{})[c.from.uid], b = (c.scores||{})[c.to.uid]; if(!a || !b || c.what.score === 'text') return null;
+    let av = a.v, bv = b.v; if(c.what.score === 'load'){ av = conv(a.v, a.u||'lb', 'lb'); bv = conv(b.v, b.u||'lb', 'lb'); }
+    if(av === bv) return 'tie'; return (c.what.score === 'time' ? av < bv : av > bv) ? c.from.uid : c.to.uid;
+  }
+  function challengesHtml(){
+    const S = SOC(); if(!S || !S.uid) return '';
+    const me = S.uid, mine = (S.challenges||[]).filter(c => c.parts && c.parts.includes(me));
+    const other = c => c.from.uid === me ? c.to : c.from, first = n => esc(String(n||'').split(' ')[0]);
+    const left = c => { const d = Math.max(0, Math.ceil(((c.due||0) - Date.now()) / 864e5)); return d === 1 ? '1 day left' : d+' days left'; };
+    const what = c => '<span class="chwhat">'+esc(c.what.label)+'</span><span class="chrule">'+esc(CH_RULE[c.what.score]||'')+'</span>'+(c.msg?'<span class="chmsg">"'+esc(c.msg)+'"</span>':'');
+    const side = (c, p) => { const s = (c.scores||{})[p.uid], w = chWinner(c); return '<div class="chside'+(w === p.uid ? ' win' : '')+'"><small>'+(p.uid === me ? 'You' : first(p.name))+'</small><b>'+(s ? esc(chScoreTxt(c, s)) : '—')+'</b>'+(w === p.uid ? '<span class="chstar">★ Winner</span>' : '')+'</div>'; };
+    const inc = mine.filter(c => chState(c) === 'open' && c.to.uid === me), out = mine.filter(c => chState(c) === 'open' && c.from.uid === me);
+    const act = mine.filter(c => chState(c) === 'accepted'), fin = mine.filter(c => ['done','expired'].includes(chState(c))).sort((a,b) => (b.doneAt||b.due||0) - (a.doneAt||a.due||0)).slice(0, 5);
+    let h = '<div class="psec"><span class="label">Head to head</span><h2>Challenges</h2></div><div class="chlist">';
+    inc.forEach(c => { h += '<div class="chcard hot"><span class="chhead"><b>'+esc(c.from.name)+'</b> challenged you · '+left(c)+'</span>'+what(c)+'<div class="row"><button class="btn solid" type="button" data-chacc="'+c.id+'">Accept</button><button class="btn" type="button" data-chno="'+c.id+'">Not now</button></div></div>'; });
+    act.forEach(c => { const mineS = (c.scores||{})[me]; h += '<div class="chcard"><span class="chhead">You vs <b>'+esc(other(c).name)+'</b> · '+left(c)+'</span>'+what(c)+'<div class="chvs">'+side(c, c.from.uid === me ? c.from : c.to)+'<span class="chv">VS</span>'+side(c, other(c))+'</div>'+(mineS ? '<p class="how" style="margin:0">Logged. Waiting on '+first(other(c).name)+'.</p>' : '<div class="row"><button class="btn solid" type="button" data-chlog="'+c.id+'">Log my score</button></div>')+'</div>'; });
+    out.forEach(c => { h += '<div class="chcard"><span class="chhead">Waiting on <b>'+esc(c.to.name)+'</b> to accept · '+left(c)+'</span>'+what(c)+'<div class="row"><button class="linkbtn" type="button" data-chdel="'+c.id+'">Cancel challenge</button></div></div>'; });
+    fin.forEach(c => { const st = chState(c), w = chWinner(c), wn = w === 'tie' ? 'Tie' : w === me ? '★ You won' : w ? '★ '+first(other(c).name)+' won' : st === 'expired' ? 'Time ran out' : 'Both done';
+      h += '<div class="chcard done"><span class="chhead">You vs <b>'+esc(other(c).name)+'</b> · '+wn+'</span>'+what(c)+'<div class="chvs">'+side(c, c.from.uid === me ? c.from : c.to)+'<span class="chv">VS</span>'+side(c, other(c))+'</div></div>'; });
+    if(!mine.length) h += '<p class="how" style="margin:0">Call someone out on a workout or a lift. You both do it, and once you both log, the app shows who won. You have 7 days.</p>';
+    h += '<div class="row"><button class="btn solid" type="button" data-chnew="">Challenge someone</button></div></div>';
+    const live = (S.all||[]).filter(c => ['open','accepted'].includes(chState(c)) && !c.parts.includes(me));
+    if(live.length) h += '<div class="psec"><span class="label">Coach view</span><h2>Open challenges</h2></div><ul class="logbook" style="margin-bottom:18px">'+live.map(c => '<li><span class="k">'+esc(chState(c) === 'open' ? 'Waiting to accept' : 'On')+' · '+left(c)+'</span><span class="s">'+esc(c.what.label)+'</span><span class="w">'+esc(c.from.name)+' vs '+esc(c.to.name)+'</span>'+(c.msg?'<span class="unote full">"'+esc(c.msg)+'"</span>':'')+'</li>').join('')+'</ul>';
+    return h;
+  }
+  function chSheet(inner){
+    let s = document.getElementById('chSheet'); if(s) s.remove();
+    s = document.createElement('div'); s.className = 'sheet'; s.id = 'chSheet'; s.innerHTML = '<form class="card" autocomplete="off">'+inner+'<p class="err" id="chErr"></p></form>';
+    document.body.appendChild(s); s.addEventListener('click', e => { if(e.target === s) s.remove(); }); return s;
+  }
+  function openChallenge(toUid){
+    const S = SOC(); if(!S) return;
+    const ppl = (S.people||[]).filter(p => p.uid !== S.uid && p.name).sort((a,b) => a.name.localeCompare(b.name));
+    if(!ppl.length){ chSheet('<span class="label">Challenge</span><h2>No one to challenge yet</h2><p class="how">People show up here once they open the new app.</p><div class="row"><button class="btn" type="button" data-chx="1">Close</button></div>'); return; }
+    const lifts = LIFT_ORDER.map(k => '<option value="lift:'+k+'">'+esc(LIFTS[k])+'</option>').join('');
+    const named = (D.named||[]).map(c => '<optgroup label="'+esc(c.title)+'">'+c.workouts.map(w => '<option value="nw:'+esc(w.id)+'">'+esc(w.name)+'</option>').join('')+'</optgroup>').join('');
+    const s = chSheet('<span class="label">Head to head · 7 days</span><h2>Challenge someone</h2>'+
+      '<label class="field"><span class="label">Who</span><select id="chWho">'+ppl.map(p => '<option value="'+esc(p.uid)+'"'+(p.uid === toUid ? ' selected' : '')+'>'+esc(p.name)+'</option>').join('')+'</select></label>'+
+      '<label class="field"><span class="label">On what</span><select id="chWhat"><option value="other">Today\'s workout or something else</option><optgroup label="Lifts · heaviest wins">'+lifts+'</optgroup>'+named+'</select></label>'+
+      '<div id="chOther"><label class="field"><span class="label">Name it</span><input id="chName" maxlength="60" placeholder="Today\'s workout, 100 burpees, 2k row"></label>'+
+      '<label class="field"><span class="label">How it\'s scored</span><select id="chScore"><option value="time">Fastest time wins</option><option value="more">Most reps wins</option><option value="load">Heaviest wins</option><option value="text">Just compare</option></select></label></div>'+
+      '<label class="field"><span class="label">Message (optional)</span><input id="chMsg" maxlength="80" placeholder="You\'re not ready"></label>'+
+      '<div class="row"><button class="btn solid" type="submit">Send challenge</button><button class="btn" type="button" data-chx="1">Cancel</button></div>');
+    const sync = () => { $('chOther').hidden = $('chWhat').value !== 'other'; }; $('chWhat').onchange = sync; sync();
+    s.querySelector('form').onsubmit = async e => {
+      e.preventDefault(); const v = $('chWhat').value, to = ppl.find(p => p.uid === $('chWho').value); let what;
+      if(v.startsWith('lift:')){ const k = v.slice(5); what = { kind:'lift', id:k, label:LIFTS[k], score:'load' }; }
+      else if(v.startsWith('nw:')){ const w = NW[v.slice(3)]; what = { kind:'named', id:w.id, label:w.name, score: w.score === 'time' ? 'time' : w.score === 'more' ? 'more' : 'text' }; }
+      else { const n = $('chName').value.trim(); if(!n){ $('chErr').textContent = 'Name the workout or lift.'; return; } what = { kind:'other', label:n.slice(0,60), score:$('chScore').value }; }
+      const b = s.querySelector('[type=submit]'); b.disabled = true;
+      try{ await S.send({ to:{ uid:to.uid, name:to.name }, what, msg: $('chMsg').value.trim().slice(0,80), days: CH_DAYS }); s.remove(); toastPR = 'Challenge sent to '+to.name.split(' ')[0]; render(); }
+      catch(err){ b.disabled = false; $('chErr').textContent = 'Couldn\'t send it. Check your internet and try again.'; }
+    };
+  }
+  function openChLog(id){
+    const S = SOC(); const c = ((S && S.challenges)||[]).find(x => x.id === id); if(!c) return;
+    const k = c.what.score;
+    const inp = k === 'time' ? '<label class="field"><span class="label">Your time (min:sec)</span><input id="chV" inputmode="numeric" placeholder="12:34"></label>' :
+      k === 'load' ? '<label class="field"><span class="label">Weight ('+A.unit+')</span><input id="chV" type="number" inputmode="decimal" step="any" min="0"></label>' :
+      k === 'more' ? '<label class="field"><span class="label">Total reps</span><input id="chV" type="number" inputmode="numeric" min="0"></label>' :
+      '<label class="field"><span class="label">Your score</span><input id="chV" maxlength="40"></label>';
+    const s = chSheet('<span class="label">vs '+esc((c.from.uid === S.uid ? c.to : c.from).name)+'</span><h2>'+esc(c.what.label)+'</h2>'+inp+'<div class="row"><button class="btn solid" type="submit">Save score</button><button class="btn" type="button" data-chx="1">Cancel</button></div>');
+    setTimeout(() => { const i = $('chV'); if(i) i.focus(); }, 50);
+    s.querySelector('form').onsubmit = async e => {
+      e.preventDefault(); const raw = $('chV').value.trim(); let sc;
+      if(k === 'time'){ const t = parseTime(raw); if(t == null || t <= 0){ $('chErr').textContent = 'Enter your time like 12:34.'; return; } sc = { v:t }; }
+      else if(k === 'text'){ if(!raw){ $('chErr').textContent = 'Enter your score.'; return; } sc = { txt: raw.slice(0,40) }; }
+      else { const n = parseFloat(raw); if(!(n > 0)){ $('chErr').textContent = 'Enter your score.'; return; } sc = k === 'load' ? { v:n, u:A.unit } : { v:n }; }
+      try{ await S.logScore(id, sc); s.remove(); render(); }catch(err){ $('chErr').textContent = 'Couldn\'t save. Check your internet and try again.'; }
+    };
+  }
+  function cheerHtml(key, toUid){
+    const S = SOC(); if(!S || !S.uid) return '';
+    const cs = (S.cheers||[]).filter(x => x.k === key), on = cs.some(x => x.uid === S.uid), names = cs.map(x => String(x.name||'').split(' ')[0]).filter(Boolean);
+    return '<span class="socrow"><button type="button" class="gj'+(on?' on':'')+'" data-gj="'+esc(key)+'" aria-pressed="'+on+'">Good job'+(cs.length?' · '+cs.length:'')+'</button>'+
+      (toUid && toUid !== S.uid ? '<button type="button" class="chb" data-chnew="'+esc(toUid)+'">Challenge</button>' : '')+
+      (names.length ? '<small>'+esc(names.slice(0,3).join(', ')+(names.length>3?' +'+(names.length-3):''))+'</small>' : '')+'</span>';
+  }
+  document.addEventListener('click', async e => {
+    const t = e.target.closest && e.target.closest('[data-chnew],[data-chacc],[data-chno],[data-chlog],[data-chdel],[data-gj],[data-chx]'); if(!t) return;
+    const S = SOC(); if(!S) return; const d = t.dataset;
+    if('chx' in d){ const s = $('chSheet'); if(s) s.remove(); return; }
+    if('chnew' in d) return openChallenge(d.chnew || '');
+    if(d.chlog) return openChLog(d.chlog);
+    t.disabled = true;
+    try{
+      if(d.chacc) await S.respond(d.chacc, 'accepted');
+      else if(d.chno) await S.respond(d.chno, 'declined');
+      else if(d.chdel) await S.remove(d.chdel);
+      else if(d.gj) await S.toggleCheer(d.gj);
+    }catch(err){ t.disabled = false; }
+  });
+
   /* ---------- progress: last phase vs this phase ---------- */
   const PHASES_DEF = [['Phase 5.0','2026-09-07'],['Phase 5.1','2026-10-26'],['Phase 6.0','2027-01-04']];
   function phasePair(){
@@ -3653,7 +3755,7 @@ Rest 2:00"></textarea></label>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, updateProfile, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { initializeFirestore, persistentLocalCache, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, serverTimestamp, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const COACHES = ['reefwtraining@gmail.com'];
 const PROGS = [['comp','Athlete Comp','WGC534'],['build','Building','RMXGZJ'],['cardio','Cardio','WQH7V7'],['shiit','S.H.I.I.T','56EG63'],['rt','RT Movement','VXW86K']];
@@ -3818,6 +3920,37 @@ function shims(u, coach){
 const STAR_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>';
 window.__bbBadgeHtml = b => b ? '<span class="cbadge'+(/^head/i.test(b)?' head':'')+'">'+STAR_SVG+'<span></span></span>' : '';
 function badgeEl(b){ const s = document.createElement('span'); s.innerHTML = window.__bbBadgeHtml(b); const el = s.firstChild; if(el) el.querySelector('span').textContent = b; return el; }
+/* ---- social: challenges (head to head, 7 days) + good job ---- */
+function initSocial(u, coach){
+  const name = (window.__bbMyName || (coach ? 'Coach Reef' : (u.email||'').split('@')[0])).slice(0,60);
+  const S = window.__bbSoc = { uid: u.uid, name, people: [], challenges: [], cheers: [] };
+  const re = () => { if(window.__bbRerender) window.__bbRerender(); };
+  const mineA = () => { try{ return localStorage.getItem('bb-me') || ''; }catch(e){ return ''; } };
+  const meRef = doc(fs, 'people', u.uid);
+  const sayHi = () => setDoc(meRef, { name, a: mineA(), at: Date.now() }).catch(() => {});
+  sayHi(); setInterval(() => { const a = mineA(); const me = S.people.find(p => p.uid === u.uid); if(!me || me.a !== a) sayHi(); }, 60000);
+  onSnapshot(collection(fs, 'people'), s => { S.people = s.docs.map(d => Object.assign({ uid: d.id }, d.data())); re(); }, () => {});
+  onSnapshot(query(collection(fs, 'challenges'), where('parts', 'array-contains', u.uid)), s => { S.challenges = s.docs.map(d => Object.assign({ id: d.id }, d.data())); re(); }, () => {});
+  if(coach) onSnapshot(collection(fs, 'challenges'), s => { S.all = s.docs.map(d => Object.assign({ id: d.id }, d.data())); re(); }, () => {});
+  onSnapshot(collection(fs, 'cheers'), s => { S.cheers = s.docs.map(d => d.data()); re(); }, () => {});
+  S.send = async ({ to, what, msg, days }) => {
+    const ref = doc(collection(fs, 'challenges')), now = Date.now();
+    await setDoc(ref, { from: { uid: u.uid, name }, to: { uid: to.uid, name: to.name }, parts: [u.uid, to.uid], what, msg: msg || '', status: 'open', scores: {}, created: now, due: now + (days || 7) * 864e5, at: now });
+  };
+  S.respond = (id, status) => updateDoc(doc(fs, 'challenges', id), { status, at: Date.now() });
+  S.remove = id => deleteDoc(doc(fs, 'challenges', id));
+  S.logScore = async (id, sc) => {
+    const c = S.challenges.find(x => x.id === id); if(!c) return;
+    const scores = Object.assign({}, c.scores || {}, { [u.uid]: Object.assign({ t: Date.now() }, sc) });
+    const both = c.parts.every(p => scores[p]);
+    await updateDoc(doc(fs, 'challenges', id), Object.assign({ scores, at: Date.now() }, both ? { status: 'done', doneAt: Date.now() } : {}));
+  };
+  S.toggleCheer = async k => {
+    const id = (k + '__' + u.uid).replace(/\//g, '_'), ref = doc(fs, 'cheers', id);
+    if(S.cheers.some(x => x.k === k && x.uid === u.uid)) await deleteDoc(ref);
+    else await setDoc(ref, { k, uid: u.uid, name, at: Date.now() });
+  };
+}
 /* ---- coach-only staff config: who runs which class timer (PINs live only here, never in the code) ---- */
 async function staffCfg(){ try{ const s = await getDoc(doc(fs, 'data', 'users', 'coachcfg', 'timers')); return s.exists() ? JSON.parse(s.data().json) : { staff: {} }; }catch(e){ return { staff: {} }; } }
 /* ---- coach: videos athletes linked to their lifts and scores ---- */
@@ -3905,7 +4038,7 @@ async function start(u, coach){
   }
   try{
     let ks = [];
-    const m = await getDoc(doc(fs, 'members', u.uid)); const md = (m.exists() && m.data()) || {};
+    const m = await getDoc(doc(fs, 'members', u.uid)); const md = (m.exists() && m.data()) || {}; window.__bbMyName = md.name || u.displayName || '';
     // Coach-added lifts (e.g. maxes copied from SugarWOD) go into this person's log once
     if(Array.isArray(md.seedLog) && md.seedLog.length){ try{
       let a = null; try{ a = JSON.parse(localStorage.getItem('bb-athlete') || 'null'); }catch(e){}
@@ -3938,6 +4071,7 @@ async function start(u, coach){
   try{ const bb = badgeEl(window.__bbBadge), bar = document.querySelector('.top .bar'); if(bb && bar){ const w = document.createElement('div'); w.className = 'hdrbadge'; w.appendChild(bb); bar.after(w); } }catch(e){}
   if(coach){ const b = document.createElement('button'); b.id = 'bbCoachBtn'; b.type = 'button'; b.textContent = 'Members'; b.onclick = openMembers; document.body.appendChild(b); }
   window.__bbSignOut = () => signOut(auth);
+  try{ initSocial(u, coach); }catch(e){}
 }
 </script>
 
