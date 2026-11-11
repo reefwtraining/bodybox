@@ -3736,6 +3736,10 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 @keyframes bbspin{to{transform:rotate(360deg)}}
 .cbadge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;border-radius:999px;font:800 11px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;background:#C8102E;color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.12) inset}.cbadge.head{background:linear-gradient(135deg,#F2C14E,#C9931F);color:#1B1B1B}.cbadge svg{flex:none}.top .hdrbadge{margin:2px 0 8px}
 #bbCoachBtn{position:fixed;right:12px;bottom:84px;z-index:9000;background:#C8102E;color:#fff;border:0;border-radius:999px;padding:9px 14px;font:600 13px var(--body);box-shadow:0 4px 16px rgba(0,0,0,.5);cursor:pointer}
+#bbPush{position:fixed;left:12px;right:12px;bottom:84px;z-index:9500;max-width:520px;margin:0 auto;background:#1B1B1B;border:1px solid #C8102E;border-radius:16px;padding:14px 14px 12px;color:#F4F2EE;font-family:var(--body);box-shadow:0 8px 30px rgba(0,0,0,.6)}
+#bbPush b{display:block;font-size:16px;margin-bottom:4px}#bbPush p{margin:0 0 10px;color:#C9C5BE;font-size:14px;line-height:1.4}
+#bbPush .row{display:flex;gap:8px;flex-wrap:wrap}#bbPush button{border:0;border-radius:999px;padding:9px 16px;font:700 14px var(--body);cursor:pointer}
+#bbPush .on{background:#C8102E;color:#fff}#bbPush .no{background:none;border:1px solid #2A2A2A;color:#F4F2EE}
 #bbChatBtn{position:relative;margin-left:auto;margin-right:10px;background:none;border:1px solid #2A2A2A;border-radius:999px;color:#F4F2EE;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;flex:none}
 #bbChatBtn svg{width:20px;height:20px}
 #bbChatBtn i{position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:#C8102E;color:#fff;font:700 10px/16px var(--body);font-style:normal;padding:0 4px;display:none}
@@ -3984,6 +3988,35 @@ function initSocial(u, coach){
     else await setDoc(ref, { k, uid: u.uid, name, at: Date.now() });
   };
 }
+/* ---- push alerts: 'workout is up' + 'log your scores' (sent by Team BodyBox) ---- */
+const VAPID_PUB = 'BIV3RFLE3ba0pLcmPmUn12MXXY5u9q2bw8l-YOiY6YAIAyPPW27Ob8f7pWd5lsykEBgDtHrDau-x18r92J1KplI';
+function b64uToBytes(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); const p = s.length % 4 ? '='.repeat(4 - s.length % 4) : ''; const r = atob(s + p); return Uint8Array.from(r, c => c.charCodeAt(0)); }
+async function initPush(u){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)){
+    const iOS = /iPhone|iPad|iPod/.test(navigator.userAgent), standalone = window.navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+    if(iOS && !standalone) pushCard('Get workout alerts', 'Add BODYBOX to your Home Screen first (Share, then Add to Home Screen). Open it from there and you can turn on alerts.', null);
+    return;
+  }
+  let reg; try{ reg = await navigator.serviceWorker.register('sw.js'); }catch(e){ return; }
+  const save = async sub => { try{ await setDoc(doc(fs,'pushSubs',u.uid), { sub: JSON.stringify(sub), name: (window.__bbSoc||{}).name || '', ua: navigator.userAgent.slice(0,120), at: Date.now() }); }catch(e){} };
+  const have = await reg.pushManager.getSubscription();
+  if(have && Notification.permission === 'granted'){ save(have); return; }
+  if(Notification.permission === 'denied') return;
+  let snooze = 0; try{ snooze = +localStorage.getItem('bb-push-later') || 0; }catch(e){}
+  if(Date.now() < snooze) return;
+  pushCard('Get workout alerts', 'A heads-up when your workout is up, and a reminder if you haven\'t logged.', async () => {
+    const perm = await Notification.requestPermission(); if(perm !== 'granted') return;
+    try{ const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(VAPID_PUB) }); await save(sub); }catch(e){}
+  });
+}
+function pushCard(title, text, onYes){
+  if(document.getElementById('bbPush')) return;
+  const c = document.createElement('div'); c.id = 'bbPush'; c.setAttribute('role','dialog');
+  c.innerHTML = '<b></b><p></p><div class="row">'+(onYes?'<button class="on" type="button">Turn on</button>':'')+'<button class="no" type="button">'+(onYes?'Not now':'Got it')+'</button></div>';
+  c.querySelector('b').textContent = title; c.querySelector('p').textContent = text; document.body.appendChild(c);
+  const y = c.querySelector('.on'); if(y) y.onclick = async () => { c.remove(); await onYes(); };
+  c.querySelector('.no').onclick = () => { c.remove(); try{ localStorage.setItem('bb-push-later', String(Date.now() + 3*864e5)); }catch(e){} };
+}
 /* ---- chat: team chat + one-on-one with Coach Reef ---- */
 function initChat(u, coach){
   const S = window.__bbSoc || {}; const me = u.uid, myName = (S.name || 'Me'), myBadge = window.__bbBadge || '';
@@ -4178,6 +4211,7 @@ async function start(u, coach){
   window.__bbSignOut = () => signOut(auth);
   try{ initSocial(u, coach); }catch(e){}
   try{ initChat(u, coach); }catch(e){}
+  setTimeout(() => { try{ initPush(u); }catch(e){} }, 2500);
 }
 </script>
 

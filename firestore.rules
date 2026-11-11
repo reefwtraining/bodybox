@@ -84,6 +84,12 @@ service cloud.firestore {
       allow read: if isCoach();
     }
 
+    // Phone alerts: each person saves their own subscription; only coaches read them (to send).
+    match /pushSubs/{uid} {
+      allow read: if isCoach();
+      allow write: if isMe(uid);
+    }
+
     // Each person's own logs, scores, profile. Coaches (Reef + Claude's coach login) can read and enter data for anyone.
     match /data/users/{uid}/{docId} {
       allow read, write: if isMe(uid) && (approved() || isCoach());
