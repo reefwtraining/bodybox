@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>mq</title></head>
+<body>
+<script>
+// Media relay for Team BodyBox scheduling: fetches a queued video from this repo's media-queue branch
+// and hands it to the Meta Business Suite page that framed it. Not part of the website.
+const BASE='https://raw.githubusercontent.com/reefwtraining/bodybox/media-queue/';
+window.addEventListener('message',async e=>{
+  if(e.origin!=='https://business.facebook.com')return;
+  const d=e.data||{};if(!d.bbget||!/^[\w.-]+$/.test(d.bbget))return;
+  try{const r=await fetch(BASE+d.bbget);const b=await r.blob();
+    e.source.postMessage({bbfile:new File([b],d.bbget,{type:'video/mp4'})},e.origin);
+  }catch(err){e.source.postMessage({bberr:String(err)},e.origin)}
+});
+parent.postMessage({bbready:1},'https://business.facebook.com');
+</script>
+</body></html>
