@@ -1399,7 +1399,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   const gymW = (lift, w) => !lift || !isDB(lift) ? roundW(w) : isKB(lift) ? nearKB(w) : Math.max(dbStep(), Math.round(w / dbStep()) * dbStep());
   // A dumbbell/kettlebell max shown as a weight that exists (estimates round down)
   const gymMax = (lift, v) => !isDB(lift) ? v : isKB(lift) ? nearKB(v, true) : Math.max(dbStep(), Math.floor(v / dbStep() + 1e-9) * dbStep());
-  const DEF_A = { v:1, unit:'lb', bar:45, log:[], scores:[], subs:[], name:'', evNotes:{}, unsync:[], done:[], personal:[], indr:{}, moves:{} };
+  const DEF_A = { v:1, unit:'lb', bar:45, log:[], scores:[], subs:[], name:'', evNotes:{}, unsync:[], done:[], personal:[], indr:{}, moves:{}, gone:[] };
   let storeOK = true;
   function loadA(){
     try{ const raw = localStorage.getItem('bb-athlete'); if(raw){ const o = JSON.parse(raw); if(o && Array.isArray(o.log)) return Object.assign({}, DEF_A, o); } }
@@ -1474,7 +1474,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       e.stopPropagation(); const id = b.dataset.del;
       if(armed !== id){ armed = id; render(); return; }
       const gone = A.log.find(x => x.id === id); if(gone && gone.src && !A.unsync.includes(gone.src)) A.unsync.push(gone.src);
-      A.log = A.log.filter(x => x.id !== id); armed = null; saveA();
+      A.log = A.log.filter(x => x.id !== id); A.gone = A.gone || []; if(!A.gone.includes(id)) A.gone.push(id); armed = null; saveA();
       if(!A.log.some(x => x.lift === openLift)) openLift = null;
       render();
     });
@@ -3769,6 +3769,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const ca = c.A;
       if(ca && typeof ca === 'object' && !Array.isArray(ca)){
         const fresh = !(A.log||[]).length && !(A.scores||[]).length && !(A.personal||[]).length;
+        if(Array.isArray(ca.gone)){ A.gone = A.gone || []; ca.gone.forEach(x => { if(typeof x === 'string' && !A.gone.includes(x)) A.gone.push(x); }); }
+        const GONE = new Set(A.gone || []); if(GONE.size){ ['log','scores','personal','done'].forEach(f => { if(Array.isArray(ca[f])) ca[f] = ca[f].filter(x => !(x && GONE.has(x.id))); if(Array.isArray(A[f])){ const b4 = A[f].length; A[f] = A[f].filter(x => !(x && GONE.has(x.id))); if(A[f].length !== b4) n++; } }); }
         ['log','scores','personal','done'].forEach(f => { if(Array.isArray(ca[f])){ if(!Array.isArray(A[f])) A[f] = []; n += union(A[f], ca[f], idk); const rv = new Map(ca[f].filter(x => x && x.vid && x.id).map(x => [x.id, x.vid])); A[f].forEach(x => { if(x && !x.vid && rv.has(x.id)){ x.vid = rv.get(x.id); n++; } }); } });
         if(Array.isArray(ca.subs)){ if(!Array.isArray(A.subs)) A.subs = []; n += union(A.subs, ca.subs, x => x ? (x.e+'|'+x.a) : null); }
         if(Array.isArray(ca.unsync)){ union(A.unsync, ca.unsync, x => String(x)); }
