@@ -6,12 +6,13 @@
 // and hands it to the Meta Business Suite page that framed it. Not part of the website.
 const BASE='https://raw.githubusercontent.com/reefwtraining/bodybox/media-queue/';
 window.addEventListener('message',async e=>{
-  if(e.origin!=='https://business.facebook.com')return;
+  const OK=['https://business.facebook.com','https://www.instagram.com','https://studio.youtube.com'];if(!OK.includes(e.origin))return;
   const d=e.data||{};if(!d.bbget||!/^[\w.-]+$/.test(d.bbget))return;
   try{const r=await fetch(BASE+d.bbget);const b=await r.blob();
-    e.source.postMessage({bbfile:new File([b],d.bbget,{type:'video/mp4'})},e.origin);
+    const t=/\.png$/i.test(d.bbget)?'image/png':/\.jpe?g$/i.test(d.bbget)?'image/jpeg':'video/mp4';
+    e.source.postMessage({bbfile:new File([b],d.bbget,{type:t})},e.origin);
   }catch(err){e.source.postMessage({bberr:String(err)},e.origin)}
 });
-parent.postMessage({bbready:1},'https://business.facebook.com');
+['https://business.facebook.com','https://www.instagram.com','https://studio.youtube.com'].forEach(o=>{try{parent.postMessage({bbready:1},o)}catch(e){}});
 </script>
 </body></html>
