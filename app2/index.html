@@ -2550,6 +2550,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     };
   }
   function partLogBar(pt, entry, date){
+    if(date && date > todayStr()) date = todayStr();
     if(!date || /warm|cool|mobil|stretch|recover/i.test(pt.tag || '')) return '';
     const pname = partName(pt), lk = (pt.lift && LIFTS[pt.lift]) ? pt.lift : liftByName(pname), noWt = /jump|bound|\bhops?\b|toss|throw|sprint|\brun|carry|medley|superset|tri-?set|core|accessory|lower leg/i.test(pt.tag || '');
     let plan = noWt ? [] : setPlan(pt.lines); if(!noWt && !plan.length) plan = setPlan([pt.tag || '']);
@@ -2561,7 +2562,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       return '<div class="logbar"><span>'+(done.length ? 'Logged: <b>'+done.map(e => fmtW(conv(e.w, e.u, A.unit))+' × '+(e.reps||1)).join(', ')+'</b>' : 'Log every set: weight and reps')+'</span>'+btn+'</div>';
     }
     const src = partSrc(pt, date), r = (A.personal||[]).filter(x => x && x.src === src).slice(-1)[0];
-    const title = ((entry && entry.title) ? entry.title+' · ' : '')+(pt.tag||'Workout');
+    const title = pt.tag || (entry && entry.title) || 'Workout';
     if(r) return '<div class="logbar"><span>Logged: <b>'+esc(r.s||'Done')+'</b>'+(r.feel?' · felt '+esc(r.feel):'')+'</span><button class="linkbtn" type="button" data-pres="'+esc(src)+'" data-ptitle="'+esc(title)+'" data-pdate="'+esc(date)+'">Log again</button></div>';
     return '<div class="logbar"><span>Log your result and the weights you used</span><button class="btn solid" type="button" data-pres="'+esc(src)+'" data-ptitle="'+esc(title)+'" data-pdate="'+esc(date)+'" style="padding:7px 12px">Log my result</button></div>';
   }
