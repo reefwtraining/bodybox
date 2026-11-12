@@ -2550,7 +2550,6 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     };
   }
   function partLogBar(pt, entry, date){
-    if(date && date > todayStr()) date = todayStr();
     if(!date || /warm|cool|mobil|stretch|recover/i.test(pt.tag || '')) return '';
     const pname = partName(pt), lk = (pt.lift && LIFTS[pt.lift]) ? pt.lift : liftByName(pname), noWt = /jump|bound|\bhops?\b|toss|throw|sprint|\brun|carry|medley|superset|tri-?set|core|accessory|lower leg/i.test(pt.tag || '');
     let plan = noWt ? [] : setPlan(pt.lines); if(!noWt && !plan.length) plan = setPlan([pt.tag || '']);
