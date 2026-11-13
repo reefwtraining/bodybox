@@ -552,7 +552,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 
 <footer class="gut"><div class="inner">
   <span>BODYBOX Programming · Coach Reef Warfield</span>
-  <span><a href="https://rebuilttraining.com" target="_blank" rel="noopener">rebuilttraining.com ↗</a> · <button class="btn" id="coachToggle" style="padding:2px 8px;font-size:12px">Coach</button></span>
+  <span><a href="https://reefwtraining.github.io/bodybox/" target="_blank" rel="noopener">BODYBOX website ↗</a> · <a href="https://rebuilttraining.com" target="_blank" rel="noopener">rebuilttraining.com ↗</a> · <button class="btn" id="coachToggle" style="padding:2px 8px;font-size:12px">Coach</button></span>
 </div></footer>
 
 <nav class="tabs" aria-label="App sections">
@@ -2269,7 +2269,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const me = meId && athById(meId) ? meId : '';
     let pre = '';
     if(me){
-      pre = profileHtml(me, true) + '<div class="row" style="margin:8px 0 6px"><button class="linkbtn" type="button" data-unme="1">Sign out</button></div>' + meIndHtml() + personalHtml();
+      pre = profileHtml(me, true) + '<div class="row" style="margin:8px 0 6px;gap:14px;align-items:center"><button class="linkbtn" type="button" data-unme="1">Sign out</button><a class="linkbtn" href="https://reefwtraining.github.io/bodybox/" target="_blank" rel="noopener">BODYBOX website ↗</a></div>' + meIndHtml() + personalHtml();
     } else {
       pre = '<div class="prof">'+avatarHtml(null)+'<div style="min-width:0"><span class="label">My profile</span><h1>Sign in</h1><p class="tagl">See your rank, points and scores</p></div></div>'+
         '<form class="connect" id="loginForm" autocomplete="on"><span class="label">Athlete sign in</span><h2>Welcome back</h2>'+
