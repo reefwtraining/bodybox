@@ -2510,7 +2510,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   // read the scheme: "5x5", "3 × 2 @ 60%", "4 x 6-8" -> one row per set with reps (and % if given)
   function setPlan(lines){
     const L = (lines||[]).map(String);
-    const per = []; L.forEach(l => { const m = l.match(/^\s*(?:set\s*|#\s*)\d+\s*[·:\-–.]?\s*(\d+)(?:\s*(?:\/\s*\d+)?\s*(?:reps?)?\s*@\s*(\d{2,3})\s*%)?/i); if(m) per.push({ reps: +m[1], pct: m[2] ? +m[2] : 0 }); });
+    const per = []; let wOnly = false; L.forEach(l => { const m = l.match(/^\s*(?:set\s*|#\s*)\d+\s*[·:\-–.]?\s*(\d+)(?:\s*(?:\/\s*\d+)?\s*(?:reps?)?\s*@\s*(\d{2,3})\s*%)?/i); if(m){ if(!m[2] && +m[1] > 30){ wOnly = true; per.push({ reps: 0, pct: 0, w: +m[1] }); } else per.push({ reps: +m[1], pct: m[2] ? +m[2] : 0 }); } });
+    if(per.length && wOnly){ const sch = setPlan(L.filter(l => !/^\s*(?:set\s*|#\s*)\d+/i.test(l))); const r = sch.length ? sch[0].reps : 0; per.forEach(p => { if(!p.reps) p.reps = r; }); }
     if(per.length) return per.slice(0, 15);
     const out = [];
     (lines||[]).forEach(l => { const re = /(\d+)\s*[x×]\s*(\d+)(?:\s*[-–]\s*\d+)?(?:\s*@\s*(\d{2,3})\s*%)?/gi; let m;
@@ -2527,10 +2528,10 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function openSets(k){
     const c = SETCTX[k]; if(!c) return; setCur = c;
     const b = c.lift ? bestOf(c.lift) : null, last = c.lift ? lastOf(c.lift) : null;
-    let plan = setPlan(c.lines); if(!plan.length && c.tag) plan = setPlan([c.tag]); if(!plan.length) plan = [{ reps: 0, pct: 0 }, { reps: 0, pct: 0 }, { reps: 0, pct: 0 }];
+    let plan = setPlan(c.lines); if(!plan.length && c.tag) plan = setPlan([c.tag]); if(plan.some(p => !p.reps) && c.tag){ const t = setPlan([c.tag]); const r = t.length ? t[0].reps : 0; plan.forEach(p => { if(!p.reps) p.reps = r; }); } if(!plan.length) plan = [{ reps: 0, pct: 0 }, { reps: 0, pct: 0 }, { reps: 0, pct: 0 }];
     $('setTitle').textContent = (c.lift && LIFTS[c.lift]) || c.name || 'Log my sets'; $('setWhat').textContent = 'Log my sets';
     $('setDate').value = c.date || todayStr(); $('setNote').value = ''; $('setVid').value = ''; $('setErr').textContent = '';
-    $('setRows').innerHTML = plan.map((p, i) => { let ph = ''; if(p.pct && b) ph = fmtW(gymW(c.lift, gymMax(c.lift, b.val) * p.pct / 100)); else if(last) ph = fmtW(conv(last.w, last.u, A.unit)); return setRowHtml(i, p.reps, ph); }).join('');
+    $('setRows').innerHTML = plan.map((p, i) => { let ph = ''; if(p.w) ph = fmtW(p.w); else if(p.pct && b) ph = fmtW(gymW(c.lift, gymMax(c.lift, b.val) * p.pct / 100)); else if(last) ph = fmtW(conv(last.w, last.u, A.unit)); return setRowHtml(i, p.reps, ph); }).join('');
     wireSetRows(); $('setSheet').hidden = false; setTimeout(() => { const f = document.querySelector('#setRows .sw'); if(f) f.focus(); }, 50);
   }
   function wireSetSheet(){
@@ -3094,6 +3095,12 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     let h = '';
     (after[-1]||[]).forEach(it => { h += itemCard(it, 'after'); });
     if(entry) entry.parts.forEach((pt, i) => {
+      const nums = (after[i]||[]).filter(it => /^your numbers$/i.test(it.tag||''));
+      if(nums.length && !rep[i]){
+        after[i] = after[i].filter(it => !nums.includes(it));
+        const n0 = nums[0], hdr = (pt.lines||[]).filter(l => /^!/.test(l)).slice(0,1);
+        pt = Object.assign({}, pt, { lines: hdr.concat(n0.lines||[]), note: [n0.note, pt.note].filter(Boolean).join(' '), mine: true });
+      }
       if(rep[i]) h += itemCard(rep[i], 'replace') + (!isCoachKey() ? '' : '<details class="grpv"><summary>Group version</summary>' + partHtml(pt) + '</details>');
       else h += partHtml(pt);
       (after[i]||[]).forEach(it => { h += itemCard(it, 'after'); });
