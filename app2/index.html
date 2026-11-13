@@ -576,6 +576,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     <label class="field" id="irTxtF"><span class="label" id="irTxtL">Score</span><input id="irTxt" type="text" maxlength="80"></label>
     <span class="label">How did it feel?</span><div class="feelrow" id="irFeel" role="group" aria-label="How did it feel"></div>
     <label class="field"><span class="label">Notes (optional)</span><textarea id="irNote" class="notein" maxlength="600" placeholder="What you changed, how it moved"></textarea></label>
+    <label class="field"><span class="label">Video link for review (optional)</span><input id="irVid" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="300" placeholder="Paste your YouTube link"><small class="vidhint">Film it, post it to YouTube (unlisted is fine) and paste the link. Coach Reef reviews it.</small></label>
     <p class="err" id="irErr"></p>
     <div class="row"><button class="btn solid" type="submit">Save</button><button class="btn" type="button" id="irCancel">Cancel</button></div>
   </form>
@@ -649,6 +650,7 @@ Rest 2:00"></textarea></label>
     <div class="setrows" id="setRows"></div>
     <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="setAdd">+ Add set</button><button class="btn" type="button" id="setFill">Same weight all sets</button></div>
     <label class="field"><span class="label">Notes (optional)</span><textarea id="setNote" class="notein" maxlength="600" placeholder="How it moved, what to try next time"></textarea></label>
+    <label class="field"><span class="label">Video link for review (optional)</span><input id="setVid" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="300" placeholder="Paste your YouTube link"><small class="vidhint">Film it, post it to YouTube (unlisted is fine) and paste the link. Coach Reef reviews it.</small></label>
     <p class="err" id="setErr"></p>
     <div class="row"><button class="btn solid" type="submit">Save sets</button><button class="btn" type="button" id="setCancel">Cancel</button></div>
   </form>
@@ -2527,7 +2529,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const b = c.lift ? bestOf(c.lift) : null, last = c.lift ? lastOf(c.lift) : null;
     let plan = setPlan(c.lines); if(!plan.length && c.tag) plan = setPlan([c.tag]); if(!plan.length) plan = [{ reps: 0, pct: 0 }, { reps: 0, pct: 0 }, { reps: 0, pct: 0 }];
     $('setTitle').textContent = (c.lift && LIFTS[c.lift]) || c.name || 'Log my sets'; $('setWhat').textContent = 'Log my sets';
-    $('setDate').value = c.date || todayStr(); $('setNote').value = ''; $('setErr').textContent = '';
+    $('setDate').value = c.date || todayStr(); $('setNote').value = ''; $('setVid').value = ''; $('setErr').textContent = '';
     $('setRows').innerHTML = plan.map((p, i) => { let ph = ''; if(p.pct && b) ph = fmtW(gymW(c.lift, gymMax(c.lift, b.val) * p.pct / 100)); else if(last) ph = fmtW(conv(last.w, last.u, A.unit)); return setRowHtml(i, p.reps, ph); }).join('');
     wireSetRows(); $('setSheet').hidden = false; setTimeout(() => { const f = document.querySelector('#setRows .sw'); if(f) f.focus(); }, 50);
   }
@@ -2542,8 +2544,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const rows = [...document.querySelectorAll('#setRows .setrow')].map(r => ({ w: parseFloat(r.querySelector('.sw').value), reps: parseInt(r.querySelector('.sr').value, 10) || 1 })).filter(x => x.w > 0);
       if(!rows.length){ $('setErr').textContent = 'Enter the weight for at least one set.'; return; }
       if(!setCur.lift){ setCur.lift = addMove(setCur.name || 'Lift'); if(!setCur.lift){ $('setErr').textContent = 'Couldn\'t save this movement.'; return; } }
+      const svid = cleanVid($('setVid').value); if(svid === null){ $('setErr').textContent = 'That video link doesn\'t look right. Copy it from YouTube and paste it again.'; return; }
       const note = $('setNote').value.trim().slice(0,600), before = bestOf(setCur.lift), base = Date.now();
-      rows.forEach((x, i) => A.log.push(Object.assign({ id: base.toString(36)+i+Math.random().toString(36).slice(2,5), lift: setCur.lift, w: x.w, u: A.unit, reps: Math.min(50, x.reps), date, t: base + i, set: i+1 }, (note && i === 0) ? { note } : {})));
+      rows.forEach((x, i) => A.log.push(Object.assign({ id: base.toString(36)+i+Math.random().toString(36).slice(2,5), lift: setCur.lift, w: x.w, u: A.unit, reps: Math.min(50, x.reps), date, t: base + i, set: i+1 }, (note && i === 0) ? { note } : {}, (svid && i === 0) ? { vid: svid } : {})));
       saveA(); $('setSheet').hidden = true;
       const after = bestOf(setCur.lift);
       toastPR = before && after.val > before.val ? 'New '+LIFTS[setCur.lift]+' PR: '+fmtW(after.val)+' '+A.unit+' (+'+fmtW(Math.round((after.val-before.val)*10)/10)+')' : '';
@@ -3067,7 +3070,10 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(it.lift && LIFTS[it.lift]) h += liftNote({ lift:it.lift, lines:it.lines||[] });
     if(it.note) h += '<p class="note">'+esc(it.note)+'</p>';
     h += demoHtml(it.lines||[]);
-    if(it._src === 'mine' || (!it._src)){
+    const sb = (it._src === 'mine' || !it._src) && it.date && !/^(your numbers|coach note)$/i.test(it.tag||'') ? partLogBar({ tag: it.title || it.tag || '', lines: it.lines || [], lift: it.lift }, null, it.date) : '';
+    if(sb.indexOf('data-psets') >= 0){
+      h += sb + '<div class="row" style="justify-content:flex-end;margin-top:4px"><button class="linkbtn" type="button" data-ilog="'+esc(it.id)+'">'+(r ? 'Result: '+esc(r.s||'Done')+' · change' : 'Or log a result / note')+'</button></div>';
+    } else if(it._src === 'mine' || (!it._src)){
       if(r) h += '<div class="logbar"><span>Logged: <b>'+esc(r.s||'Done')+'</b>'+(r.feel?' · felt '+esc(r.feel):'')+'</span><button class="linkbtn" type="button" data-ilog="'+esc(it.id)+'">Change</button></div>';
       else h += '<div class="logbar"><span>'+(it.board?'Counts on the board':'Counts toward your own progress')+'</span><button class="btn solid" type="button" data-ilog="'+esc(it.id)+'" style="padding:7px 12px">Log my result</button></div>';
     }
@@ -3111,7 +3117,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     $('irWhat').textContent = (it.tag ? it.tag + ' · ' : '') + (it.title || 'Your workout');
     $('irTimeF').hidden = it.score !== 'time'; $('irNumF').hidden = !(it.score === 'reps'); $('irLoadF').hidden = it.score !== 'load'; $('irTxtF').hidden = !(it.score === 'text' || it.score === 'none' || !it.score);
     $('irTxtL').textContent = it.score === 'none' || !it.score ? 'What you did (optional)' : 'Score';
-    $('irTime').value = r.sec ? fmt(r.sec) : ''; $('irNum').value = r.n != null ? r.n : ''; $('irW').value = r.w || ''; $('irReps').value = r.reps || defaultReps(it); $('irTxt').value = r.txt || ''; $('irNote').value = r.note || '';
+    $('irTime').value = r.sec ? fmt(r.sec) : ''; $('irNum').value = r.n != null ? r.n : ''; $('irW').value = r.w || ''; $('irReps').value = r.reps || defaultReps(it); $('irTxt').value = r.txt || ''; $('irNote').value = r.note || ''; $('irVid').value = r.vid || '';
     $('irLoadL').textContent = 'Weight ('+A.unit+')'; $('irErr').textContent = ''; paintIrFeel();
     $('irSheet').hidden = false;
   }
@@ -3131,6 +3137,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       else { const tx = $('irTxt').value.trim().slice(0,80); r.txt = tx; r.s = tx || 'Done'; }
       if(irFeel) r.feel = (FEELS.find(x => x[0] === irFeel)||['',''])[1].toLowerCase();
       const note = $('irNote').value.trim().slice(0,600); if(note) r.note = note;
+      const ivid = cleanVid($('irVid').value); if(ivid === null){ $('irErr').textContent = 'That video link doesn\'t look right. Copy it from YouTube and paste it again.'; return; } if(ivid) r.vid = ivid;
       A.indr = A.indr || {}; A.indr[it.id] = r;
       // testing days and loaded lifts update My Numbers on their own
       if(it.score === 'load' && it.lift && LIFTS[it.lift]){
