@@ -3094,7 +3094,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     let h = '';
     (after[-1]||[]).forEach(it => { h += itemCard(it, 'after'); });
     if(entry) entry.parts.forEach((pt, i) => {
-      if(rep[i]) h += itemCard(rep[i], 'replace') + ((rep[i].hideGroup && !isCoachKey()) ? '' : '<details class="grpv"><summary>Group version</summary>' + partHtml(pt) + '</details>');
+      if(rep[i]) h += itemCard(rep[i], 'replace') + (!isCoachKey() ? '' : '<details class="grpv"><summary>Group version</summary>' + partHtml(pt) + '</details>');
       else h += partHtml(pt);
       (after[i]||[]).forEach(it => { h += itemCard(it, 'after'); });
     });
