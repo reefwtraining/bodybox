@@ -1454,6 +1454,15 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   const inc = () => A.unit === 'kg' ? 2.5 : 5;
   const roundW = w => Math.round(w / inc()) * inc();
   const fmtW = w => { const r = Math.round(w * 10) / 10; return (r % 1 ? r.toFixed(1) : String(r)); };
+  // Release rule (Reef, Nov 14): athletes see the next day's workout only from 8 PM Eastern the night before. Coaches see everything.
+  function etNow(){ const f = new Intl.DateTimeFormat('en-CA', { timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', hour12:false }).formatToParts(new Date()); const g = t => (f.find(x => x.type === t)||{}).value; return { date: g('year')+'-'+g('month')+'-'+g('day'), hour: +g('hour') % 24 }; }
+  function dayReleased(ds){
+    try{ if(isCoachKey() || canEditLB || window.__bbBadge) return true; }catch(e){}
+    const n = etNow(); if(ds <= n.date) return true;
+    const t = new Date(n.date+'T12:00:00'); t.setDate(t.getDate()+1);
+    const tom = t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+    return ds === tom && n.hour >= 20;
+  }
   const todayStr = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
   const niceDate = s => { const [y,m,d] = s.split('-').map(Number); return MON[m-1]+' '+d+', '+y; };
   function entriesOf(lift){ return A.log.filter(e => e.lift === lift).sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.t - b.t); }
@@ -2636,7 +2645,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(A.moved && typeof A.moved === 'object') Object.keys(A.moved).forEach(d => { if(d < today) delete A.moved[d]; });
     const mv = A.moved && A.moved[today] && A.moved[today].prog === memProg && dayMap[A.moved[today].from] ? A.moved[today] : null;
     const showMoved = mv && memDay === today && !memShowOrig;
-    const entry = showMoved ? dayMap[mv.from] : dayMap[memDay];
+    const locked = !showMoved && !dayReleased(memDay) && !!dayMap[memDay];
+    const entry = locked ? null : (showMoved ? dayMap[mv.from] : dayMap[memDay]);
     memCurEntry = entry;
     const cn = ((MEM.coachnotes||{})[memProg]||{})[memDay];
     const sampleOnly = memSlots.size && [...memSlots].every(x => x === 'sample');
@@ -2654,7 +2664,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       return '<button class="day'+(dd===today?' is-today':'')+'" type="button" data-mday="'+dd+'" aria-pressed="'+(dd===memDay)+'"><small>'+DOW[d.getDay()]+'</small><b>'+d.getDate()+'</b></button>'; }).join('')+'</div>';
     h += dayPhotoHtml(memDay);
     if(progs.length > 1) h += '<div class="progs" role="group" aria-label="Program">'+progs.map(k => '<button class="prog" type="button" data-mprog="'+k+'" aria-pressed="'+(k===memProg)+'">'+esc(D.programs[k].short)+'</button>').join('')+'</div>';
-    if(!entry){
+    if(locked){
+      h += '<div class="empty"><b>Coming tonight</b>This workout drops at 8 PM Eastern the night before. Get your rest and check back then.</div>';
+    } else if(!entry){
       h += '<div class="empty"><b>'+(((MEM[memProg]||{}).days && Object.keys(MEM[memProg].days).length) ? 'Rest day' : 'Coming soon')+'</b>'+(((MEM[memProg]||{}).days && Object.keys(MEM[memProg].days).length) ? 'No '+esc(p.short)+' on this day.' : 'This week\'s '+esc(p.short)+' programming loads here soon.')+'</div>';
     } else {
       if(showMoved) h += '<div class="logbar" style="border:1px dashed var(--gold);border-radius:8px;padding:10px 12px;margin-bottom:10px"><span>Moved to today from <b>'+longDate(mv.from)+'</b></span><span class="row">'+(dayMap[today]?'<button class="linkbtn" type="button" id="mvOrig">Show today\'s workout</button>':'')+'<button class="linkbtn" type="button" id="mvUndo">Undo</button></span></div>';
