@@ -3168,7 +3168,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         const n0 = nums[0], hdr = (pt.lines||[]).filter(l => /^!/.test(l)).slice(0,1);
         pt = Object.assign({}, pt, { lines: hdr.concat(n0.lines||[]), note: [n0.note, pt.note].filter(Boolean).join(' '), mine: true });
       }
-      if(rep[i]) h += itemCard(rep[i], 'replace') + (!isCoachKey() ? '' : '<details class="grpv"><summary>Group version</summary>' + partHtml(pt) + '</details>');
+      if(rep[i] && rep[i].skip) h += (!isCoachKey() ? '' : '<details class="grpv"><summary>Removed for this athlete</summary>' + partHtml(pt) + '</details>');
+      else if(rep[i]) h += itemCard(rep[i], 'replace') + (!isCoachKey() ? '' : '<details class="grpv"><summary>Group version</summary>' + partHtml(pt) + '</details>');
       else h += partHtml(pt);
       (after[i]||[]).forEach(it => { h += itemCard(it, 'after'); });
     });
