@@ -104,5 +104,11 @@ service cloud.firestore {
     match /coachnotes/{d} {
       allow read, write: if isCoach();
     }
+    // Coaches who run one class read only that program's coaches notes (members/{uid}.staffProgs, set by Reef).
+    match /staffnotes/{prog}/days/{d} {
+      allow read: if isCoach() || (approved()
+        && prog in get(/databases/$(database)/documents/members/$(request.auth.uid)).data.get('staffProgs', []));
+      allow write: if isCoach();
+    }
   }
 }

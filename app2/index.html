@@ -4486,13 +4486,30 @@ async function loadCardNotes(coach){
   const dates = []; const t0 = new Date(); for(let i = -7; i <= 14; i++){ const d = new Date(t0); d.setDate(t0.getDate()+i); dates.push(ymdLocal(d)); }
   const grab = async (col, d) => { try{ const s = await getDoc(doc(fs, col, d)); return s.exists() ? JSON.parse(s.data().json || '{}') : null; }catch(e){ return null; } };
   const A = {}, C = {};
-  await Promise.all(dates.map(async d => { const x = await grab('cardnotes', d); if(x) A[d] = x; if(coach){ const y = await grab('coachnotes', d); if(y) C[d] = y; } }));
-  window.__bbCardNotes = A; window.__bbCoachCardNotes = coach ? C : {};
+  let staff = [];
+  if(!coach){ try{ const u = auth.currentUser; const m = u && await getDoc(doc(fs, 'members', u.uid)); staff = (m && m.exists() && Array.isArray(m.data().staffProgs)) ? m.data().staffProgs : []; }catch(e){} }
+  await Promise.all(dates.map(async d => {
+    const x = await grab('cardnotes', d); if(x) A[d] = x;
+    if(coach){ const y = await grab('coachnotes', d); if(y) C[d] = y; }
+    else for(const pg of staff){ try{ const s = await getDoc(doc(fs, 'staffnotes', pg, 'days', d)); if(s.exists()){ (C[d] = C[d] || {})[pg] = JSON.parse(s.data().json || '[]'); } }catch(e){} }
+  }));
+  window.__bbCardNotes = A; window.__bbCoachCardNotes = (coach || staff.length) ? C : {};
 }
 // Coach only: take card notes sent from a SugarWOD tab (Claude's nightly copy) and save them
 window.addEventListener('message', async e => {
   if(e.origin !== 'https://app.sugarwod.com') return;
-  const d = e.data; if(!d || !d.bbNotes || typeof d.bbNotes !== 'object') return;
+  const d = e.data;
+  if(d && d.bbStaffProgs && typeof d.bbStaffProgs === 'object'){
+    const u = auth.currentUser; if(!u || !isCoachUser(u)) return;
+    const res = {};
+    for(const em of Object.keys(d.bbStaffProgs)){
+      const progs = (d.bbStaffProgs[em] || []).filter(x => /^[a-z]{2,10}$/.test(x));
+      try{ const q = await getDocs(query(collection(fs, 'members'), where('email', '==', em.toLowerCase()))); res[em] = q.size; for(const m of q.docs) await updateDoc(m.ref, { staffProgs: progs }); }catch(x){ res[em] = 'err'; }
+    }
+    try{ e.source.postMessage({ bbStaffSaved: res }, e.origin); }catch(x){}
+    return;
+  }
+  if(!d || !d.bbNotes || typeof d.bbNotes !== 'object') return;
   const u = auth.currentUser; if(!u || !isCoachUser(u)) { try{ e.source.postMessage({ bbNotesSaved: -1, why: 'not coach' }, e.origin); }catch(x){} return; }
   let n = 0; const clean = v => String(v || '').slice(0, 4000);
   for(const date of Object.keys(d.bbNotes)){
@@ -4503,6 +4520,8 @@ window.addEventListener('message', async e => {
       co[prog] = day[prog].map(c => ({ t: clean(c.t).slice(0,120), c: clean(c.c) })).filter(c => c.c); });
     await setDoc(doc(fs, 'cardnotes', date), { json: JSON.stringify(ath), at: serverTimestamp() });
     await setDoc(doc(fs, 'coachnotes', date), { json: JSON.stringify(co), at: serverTimestamp() });
+    // coaches who run one class (Dennis: S.H.I.I.T + RT Movement) read only their program's coaches notes
+    for(const pg of Object.keys(co)) await setDoc(doc(fs, 'staffnotes', pg, 'days', date), { json: JSON.stringify(co[pg]), at: serverTimestamp() });
     n++;
   }
   try{ e.source.postMessage({ bbNotesSaved: n }, e.origin); }catch(x){}
