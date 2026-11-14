@@ -528,6 +528,14 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .news{background:linear-gradient(180deg,rgba(200,16,46,.16),rgba(200,16,46,.04));border-color:rgba(200,16,46,.55)}
 .msgban{background:rgba(200,16,46,.12);border-color:var(--red)}
 .plan.bundle{border-color:var(--red);background:linear-gradient(180deg,rgba(200,16,46,.16),rgba(200,16,46,.03))}
+/* easy-read cards: white, black text, bold red words (Reef, Nov 13) */
+.news,.cgcard{background:#fff;border:2px solid var(--red);color:#111}
+.news h1,.news .bd h3,.cgcard b{color:#111}
+.news .when,.cgcard .label{color:var(--red)}
+.news .bd strong{color:var(--red);font-weight:800}
+.news .stale{color:#555}
+.news .linkbtn{color:var(--red)}
+.news .btn:not(.solid){color:#111;border-color:#bbb;background:#fff}
 .swap{background:rgba(255,255,255,.08)}
 /* bottom tabs like the canvas */
 .tabs{background:#0B0B0B;border-top-color:#262626}
@@ -3625,7 +3633,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const key = g.kind === 'gym' ? 'gym:'+g.k : g.k, cur = (A.goals||{})[key];
     const set = cur && (g.kind === 'gym' ? cur.n === g.target : cur.w === g.target) && cur.coach;
     if(set) return '';
-    return '<div class="example" style="border-color:var(--gold)"><span class="label" style="color:var(--gold)">Coach Reef\'s pick for this block</span>'+
+    return '<div class="example cgcard"><span class="label">Coach Reef\'s pick for this block</span>'+
       '<p style="margin:6px 0"><b>'+esc(cgName(g))+': '+g.target+' '+esc(cgUnit(g))+(g.by?' by '+niceDate(g.by):'')+'</b></p>'+(g.why?'<p style="margin:0 0 8px">'+esc(g.why)+'</p>':'')+
       '<div class="row"><button class="btn solid" type="button" id="cgSet">Set this goal</button></div></div>';
   }
