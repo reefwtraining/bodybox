@@ -2573,7 +2573,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     return '<div class="swn">'+esc(t).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')+'</div>';
   }
   function swNoteFor(store, date, prog, pt, key){
-    const list = ((store||{})[date]||{})[prog]; if(!Array.isArray(list)) return '';
+    const dd = (store||{})[date]||{}; const list = dd[prog] || dd[{ class:'rt', rt:'class' }[prog]]; if(!Array.isArray(list)) return '';
     const cands = [pt.tag, (pt.lines||[])[0]].map(nNorm).filter(Boolean);
     const hit = list.find(c => cands.includes(nNorm(c.t))) || list.find(c => { const n = nNorm(c.t); return n.length > 4 && cands.some(x => x.indexOf(n) === 0 || n.indexOf(x) === 0); });
     return hit ? swNoteHtml(hit[key]) : '';
