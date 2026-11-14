@@ -864,6 +864,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function lineHtml(l, lift, noSwap){
     const bold = l.trim().startsWith('!');
     let t = esc(bold ? l.trim().slice(1) : l);
+    t = t.replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, (m, txt, u) => '<a href="'+u+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">'+txt+'</a>');
     if(!lift) lift = detectLift(l);
     if(lift){
       const b = bestOf(lift);
