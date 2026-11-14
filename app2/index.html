@@ -2654,6 +2654,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     let h = '<section class="mytrain"><div class="mh"><h2>'+(sampleOnly ? 'Your free 7 days' : (memSlots.has('beta') && memSlots.size === 1) ? 'Team preview' : 'My training')+'</h2><span class="label">'+progs.map(k => esc(D.programs[k].short)).join(' · ')+(MEM.coachnotes?' · Coach':'')+'</span></div>';
     h += viewAsBar();
     if(!viewAs) h += readyHtml();
+    if(!viewAs) h += weeklyHtml(memDay);
     h += '<div class="row" style="justify-content:flex-end;margin:-4px 0 8px"><button class="linkbtn" type="button" id="calToggle">'+(calOpen?'Hide month':'Month view')+'</button></div>' + (calOpen ? calHtml() : '');
     if(viewAs && athById(viewAs)) h += '<p class="example" style="margin:0 0 10px">Showing <b>'+esc(athById(viewAs).name)+'</b>\'s screen: their extras, their versions and their swaps. <button class="linkbtn" type="button" id="viewAsOff">Back to group</button></p>';
     if(weeks.length > 1 || memWeek !== thisWk){
@@ -3837,7 +3838,49 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const cur = r || {};
     return '<div class="ready ask"><span class="label">10-second check-in</span><b>How are you today?</b>'+RQ.map(([k,l,opts]) => '<div class="rq"><span>'+l+'</span><div class="sexf" role="group" aria-label="'+l+'">'+opts.map((o,i) => '<button type="button" data-rq="'+k+'|'+i+'" aria-pressed="'+(cur[k]===i)+'">'+o+'</button>').join('')+'</div></div>').join('')+'</div>';
   }
+  // ---- Sunday weekly check-in (Personal athletes only, Reef Nov 14) ----
+  let wkEdit = false; const WK_AREAS = ['Neck','L shoulder','R shoulder','L elbow','R elbow','Wrist/hand','Upper back','Low back','Hips','L knee','R knee','Ankle/foot'];
+  function weeklyHtml(d){
+    if(!window.__bbPersonal || !d || parse(d).getDay() !== 0 || !dayReleased(d)) return '';
+    const w = (A.weekly||{})[d] || {};
+    if(w.t && !wkEdit){
+      const pains = (w.pain||[]).filter(x => x.l > 0).map(x => x.a+' '+x.l+'/10').join(', ');
+      return '<div class="ready ok"><span><b>Weekly check-in done.</b> Week '+w.feel+'/10 · sleep '+esc(w.sleep||'-')+(pains ? ' · '+esc(pains) : ' · no pain')+'</span><button class="linkbtn" type="button" id="wkEdit">Change</button></div>'; }
+    const chip = (k, v, lab, on) => '<button type="button" class="'+(on?'':'ghost')+'" data-wq="'+k+'|'+v+'" aria-pressed="'+!!on+'" style="padding:6px 10px;min-width:38px">'+esc(lab)+'</button>';
+    const pain = w.pain || [];
+    let h = '<div class="ready ask"><span class="label">Weekly check-in · Sunday</span><b>How did your week go?</b><p class="how" style="margin:4px 0 8px">30 seconds. Coach Reef uses this to build your next week.</p>';
+    h += '<div class="rq"><span>How the week felt (1 easy · 10 crushed)</span><div class="sexf" style="flex-wrap:wrap">'+[1,2,3,4,5,6,7,8,9,10].map(n => chip('feel', n, String(n), w.feel===n)).join('')+'</div></div>';
+    h += '<div class="rq"><span>Sleep, most nights</span><div class="sexf" style="flex-wrap:wrap">'+['Under 6','6 hrs','7 hrs','8 hrs','9+ hrs'].map(x => chip('sleep', x, x, w.sleep===x)).join('')+'</div></div>';
+    h += '<div class="rq"><span>Any pain or tightness? Tap where</span><div class="sexf" style="flex-wrap:wrap">'+chip('nopain', 1, 'None', w.nopain)+WK_AREAS.map(a => chip('area', a, a, pain.some(x => x.a===a))).join('')+'</div></div>';
+    pain.forEach(x => { h += '<div class="rq"><span>'+esc(x.a)+': how bad? (1 mild · 10 sharp)</span><div class="sexf" style="flex-wrap:wrap">'+[1,2,3,4,5,6,7,8,9,10].map(n => chip('lvl', x.a+'~'+n, String(n), x.l===n)).join('')+'</div></div>'; });
+    h += '<div class="rq"><span>Did your recovery work (stretch or easy flush)?</span><div class="sexf">'+chip('rec','yes','Yes',w.rec==='yes')+chip('rec','no','No',w.rec==='no')+'</div></div>';
+    h += '<div class="grid2" style="margin-top:6px"><input id="wkRhr" type="number" inputmode="numeric" placeholder="Resting HR (optional)" value="'+(w.rhr||'')+'"><input id="wkBw" type="number" inputmode="decimal" placeholder="Body weight (optional)" value="'+(w.bw||'')+'"></div>';
+    h += '<p class="err" id="wkErr"></p><button class="btn solid" type="button" id="wkSave" style="margin-top:6px">Send to Coach Reef</button></div>';
+    return h;
+  }
+  function wireWeekly(){
+    const d = memDay; if(!d) return;
+    const get = () => { A.weekly = A.weekly || {}; return A.weekly[d] = Object.assign({ pain:[] }, A.weekly[d] || {}); };
+    document.querySelectorAll('[data-wq]').forEach(b => b.onclick = () => {
+      const [k, v] = b.dataset.wq.split('|'); const w = get();
+      if(k === 'feel') w.feel = +v; else if(k === 'sleep') w.sleep = v; else if(k === 'rec') w.rec = v;
+      else if(k === 'nopain'){ w.nopain = !w.nopain; if(w.nopain) w.pain = []; }
+      else if(k === 'area'){ w.nopain = false; w.pain = w.pain.some(x => x.a === v) ? w.pain.filter(x => x.a !== v) : w.pain.concat([{ a:v, l:0 }]); }
+      else if(k === 'lvl'){ const [a, n] = v.split('~'); const x = w.pain.find(y => y.a === a); if(x) x.l = +n; }
+      render();
+    });
+    const sv = $('wkSave'); if(sv) sv.onclick = () => { const w = get();
+      if(!w.feel){ $('wkErr').textContent = 'Tap how the week felt.'; return; }
+      if(!w.sleep){ $('wkErr').textContent = 'Tap how you slept.'; return; }
+      if(!w.nopain && !w.pain.length){ $('wkErr').textContent = 'Tap where it hurts, or None.'; return; }
+      if(w.pain.some(x => !x.l)){ $('wkErr').textContent = 'Rate each sore spot 1 to 10.'; return; }
+      const r = parseInt($('wkRhr').value, 10), bw = parseFloat($('wkBw').value);
+      if(r > 25 && r < 140) w.rhr = r; else delete w.rhr; if(bw > 60 && bw < 500) w.bw = bw; else delete w.bw;
+      w.t = Date.now(); wkEdit = false; saveA(); toastPR = 'Weekly check-in sent. Thanks, Coach Reef will use it for next week.'; render(); };
+    const ed = $('wkEdit'); if(ed) ed.onclick = () => { wkEdit = true; render(); };
+  }
   function wireReady(){
+    wireWeekly();
     document.querySelectorAll('[data-rq]').forEach(b => b.onclick = () => {
       const [k, i] = b.dataset.rq.split('|'); const today = todayStr(); A.ready = A.ready || {};
       const r = A.ready[today] = Object.assign({}, A.ready[today] || {}); r[k] = +i;
@@ -4020,7 +4063,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         ['log','scores','personal','done','skills'].forEach(f => { if(Array.isArray(ca[f])){ if(!Array.isArray(A[f])) A[f] = []; n += union(A[f], ca[f], idk); const rv = new Map(ca[f].filter(x => x && x.vid && x.id).map(x => [x.id, x.vid])); A[f].forEach(x => { if(x && !x.vid && rv.has(x.id)){ x.vid = rv.get(x.id); n++; } }); } });
         if(Array.isArray(ca.subs)){ if(!Array.isArray(A.subs)) A.subs = []; n += union(A.subs, ca.subs, x => x ? (x.e+'|'+x.a) : null); }
         if(Array.isArray(ca.unsync)){ union(A.unsync, ca.unsync, x => String(x)); }
-        ['evNotes','evVids','indr','moves'].forEach(f => { const o = ca[f]; if(o && typeof o === 'object' && !Array.isArray(o)){ if(!A[f] || typeof A[f] !== 'object') A[f] = {}; Object.keys(o).forEach(k => { if(!(k in A[f])){ A[f][k] = o[k]; n++; } }); } });
+        ['evNotes','evVids','indr','moves','weekly'].forEach(f => { const o = ca[f]; if(o && typeof o === 'object' && !Array.isArray(o)){ if(!A[f] || typeof A[f] !== 'object') A[f] = {}; Object.keys(o).forEach(k => { if(!(k in A[f])){ A[f][k] = o[k]; n++; } }); } });
         Object.keys(A.moves||{}).forEach(k => { if(!LIFTS[k]){ LIFTS[k] = A.moves[k]; LIFT_ORDER.push(k); } });
         if(ca.coachGoal && typeof ca.coachGoal === 'object' && (!A.coachGoal || (ca.coachGoal.at||'') > (A.coachGoal.at||''))){ A.coachGoal = ca.coachGoal; n++; }
         if(!A.name && ca.name){ A.name = ca.name; n++; }
@@ -4588,6 +4631,7 @@ async function start(u, coach){
     if(coach) ks = PROGS.map(p => p[0]);
     else { ks = md.progs || [];
       // Personal athletes: open their own profile + private days straight from their login (no PIN)
+      window.__bbPersonal = ks.includes('personal');
       if(ks.includes('personal') && md.meId && md.ka){ localStorage.setItem('bb-me', md.meId); localStorage.setItem('bb-ka-'+md.meId, md.ka); }
       else if(!ks.includes('personal')){ try{ const old = localStorage.getItem('bb-me'); if(old) localStorage.removeItem('bb-ka-'+old); }catch(e){} }
     }
