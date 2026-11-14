@@ -711,7 +711,8 @@ Rest 2:00"></textarea></label>
   <form class="card" id="subForm" autocomplete="off">
     <span class="label" id="sbWhat">Log your score</span>
     <h2>Log your score</h2>
-    <label class="field"><span class="label">Division</span><select id="sbDiv"></select></label>
+    <div id="sbMv"></div>
+    <label class="field" id="sbDivF"><span class="label">Division</span><select id="sbDiv"></select></label>
     <label class="field" id="sbTimeF"><span class="label">Time (min:sec)</span><input id="sbTime" type="text" inputmode="numeric" placeholder="12:34"></label>
     <label class="field" id="sbNumF"><span class="label" id="sbNumL">Score</span><input id="sbNum" type="number" inputmode="decimal" step="any" min="0"></label>
     <label class="row" id="sbModF" style="gap:8px"><input id="sbMod" type="checkbox" style="width:20px;height:20px"> <span>I did a modified version (keeps it off the main board, still counts for my progress)</span></label>
@@ -2666,7 +2667,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const nkDay = memProg+'|'+(showMoved ? mv.from : memDay);
       const partHtml = pt => '<section class="part"><span class="tag">'+esc(pt.tag)+'</span><ul class="rx">'+pt.lines.map(l => lineHtml(l, pt.lift)).join('')+'</ul>'+liftNote(pt)+
         (pt.scale?'<p class="scale"><b>Scale it:</b> '+esc(pt.scale.replace(/^Scaled:\s*/,''))+'</p>':'')+
-        notesTabs(nkDay+'|'+(pt.tag||''), athNotes(pt.note, pt.lines.concat(pt.scale||[])) + swNoteFor(window.__bbCardNotes, (showMoved ? mv.from : memDay), memProg, pt, 'a'), (cmap.map[String(pt.tag||'')]||'') + swNoteFor(window.__bbCoachCardNotes, (showMoved ? mv.from : memDay), memProg, pt, 'c'))+ (pt.event && evById(pt.event) && meId && athById(meId) ? logBar(evById(pt.event)) + (pt.lift && LIFTS[pt.lift] ? partLogBar(pt, entry, memDay) : '') : partLogBar(pt, entry, memDay)) +'</section>';
+        notesTabs(nkDay+'|'+(pt.tag||''), athNotes(pt.note, pt.lines.concat(pt.scale||[])) + swNoteFor(window.__bbCardNotes, (showMoved ? mv.from : memDay), memProg, pt, 'a'), (cmap.map[String(pt.tag||'')]||'') + swNoteFor(window.__bbCoachCardNotes, (showMoved ? mv.from : memDay), memProg, pt, 'c'))+ (boardEvFor(pt, showMoved ? mv.from : memDay) && meId && athById(meId) ? logBar(boardEvFor(pt, showMoved ? mv.from : memDay)) + (pt.lift && LIFTS[pt.lift] ? partLogBar(pt, entry, memDay) : '') : partLogBar(pt, entry, memDay)) +'</section>';
       const wv = partsWithItems(entry, showMoved ? mv.from : memDay, memProg, partHtml);
       h += ownDayHtml(wv.own) + '<div class="parts">'+wv.html+'</div>';
     }
@@ -2749,6 +2750,15 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(r) return '<div class="logbar"><span>Logged: <b>'+esc(r.s||'Done')+'</b>'+(r.feel?' · felt '+esc(r.feel):'')+'</span><button class="linkbtn" type="button" data-pres="'+esc(src)+'" data-ptitle="'+esc(title)+'" data-pdate="'+esc(date)+'">Log again</button></div>';
     return '<div class="logbar"><span>Log your result and the weights you used</span><button class="btn solid" type="button" data-pres="'+esc(src)+'" data-ptitle="'+esc(title)+'" data-pdate="'+esc(date)+'" style="padding:7px 12px">Log my result</button></div>';
   }
+  // Athlete Comp parts link to that day's Board event (Board scores Athlete Comp, Nov 14): the day's Workout/Interval/Aerobic to the scored event, a main lift to its load event.
+  function boardEvFor(pt, date){
+    if(pt.event && evById(pt.event)) return evById(pt.event);
+    if(memProg !== 'comp' || !date || /warm|cool|mobil|stretch|accessory|plyo/i.test(pt.tag||'')) return null;
+    const evs = LB.events.filter(e => e.date === date);
+    if(pt.lift) return evs.find(e => e.type === 'load' && e.lift === pt.lift) || null;
+    if(/workout|interval|aerobic/i.test(pt.tag||'')) return evs.find(e => e.type !== 'load') || null;
+    return null;
+  }
   function logBar(ev){
     const me = meId && athById(meId);
     if(!me) return '<div class="logbar"><span>Sign in on the Me tab to log your score for the board.</span></div>';
@@ -2796,13 +2806,19 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 
   /* athlete score submission */
   if(!Array.isArray(A.subs)) A.subs = [];
-  let subEv = null;
+  let subEv = null, sbPick = {};
+  // Score bubble (Reef, Nov 14): division = the easiest option picked across the workout's movements/weights.
+  function sbMvDiv(ev){ const mv = Array.isArray(ev.mv) ? ev.mv : []; if(!mv.length || mv.some((m,i) => sbPick[i] == null)) return ''; return mv.map((m,i) => m.o[sbPick[i]][0]).sort((a,b) => DIVRANK(b) - DIVRANK(a))[0]; }
   function openSub(ev){
     if(!ev) return; subEv = ev;
     $('sbWhat').textContent = ev.name+' · '+niceDate(ev.date);
     const sel = $('sbDiv'); sel.innerHTML = ''; LB.divs.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
     $('sbMod').checked = !!(IK.mine && IK.mine.swaps.length && (ev.name||'') && IK.mine.swaps.some(s => swapRe(s.from).test(ev.name + ' ' + (ev.desc||''))));
     const me = athById(meId); sel.value = (me && me.div) || LB.divs[0];
+    sbPick = {}; const mv = Array.isArray(ev.mv) ? ev.mv : [];
+    $('sbDivF').hidden = mv.length > 0;
+    $('sbMv').innerHTML = mv.length ? '<p class="how" style="margin:0 0 6px">Tap what you did for each one. Your division is set by the easiest choice you made.</p>'+mv.map((m,i) => '<div class="field"><span class="label">'+esc(m.n)+'</span><div class="divs" style="flex-wrap:wrap;margin:6px 0 10px">'+m.o.map((o,j) => '<button class="prog" type="button" data-mvr="'+i+'" data-mvo="'+j+'" aria-pressed="false" style="text-align:left">'+esc(o[1])+' <small style="opacity:.7">· '+esc(o[0])+'</small></button>').join('')+'</div></div>').join('')+'<p class="how" id="sbMvDiv" style="margin:0 0 8px"></p>' : '';
+    $('sbMv').querySelectorAll('[data-mvr]').forEach(b => b.onclick = () => { const i = +b.dataset.mvr; sbPick[i] = +b.dataset.mvo; $('sbMv').querySelectorAll('[data-mvr="'+i+'"]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); const d = sbMvDiv(ev); $('sbMvDiv').innerHTML = d ? 'Your division: <b>'+esc(d)+'</b>' : ''; });
     $('sbTimeF').hidden = ev.type !== 'time'; $('sbNumF').hidden = ev.type === 'time';
     $('sbNumL').textContent = ev.type === 'load' ? 'Weight ('+A.unit+')' : 'Total reps';
     $('sbTime').value = ''; $('sbNum').value = ''; $('sbErr').textContent = ''; $('sbNote').value = A.evNotes[ev.id] || '';
@@ -2812,6 +2828,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   $('subForm').onsubmit = e => {
     e.preventDefault(); const ev = subEv; if(!ev || !meId) return;
     const rec = { id: lbUid(), a: meId, e: ev.id, d: $('sbDiv').value, t: Date.now() };
+    if(Array.isArray(ev.mv) && ev.mv.length){ const d = sbMvDiv(ev); if(!d){ $('sbErr').textContent = 'Tap what you did for each movement first.'; return; } rec.d = d; rec.mv = ev.mv.map((m,i) => sbPick[i]); }
     if(ev.type === 'time'){ const sec = parseTime($('sbTime').value); if(sec == null || sec <= 0){ $('sbErr').textContent = 'Enter your time like 12:34.'; return; } rec.v = sec; }
     else { let n = parseFloat($('sbNum').value); if(!(n >= 0)){ $('sbErr').textContent = 'Enter your score.'; return; } if(ev.type === 'load' && A.unit === 'kg') n = Math.round(n*2.20462); rec.v = n; }
     const bnote = $('sbNote').value.trim().slice(0,600); if(bnote) A.evNotes[ev.id] = bnote; else delete A.evNotes[ev.id];
