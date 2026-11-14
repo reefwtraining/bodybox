@@ -2059,8 +2059,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   // POINT SYSTEM (Reef, Nov 14): workouts score, lifts don't (they show as top weights).
   // Each workout: athletes on a division's board are those whose home division is that division.
   // Like the Open: whoever did the workout in a harder division ranks above everyone who did it easier, then by score.
-  // Place points: 1st 100, 2nd 95 ... down by 5, at least 10 for finishing. Missed = 0.
-  // Bonuses: +5 for doing it in a harder division than your own; coach bonuses (LB.bonus: PR +10, full week logged +5).
+  // Place points: 1st 10, 2nd 9 ... down by 1, at least 1 for finishing. Missed = 0.
+  // Bonuses: +1 for a harder division than your own; weekly (LB.bonus): workout video +2, lift video +1, lift PR +3, full week logged +2.
   const DIVRANK = d => { const i = LB.divs.indexOf(d); return i < 0 ? 99 : i; };
   const homeDiv = id => (LB.athletes.find(a => a.id === id) || {}).div || LB.divs[0];
   const scoredEv = ev => ev.type !== 'load';
@@ -2071,7 +2071,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const rs = Object.values(best).sort((a,b) => (DIVRANK(a.d) - DIVRANK(b.d)) || lbCmp(ev)(a,b));
     let place = 0; return rs.map((r,i) => { if(i===0 || rs[i-1].d !== r.d || !lbSame(ev, rs[i-1], r)) place = i+1; return { r, place }; });
   }
-  const placePts = place => Math.max(10, 100 - 5*(place-1));
+  const placePts = place => Math.max(1, 11 - place);
   function standings(div, sex){
     const RS = allResults().filter(r => inSex(r.a, sex) && homeDiv(r.a) === div);
     const evs = LB.events.filter(ev => scoredEv(ev) && inPer(ev.date) && RS.some(r => r.e === ev.id));
@@ -2083,7 +2083,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const pl = placingsHome(ev, div, sex);
       rows.forEach(row => {
         const hit = pl.find(x => x.r.a === row.id);
-        if(hit){ const up = DIVRANK(hit.r.d) < DIVRANK(div) ? 5 : 0, pts = placePts(hit.place) + up;
+        if(hit){ const up = DIVRANK(hit.r.d) < DIVRANK(div) ? 1 : 0, pts = placePts(hit.place) + up;
           row.pts += pts; row.done++; if(hit.place===1) row.wins++; row.per.push({ ev, place: hit.place, r: hit.r, pts, up }); }
         else row.per.push({ ev, place: 0, r: null, pts: 0 });
       });
@@ -2102,7 +2102,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(lbOpenEv && evById(lbOpenEv)) return renderBoardEvent(v, evById(lbOpenEv));
     const { rows, evs } = standings(lbDiv, lbSex);
     let h = '<div class="head"><span class="sched">'+perLabel()+' · '+(LB.updated?'updated '+niceDate(LB.updated):'starting soon')+'</span><h1>Leaderboard</h1></div>';
-    h += '<p class="how">Workouts score points: 1st = 100, 2nd = 95, down by 5 (finishing is always worth at least 10). Like the Open, doing a workout in a harder division puts you above everyone who did it easier, plus 5 bonus points; doing it easier puts you below everyone who did your division. Bonus points: +10 for a lift PR, +5 for logging your full week. Lifts show their top weights but do not score. Highest total wins. The board updates every Wednesday at 8 PM with the week\'s scores (Thursday to Wednesday).</p>';
+    h += '<p class="how">Workouts score points: 1st = 10, 2nd = 9, down by 1 (finishing is always worth at least 1). Like the Open, doing a workout in a harder division puts you above everyone who did it easier, plus 1 bonus point; doing it easier puts you below everyone who did your division. Bonus points: +2 for a workout video, +1 for a lift video, +3 for a lift PR, +2 for logging your full week. Lifts show their top weights but do not score. Highest total wins. The board updates every Wednesday at 8 PM with the week\'s scores (Thursday to Wednesday).</p>';
     h += '<div class="divs" role="group" aria-label="Time period">'+[['week','Week'],['month','Month'],['all','All time']].map(([k,l]) => '<button class="prog" type="button" data-lbper="'+k+'" aria-pressed="'+(k===lbPer)+'">'+l+'</button>').join('')+'</div>';
     h += '<div class="divs" role="group" aria-label="Division">'+LB.divs.map(d => '<button class="prog" type="button" data-lbdiv="'+esc(d)+'" aria-pressed="'+(d===lbDiv)+'">'+esc(d)+'</button>').join('')+'</div>' + sexPills();
     if(canEditLB && lbSex !== 'all' && LB.athletes.some(a => !a.sex)) h += '<p class="how" style="margin-top:-6px">Coach tip: athletes without Men or Women set on their profile only show under All.</p>';
