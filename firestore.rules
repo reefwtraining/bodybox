@@ -95,5 +95,14 @@ service cloud.firestore {
       allow read, write: if isMe(uid) && (approved() || isCoach());
       allow read, write: if isCoach();
     }
+
+    // SugarWOD card notes. Athlete notes: approved members read. Coaches notes: coaches only.
+    match /cardnotes/{d} {
+      allow read: if isCoach() || approved();
+      allow write: if isCoach();
+    }
+    match /coachnotes/{d} {
+      allow read, write: if isCoach();
+    }
   }
 }
