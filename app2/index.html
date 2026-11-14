@@ -2056,21 +2056,40 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     return date >= f(thu) && date <= f(wed);
   }
   const perLabel = () => lbPer === 'week' ? 'Week · updates Wed 8 PM' : lbPer === 'month' ? 'This month' : 'All-time';
+  // POINT SYSTEM (Reef, Nov 14): workouts score, lifts don't (they show as top weights).
+  // Each workout: athletes on a division's board are those whose home division is that division.
+  // Like the Open: whoever did the workout in a harder division ranks above everyone who did it easier, then by score.
+  // Place points: 1st 100, 2nd 95 ... down by 5, at least 10 for finishing. Missed = 0.
+  // Bonuses: +5 for doing it in a harder division than your own; coach bonuses (LB.bonus: PR +10, full week logged +5).
+  const DIVRANK = d => { const i = LB.divs.indexOf(d); return i < 0 ? 99 : i; };
+  const homeDiv = id => (LB.athletes.find(a => a.id === id) || {}).div || LB.divs[0];
+  const scoredEv = ev => ev.type !== 'load';
+  function placingsHome(ev, div, sex){
+    const best = {};
+    allResults().filter(r => r.e === ev.id && inSex(r.a, sex) && homeDiv(r.a) === div).forEach(r => {
+      const b = best[r.a]; if(!b || DIVRANK(r.d) < DIVRANK(b.d) || (r.d === b.d && lbCmp(ev)(r, b) < 0)) best[r.a] = r; });
+    const rs = Object.values(best).sort((a,b) => (DIVRANK(a.d) - DIVRANK(b.d)) || lbCmp(ev)(a,b));
+    let place = 0; return rs.map((r,i) => { if(i===0 || rs[i-1].d !== r.d || !lbSame(ev, rs[i-1], r)) place = i+1; return { r, place }; });
+  }
+  const placePts = place => Math.max(10, 100 - 5*(place-1));
   function standings(div, sex){
-    const RS = allResults().filter(r => inSex(r.a, sex));
-    const evs = LB.events.filter(ev => inPer(ev.date) && RS.some(r => r.e === ev.id && r.d === div));
-    const ids = [...new Set(RS.filter(r => r.d === div).map(r => r.a))];
+    const RS = allResults().filter(r => inSex(r.a, sex) && homeDiv(r.a) === div);
+    const evs = LB.events.filter(ev => scoredEv(ev) && inPer(ev.date) && RS.some(r => r.e === ev.id));
+    const ids = [...new Set(RS.filter(r => evs.some(ev => ev.id === r.e)).map(r => r.a))];
+    (LB.bonus||[]).forEach(b => { if(inPer(b.date) && homeDiv(b.a) === div && inSex(b.a, sex) && !ids.includes(b.a)) ids.push(b.a); });
     const rows = ids.map(id => ({ id, pts:0, done:0, wins:0, per:[] }));
     const byId = Object.fromEntries(rows.map(x => [x.id, x]));
     evs.forEach(ev => {
-      const pl = placings(ev, div, sex), miss = pl.length + 1;
+      const pl = placingsHome(ev, div, sex);
       rows.forEach(row => {
         const hit = pl.find(x => x.r.a === row.id);
-        if(hit){ row.pts += hit.place; row.done++; if(hit.place===1) row.wins++; row.per.push({ ev, place: hit.place, r: hit.r }); }
-        else { row.pts += miss; row.per.push({ ev, place: miss, r: null }); }
+        if(hit){ const up = DIVRANK(hit.r.d) < DIVRANK(div) ? 5 : 0, pts = placePts(hit.place) + up;
+          row.pts += pts; row.done++; if(hit.place===1) row.wins++; row.per.push({ ev, place: hit.place, r: hit.r, pts, up }); }
+        else row.per.push({ ev, place: 0, r: null, pts: 0 });
       });
     });
-    rows.sort((a,b) => a.pts - b.pts || b.wins - a.wins || athName(a.id).localeCompare(athName(b.id)));
+    (LB.bonus||[]).forEach(b => { const row = byId[b.a]; if(row && inPer(b.date)){ row.pts += +b.pts||0; row.per.push({ bonus: b, pts: +b.pts||0 }); } });
+    rows.sort((a,b) => b.pts - a.pts || b.wins - a.wins || athName(a.id).localeCompare(athName(b.id)));
     let rk = 0; rows.forEach((r,i) => { if(i===0 || rows[i-1].pts !== r.pts || rows[i-1].wins !== r.wins) rk = i+1; r.rank = rk; });
     return { rows, evs };
   }
@@ -2083,7 +2102,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(lbOpenEv && evById(lbOpenEv)) return renderBoardEvent(v, evById(lbOpenEv));
     const { rows, evs } = standings(lbDiv, lbSex);
     let h = '<div class="head"><span class="sched">'+perLabel()+' · '+(LB.updated?'updated '+niceDate(LB.updated):'starting soon')+'</span><h1>Leaderboard</h1></div>';
-    h += '<p class="how">Your place in each workout is your points: 1st = 1 point, 2nd = 2 and so on. Lowest total wins. Miss a workout and you get last place plus one. The board updates every Wednesday at 8 PM with the week\'s scores (Thursday to Wednesday).</p>';
+    h += '<p class="how">Workouts score points: 1st = 100, 2nd = 95, down by 5 (finishing is always worth at least 10). Like the Open, doing a workout in a harder division puts you above everyone who did it easier, plus 5 bonus points; doing it easier puts you below everyone who did your division. Bonus points: +10 for a lift PR, +5 for logging your full week. Lifts show their top weights but do not score. Highest total wins. The board updates every Wednesday at 8 PM with the week\'s scores (Thursday to Wednesday).</p>';
     h += '<div class="divs" role="group" aria-label="Time period">'+[['week','Week'],['month','Month'],['all','All time']].map(([k,l]) => '<button class="prog" type="button" data-lbper="'+k+'" aria-pressed="'+(k===lbPer)+'">'+l+'</button>').join('')+'</div>';
     h += '<div class="divs" role="group" aria-label="Division">'+LB.divs.map(d => '<button class="prog" type="button" data-lbdiv="'+esc(d)+'" aria-pressed="'+(d===lbDiv)+'">'+esc(d)+'</button>').join('')+'</div>' + sexPills();
     if(canEditLB && lbSex !== 'all' && LB.athletes.some(a => !a.sex)) h += '<p class="how" style="margin-top:-6px">Coach tip: athletes without Men or Women set on their profile only show under All.</p>';
@@ -2094,7 +2113,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       h += '<div style="overflow-x:auto"><table class="stand"><thead><tr><th>#</th><th>Athlete</th><th style="text-align:right">Pts</th><th style="text-align:right">Done</th></tr></thead><tbody>';
       rows.forEach(r => {
         h += '<tr class="ath" data-ath="'+r.id+'"><td class="rk">'+r.rank+'</td><td><span class="nm">'+avatarHtml(athById(r.id),'sm')+esc(athName(r.id))+(r.id===meId?' <span class="you">YOU</span>':'')+'</span></td><td class="pt">'+r.pts+'</td><td class="ev">'+r.done+'/'+evs.length+'</td></tr>';
-        if(lbOpenAth === r.id) h += '<tr class="brk"><td colspan="4"><ul>'+r.per.slice().reverse().map(x => '<li><span>'+esc(x.ev.name)+'</span><span>'+(x.r ? ordinal(x.place)+' · '+esc(lbScore(x.ev, x.r)) : 'No score · '+x.place+' pts')+'</span></li>').join('')+'</ul></td></tr>';
+        if(lbOpenAth === r.id) h += '<tr class="brk"><td colspan="4"><ul>'+r.per.slice().reverse().map(x => x.bonus ? '<li><span>Bonus · '+esc(x.bonus.why||'')+'</span><span>+'+x.pts+' pts</span></li>' : '<li><span>'+esc(x.ev.name)+'</span><span>'+(x.r ? ordinal(x.place)+(x.r.d!==lbDiv?' ('+esc(x.r.d)+')':'')+' · '+esc(lbScore(x.ev, x.r))+' · '+x.pts+' pts' : 'No score · 0 pts')+'</span></li>').join('')+'</ul></td></tr>';
       });
       h += '</tbody></table></div>';
     }
@@ -2250,7 +2269,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     });
     LB.events.forEach(ev => LB.divs.forEach(d => {
       const pl = placings(ev, d); const hit = pl.find(x => x.r.a === id);
-      if(hit){ out.done++; if(hit.place===1) out.wins++; if(hit.place<=3) out.podiums++; out.results.push({ ev, div:d, place:hit.place, of:pl.length, r:hit.r }); }
+      if(hit){ if(scoredEv(ev)){ out.done++; if(hit.place===1) out.wins++; if(hit.place<=3) out.podiums++; } out.results.push({ ev, div:d, place:hit.place, of:pl.length, r:hit.r }); }
     }));
     out.results.sort((a,b) => a.ev.date < b.ev.date ? 1 : -1);
     out.main = out.boards.slice().sort((a,b) => b.of - a.of)[0] || null;
