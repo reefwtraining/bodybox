@@ -3139,7 +3139,25 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   const TABS_OK = ['workouts','named','board','numbers','calc','clock','plans','coach','moves'];
   function setTab(t){ tab = t; store.set('bb-tab', t); render(); window.scrollTo(0,0); }
   document.querySelectorAll('.tabs [data-tab]').forEach(b => b.onclick = () => { if(b.dataset.tab === 'named') namedOpen = null; if(b.dataset.tab === 'board'){ lbOpenEv = null; profId = null; } setTab(b.dataset.tab); });
+  // Apple Watch / Apple Health via an iPhone Shortcut (Nov 14): the Shortcut opens the app with ?hk=1&rhr=..&hrv=..&sleep=..(hours)
+  let hkDone = false;
+  function applyHealth(){
+    if(hkDone) return; hkDone = true;
+    let q; try{ q = new URLSearchParams(location.search); }catch(e){ return; }
+    if(q.get('hk') !== '1') return;
+    const num = (k, lo, hi) => { const v = parseFloat(String(q.get(k)||'').replace(',', '.')); return v >= lo && v <= hi ? Math.round(v*10)/10 : null; };
+    const rhr = num('rhr', 25, 140), hrv = num('hrv', 5, 300), sl = num('sleep', 0.5, 16);
+    try{ history.replaceState(null, '', location.pathname + location.hash); }catch(e){}
+    if(rhr == null && hrv == null && sl == null) return;
+    const d = etNow().date; A.health = A.health || {}; const h = A.health[d] = Object.assign({}, A.health[d] || {});
+    if(rhr != null) h.rhr = Math.round(rhr); if(hrv != null) h.hrv = Math.round(hrv); if(sl != null) h.sleep = sl; h.t = Date.now();
+    if(parse(d).getDay() === 0){ A.weekly = A.weekly || {}; const w = A.weekly[d] = Object.assign({ pain:[] }, A.weekly[d] || {});
+      if(rhr != null && !w.rhr) w.rhr = Math.round(rhr);
+      if(sl != null && !w.sleep) w.sleep = sl < 6 ? 'Under 6' : sl < 6.75 ? '6 hrs' : sl < 7.75 ? '7 hrs' : sl < 8.75 ? '8 hrs' : '9+ hrs'; }
+    saveA(); toastPR = 'Apple Health synced: '+[rhr!=null?'resting HR '+Math.round(rhr):'', hrv!=null?'HRV '+Math.round(hrv):'', sl!=null?'sleep '+sl+' hrs':''].filter(Boolean).join(' · ');
+  }
   function render(){
+    applyHealth();
     const sm = syncLifts(); if(sm) toastPR = sm;
     document.querySelectorAll('.tabs [data-tab]').forEach(b => { if(b.dataset.tab === tab) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     const w = tab === 'workouts';
@@ -4063,7 +4081,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         ['log','scores','personal','done','skills'].forEach(f => { if(Array.isArray(ca[f])){ if(!Array.isArray(A[f])) A[f] = []; n += union(A[f], ca[f], idk); const rv = new Map(ca[f].filter(x => x && x.vid && x.id).map(x => [x.id, x.vid])); A[f].forEach(x => { if(x && !x.vid && rv.has(x.id)){ x.vid = rv.get(x.id); n++; } }); } });
         if(Array.isArray(ca.subs)){ if(!Array.isArray(A.subs)) A.subs = []; n += union(A.subs, ca.subs, x => x ? (x.e+'|'+x.a) : null); }
         if(Array.isArray(ca.unsync)){ union(A.unsync, ca.unsync, x => String(x)); }
-        ['evNotes','evVids','indr','moves','weekly'].forEach(f => { const o = ca[f]; if(o && typeof o === 'object' && !Array.isArray(o)){ if(!A[f] || typeof A[f] !== 'object') A[f] = {}; Object.keys(o).forEach(k => { if(!(k in A[f])){ A[f][k] = o[k]; n++; } }); } });
+        ['evNotes','evVids','indr','moves','weekly','health'].forEach(f => { const o = ca[f]; if(o && typeof o === 'object' && !Array.isArray(o)){ if(!A[f] || typeof A[f] !== 'object') A[f] = {}; Object.keys(o).forEach(k => { if(!(k in A[f])){ A[f][k] = o[k]; n++; } }); } });
         Object.keys(A.moves||{}).forEach(k => { if(!LIFTS[k]){ LIFTS[k] = A.moves[k]; LIFT_ORDER.push(k); } });
         if(ca.coachGoal && typeof ca.coachGoal === 'object' && (!A.coachGoal || (ca.coachGoal.at||'') > (A.coachGoal.at||''))){ A.coachGoal = ca.coachGoal; n++; }
         if(!A.name && ca.name){ A.name = ca.name; n++; }
