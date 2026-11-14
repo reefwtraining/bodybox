@@ -3570,7 +3570,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       if(up.length) h += '<div class="psec"><span class="label">Just for you</span><h2>Coming up</h2></div><ul class="ilist">'+up.map(it => '<li><span class="k">'+niceDate(it.date)+' · '+esc(it.prog==='own'?'Custom day':((D.programs[it.prog]||{}).short||''))+'</span><span class="w">'+esc(it.title||it.tag)+'</span></li>').join('')+'</ul>';
       if(IK.mine.swaps.length) h += '<div class="psec"><span class="label">Your coach set these</span><h2>Your swaps</h2></div><ul class="ilist">'+IK.mine.swaps.map(s => '<li><span class="w">'+esc(s.from)+' → '+esc(s.to)+'</span>'+(s.note?'<span class="b">'+esc(s.note)+'</span>':'')+'</li>').join('')+'</ul>';
     }
-    if(I.pub){
+    if(window.__bbFire){
+      h += '<p class="how" style="margin:8px 0">Your lifts and scores go to Coach Reef and the Board on their own every night. Just keep logging.</p>';
+    } else if(I.pub){
       const last = A.lastReport ? Math.round((Date.now() - A.lastReport)/864e5) : null;
       h += '<div class="coach"><span class="label">Keep your coach in the loop</span><h3>Send my update to coach</h3><p class="how" style="margin:0 0 8px">Tap after every workout. It opens an email to Coach Reef with your lifts, scores and notes, locked so only coaches can open it. Just hit send.'+(last==null?'':' Last sent '+(last===0?'today':last+' day'+(last>1?'s':'')+' ago')+'.')+'</p>'+
         '<div class="row"><button class="btn solid" type="button" id="repSend">Send my update</button></div><p class="how" id="repOut"></p></div>';
