@@ -412,9 +412,9 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
 .dphoto img{display:block;width:100%;height:auto;max-height:58vh;object-fit:contain;background:#111}
 .news .dphoto{margin:2px 0 4px}
 .news.compact{background:none;border:0;padding:0;gap:12px;margin:2px 0 18px}
-.aimrow{display:flex;flex-wrap:wrap;gap:10px}
-.aimpill{flex:1 1 0;min-width:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:14px;padding:12px 14px;font-family:var(--display);font-size:20px;letter-spacing:.03em;text-transform:uppercase;text-decoration:none;cursor:pointer;line-height:1.05;text-align:center}
-.aimpill small{font-family:var(--mono);font-size:10px;letter-spacing:.1em;opacity:.8}
+.aimrow{display:flex;flex-wrap:nowrap;gap:8px}
+.aimpill{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:999px;padding:8px 10px;font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;line-height:1.1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aimpill small{display:none}
 .aimbtn{background:var(--red);color:#fff;border:0}
 .aimbtn[aria-expanded="true"]{background:var(--chalk);color:var(--ink)}
 .aimpill.sc{background:var(--panel);color:var(--chalk);border:1px solid var(--line)}
