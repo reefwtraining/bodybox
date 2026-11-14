@@ -411,6 +411,15 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
 .dphoto{margin:0 0 12px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
 .dphoto img{display:block;width:100%;height:auto;max-height:58vh;object-fit:contain;background:#111}
 .news .dphoto{margin:2px 0 4px}
+.news.compact{background:none;border:0;padding:0;gap:12px;margin:2px 0 18px}
+.aimrow{display:flex;flex-wrap:wrap;gap:10px}
+.aimpill{flex:1 1 0;min-width:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:14px;padding:12px 14px;font-family:var(--display);font-size:20px;letter-spacing:.03em;text-transform:uppercase;text-decoration:none;cursor:pointer;line-height:1.05;text-align:center}
+.aimpill small{font-family:var(--mono);font-size:10px;letter-spacing:.1em;opacity:.8}
+.aimbtn{background:var(--red);color:#fff;border:0}
+.aimbtn[aria-expanded="true"]{background:var(--chalk);color:var(--ink)}
+.aimpill.sc{background:var(--panel);color:var(--chalk);border:1px solid var(--line)}
+.aimpill.off{background:var(--panel);color:var(--muted);border:1px dashed var(--line);cursor:default}
+.news .aimbody{background:#fff;color:#111;border:2px solid var(--red);border-radius:12px;padding:16px;display:grid;gap:10px}
 
 
 /* members + plans */
@@ -2453,9 +2462,12 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const u = (LB.photos||{})[d]; if(!u) return '';
     return '<figure class="dphoto"><img src="'+esc(u)+'" alt="BODYBOX photo of the day, '+esc(longDate(d))+'" loading="lazy" onerror="this.parentNode.remove()"></figure>';
   }
+  const AIMOPEN = new Set();
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-aimbtn]'); if(!b) return; const d = b.dataset.aimbtn, body = b.closest('.news').querySelector('.aimbody'); if(!body) return; body.hidden = !body.hidden; b.setAttribute('aria-expanded', String(!body.hidden)); if(body.hidden) AIMOPEN.delete(d); else AIMOPEN.add(d); });
   function newsHtml(){
     const today = todayStr(); const n = newsFor(today);
-    let h = '<section class="news" aria-label="Daily announcement">';
+    let h = '<section class="news'+(newsEdit && canEditLB ? '' : ' compact')+'" aria-label="Daily announcement">';
+    const scBtn = LB.scaling ? '<a class="aimpill sc" href="'+esc(LB.scaling)+'" target="_blank" rel="noopener">Scaling options ↗</a>' : '';
     if(newsEdit && canEditLB){
       const cur = (LB.news||[]).find(x => x.date === today) || { title:'', body:'' };
       h += '<span class="label">Coach tools · today\'s announcement</span>'+
@@ -2464,14 +2476,14 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         '<textarea id="nwBody" placeholder="Write the announcement. Blank line = new paragraph. ## for a heading, - for a bullet, **bold**.">'+esc(cur.body)+'</textarea>'+
         '<p class="err" id="nwErr"></p><div class="row"><button class="btn solid" type="button" id="nwSave">Save announcement</button><button class="btn" type="button" id="nwCancel">Cancel</button></div>';
     } else if(n){
-      h += '<span class="when">Daily announcement · '+longDate(n.date === today ? today : n.date)+'</span>'+(memProgs().length ? '' : dayPhotoHtml(today))+'<h1>'+esc(n.title)+'</h1><div class="bd">'+mdLite(n.body)+'</div>'+
-        (n.date !== today ? '<p class="stale">Today\'s announcement isn\'t up yet. This is the latest one.</p>' : '');
+      const open = AIMOPEN.has(n.date);
+      h += '<div class="aimrow"><button class="aimpill aimbtn" type="button" data-aimbtn="'+esc(n.date)+'" aria-expanded="'+open+'">'+esc(n.title || 'Aim of the day')+'<small>'+esc(longDate(n.date === today ? today : n.date))+'</small></button>'+scBtn+'</div>'+
+        '<div class="aimbody"'+(open?'':' hidden')+'>'+(memProgs().length ? '' : dayPhotoHtml(today))+'<div class="bd">'+mdLite(n.body)+'</div>'+
+        (n.date !== today ? '<p class="stale">Today\'s announcement isn\'t up yet. This is the latest one.</p>' : '')+'</div>';
     } else {
-      h += '<span class="when">Daily announcement · '+longDate(today)+'</span><h1>Coming soon</h1><p class="stale">Today\'s announcement goes up each morning.</p>';
+      h += '<div class="aimrow"><span class="aimpill off">Aim of the day<small>Coming soon</small></span>'+scBtn+'</div>';
     }
     if(!(newsEdit && canEditLB)){
-      h += '<div class="row">'+(LB.scaling?'<a class="btn solid" href="'+esc(LB.scaling)+'" target="_blank" rel="noopener">Scaling options ↗</a>':'')+(LB.chat?'<a class="btn" href="'+esc(LB.chat)+'" target="_blank" rel="noopener">Team chat ↗</a>':'')+
-        '</div>';
       if(canEditLB) h += '<div class="row"><button class="linkbtn" type="button" id="nwEdit">'+((LB.news||[]).some(x => x.date === today) ? 'Edit today\'s announcement' : 'Write today\'s announcement')+'</button></div>';
     }
     h += '</section>';
