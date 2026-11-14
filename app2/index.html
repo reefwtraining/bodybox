@@ -1467,7 +1467,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const es = gymEntries(k), u = gymUnit(k);
     const rows = es.slice().reverse().map(e => '<li><span class="d">'+niceDate(e.date)+'</span><span>'+e.n+' '+u+(e.note?'<span class="unote">'+esc(e.note)+'</span>':'')+'</span>'+
       '<button type="button" data-gymdel="'+e.id+'" class="'+(gymArmed===e.id?'sure':'')+'">'+(gymArmed===e.id?'Delete?':'Remove')+'</button></li>').join('');
-    return '<div class="detail"><h3>'+esc(gymName(k))+'</h3>'+
+    return '<div class="detail"><h3>'+esc(gymName(k))+'</h3>'+gymGoalBar(k)+
       '<div class="grid2"><label class="field"><span class="label">Max '+(u==='sec'?'seconds':u==='ft'?'feet':'unbroken reps')+'</span><input id="gymN" type="number" inputmode="numeric" min="0" step="1" placeholder="0"></label>'+
       '<label class="field"><span class="label">Date</span><input id="gymD" type="date" value="'+todayStr()+'"></label></div>'+
       '<label class="field"><span class="label">Note (optional)</span><input id="gymNote" maxlength="120" placeholder="e.g. banded, chest touched every rep"></label>'+
@@ -3611,11 +3611,30 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const pct = Math.max(0, Math.min(100, Math.round(cur / tgt * 100))); const left = Math.max(0, Math.round((tgt - cur) * 10) / 10);
     return '<span class="goalb'+(compact?' sm':'')+'"><span class="gtrack"><i style="width:'+pct+'%"></i></span><span class="glab">'+(left > 0 ? 'Goal '+fmtW(tgt)+' · '+fmtW(left)+' to go' : 'Goal '+fmtW(tgt)+' · hit it')+'</span></span>';
   }
+  // Coach Reef's pick: written into the athlete's profile (A.coachGoal) when it fits the 6-week block
+  const cgName = g => g.kind === 'gym' ? gymName(g.k) : (LIFTS[g.k] || g.k);
+  const cgUnit = g => g.kind === 'gym' ? gymUnit(g.k) : A.unit;
+  const gymBest = k => (A.skills||[]).filter(e => e.k === k).reduce((m,e) => Math.max(m, e.n), 0);
+  function gymGoalBar(k){
+    const g = (A.goals||{})['gym:'+k]; if(!g || !(g.n > 0)) return '';
+    const cur = gymBest(k), pct = Math.max(0, Math.min(100, Math.round(cur / g.n * 100))), left = Math.max(0, g.n - cur);
+    return '<span class="goalb"><span class="gtrack"><i style="width:'+pct+'%"></i></span><span class="glab">'+(left > 0 ? 'Goal '+g.n+' '+gymUnit(k)+' · '+left+' to go' : 'Goal '+g.n+' '+gymUnit(k)+' · hit it')+(g.by?' · by '+niceDate(g.by):'')+'</span></span>';
+  }
+  function coachGoalHtml(){
+    const g = A.coachGoal; if(!g || !g.k || g.done) return '';
+    const key = g.kind === 'gym' ? 'gym:'+g.k : g.k, cur = (A.goals||{})[key];
+    const set = cur && (g.kind === 'gym' ? cur.n === g.target : cur.w === g.target) && cur.coach;
+    if(set) return '';
+    return '<div class="example" style="border-color:var(--gold)"><span class="label" style="color:var(--gold)">Coach Reef\'s pick for this block</span>'+
+      '<p style="margin:6px 0"><b>'+esc(cgName(g))+': '+g.target+' '+esc(cgUnit(g))+(g.by?' by '+niceDate(g.by):'')+'</b></p>'+(g.why?'<p style="margin:0 0 8px">'+esc(g.why)+'</p>':'')+
+      '<div class="row"><button class="btn solid" type="button" id="cgSet">Set this goal</button></div></div>';
+  }
   function goalsHtml(){
     const ks = Object.keys(A.goals||{}).filter(k => LIFTS[k] && goalOf(k));
-    let h = '<div class="psec"><span class="label">What you\'re chasing</span><h2>My goals</h2></div>';
-    if(!ks.length) return h + '<p class="how">Open any lift below and tap "Set a goal" to track how close you are.</p>';
-    return h + '<ul class="ilist">' + ks.map(k => '<li><span class="w">'+esc(LIFTS[k])+'</span>'+goalBar(k)+'</li>').join('') + '</ul>';
+    const gk = Object.keys(A.goals||{}).filter(k => k.startsWith('gym:') && A.goals[k] && A.goals[k].n > 0).map(k => k.slice(4));
+    let h = '<div class="psec"><span class="label">What you\'re chasing</span><h2>My goals</h2></div>' + coachGoalHtml();
+    if(!ks.length && !gk.length) return h + '<p class="how">Open any lift below and tap "Set a goal" to track how close you are.</p>';
+    return h + '<ul class="ilist">' + ks.map(k => '<li><span class="w">'+esc(LIFTS[k])+'</span>'+goalBar(k)+'</li>').join('') + gk.map(k => '<li><span class="w">'+esc(gymName(k))+'</span>'+gymGoalBar(k)+'</li>').join('') + '</ul>';
   }
   function goalEditHtml(k){
     const g = goalOf(k);
@@ -3627,6 +3646,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(gs){ const k = gs.dataset.goalsave, w = parseFloat(($('goalIn')||{}).value); if(!(w > 0)) return; A.goals = A.goals || {}; A.goals[k] = { w, u: A.unit, set: todayStr() }; saveA(); render(); }
     const gc = e.target.closest && e.target.closest('[data-goalclear]');
     if(gc){ if(A.goals) delete A.goals[gc.dataset.goalclear]; saveA(); render(); }
+    if(e.target.closest && e.target.closest('#cgSet')){ const g = A.coachGoal; if(g && g.k){ A.goals = A.goals || {}; const today = todayStr(); if(g.kind === 'gym') A.goals['gym:'+g.k] = { n: g.target, set: today, by: g.by || '', coach: true }; else A.goals[g.k] = { w: g.target, u: A.unit, set: today, by: g.by || '', coach: true }; saveA(); render(); } }
   });
 
   // ---- lifetime stats ----
@@ -3850,6 +3870,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         if(Array.isArray(ca.unsync)){ union(A.unsync, ca.unsync, x => String(x)); }
         ['evNotes','evVids','indr','moves'].forEach(f => { const o = ca[f]; if(o && typeof o === 'object' && !Array.isArray(o)){ if(!A[f] || typeof A[f] !== 'object') A[f] = {}; Object.keys(o).forEach(k => { if(!(k in A[f])){ A[f][k] = o[k]; n++; } }); } });
         Object.keys(A.moves||{}).forEach(k => { if(!LIFTS[k]){ LIFTS[k] = A.moves[k]; LIFT_ORDER.push(k); } });
+        if(ca.coachGoal && typeof ca.coachGoal === 'object' && (!A.coachGoal || (ca.coachGoal.at||'') > (A.coachGoal.at||''))){ A.coachGoal = ca.coachGoal; n++; }
         if(!A.name && ca.name){ A.name = ca.name; n++; }
         if(fresh){ if(ca.unit) A.unit = ca.unit; if(ca.bar) A.bar = ca.bar; }
         Object.keys(ca).forEach(k => { if(!(k in A)) A[k] = ca[k]; });
