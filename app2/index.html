@@ -72,6 +72,21 @@ main{padding-block:18px 40px}
 .part .rx b{font-weight:700;color:var(--chalk)}
 .part .rx .sub{color:var(--muted)}
 .part .note{margin:0;color:var(--muted);font-size:15px;border-top:1px dashed var(--line);padding-top:8px}
+.ntabs{display:flex;flex-wrap:wrap;gap:8px;border-top:1px dashed var(--line);padding-top:10px}
+.nt{flex:0 0 auto}
+.nt[open]{flex:1 1 100%;order:2}
+.nt>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-family:var(--cond);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--chalk);background:var(--bg)}
+.nt>summary::-webkit-details-marker{display:none}
+.nt>summary::after{content:"+";color:var(--muted);font-family:var(--mono)}
+.nt[open]>summary{background:var(--chalk);color:var(--ink);border-color:var(--chalk)}
+.nt[open]>summary::after{content:"\2212";color:var(--ink)}
+.ntc>summary{border-color:var(--gold);color:var(--gold)}
+.ntc[open]>summary{background:var(--gold);border-color:var(--gold);color:#fff}
+.ntb{display:grid;gap:8px;padding:10px 2px 2px}
+.ntb .note,.ntb .demos{border-top:0;padding-top:0}
+.ntc .ntb h4{margin:4px 0 0;font-family:var(--cond);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.ntc .ntb p,.ntc .ntb ul{margin:0}
+.ntc .ntb table{border-collapse:collapse}.ntc .ntb td{padding:2px 12px 2px 0;font-size:15px}
 .part .scale{font-size:14px;color:var(--muted);margin:0}
 .part .scale b{color:var(--gold);font-weight:600}
 .empty{background:var(--panel);border:1px dashed var(--line);border-radius:8px;padding:22px;text-align:center;color:var(--muted)}
@@ -980,7 +995,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         h += '<div class="parts">'+entry.parts.map(pt =>
           '<section class="part"><span class="tag">'+esc(pt.tag)+'</span><ul class="rx">'+pt.lines.map(l => lineHtml(l, pt.lift)).join('')+'</ul>'+ liftNote(pt) +
           (pt.scale?'<p class="scale"><b>Scale it:</b> '+esc(pt.scale.replace(/^Scaled:\s*/,''))+'</p>':'')+
-          (pt.note?'<p class="note">'+esc(pt.note)+'</p>':'')+demoHtml(pt.lines.concat(pt.scale||[]))+'</section>').join('')+'</div>';
+          notesTabs('ex|'+prog+'|'+(pt.tag||''), athNotes(pt.note, pt.lines.concat(pt.scale||[])), '')+'</section>').join('')+'</div>';
       }
       h += memberHtml(p) + signupHtml(p);
     } else {
@@ -2539,6 +2554,39 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(cn.notes) h += '<h4>Notes</h4><p>'+esc(cn.notes)+'</p>';
     return h + '</section>';
   }
+  // per-card notes, like SugarWOD: workout lines on the card, everything else behind two tabs
+  const NOPEN = new Set();
+  document.addEventListener('toggle', e => { const d = e.target; if(d && d.dataset && d.dataset.nk){ if(d.open) NOPEN.add(d.dataset.nk); else NOPEN.delete(d.dataset.nk); } }, true);
+  function notesTabs(key, athHtml, coachHtml){
+    if(!athHtml && !coachHtml) return '';
+    const one = (kind, label, body) => { const k = kind+'|'+key; return '<details class="nt'+(kind==='c'?' ntc':'')+'" data-nk="'+esc(k)+'"'+(NOPEN.has(k)?' open':'')+'><summary>'+label+'</summary><div class="ntb">'+body+'</div></details>'; };
+    return '<div class="ntabs">'+(athHtml ? one('a','Athlete notes',athHtml) : '')+(coachHtml ? one('c','Coach notes',coachHtml) : '')+'</div>';
+  }
+  function athNotes(note, lines){ return (note ? '<p class="note">'+esc(note)+'</p>' : '') + demoHtml(lines||[]); }
+  function cnBits(cn, which){
+    let h = '';
+    if(which.warm && cn.warmup && cn.warmup.length) h += '<h4>Warm-up focus</h4><ul>'+cn.warmup.map(x => '<li>'+esc(x)+'</li>').join('')+'</ul>';
+    if(which.main){
+      if(cn.caps && cn.caps.length) h += '<h4>Time caps & targets</h4><table><tbody>'+cn.caps.map(r => '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>').join('')+'</tbody></table>';
+      if(cn.intent) h += '<h4>Intent</h4><p>'+esc(cn.intent)+'</p>';
+      if(cn.notes) h += '<h4>Notes</h4><p>'+esc(cn.notes)+'</p>';
+    }
+    return h;
+  }
+  // which card each coach note belongs on: cn.parts[tag] first, warm-up focus on the warm-up card, caps/intent/notes on the main workout card
+  function coachByTag(cn, parts){
+    const out = {}; if(!cn || !parts || !parts.length) return { map: out, rest: cn };
+    const tags = parts.map(pt => String(pt.tag||''));
+    const add = (t, h) => { if(h) out[t] = (out[t]||'') + h; };
+    if(cn.parts) Object.keys(cn.parts).forEach(t => { if(tags.includes(t) && cn.parts[t]) add(t, '<p>'+esc(cn.parts[t])+'</p>'); });
+    const warm = parts.find(pt => /warm/i.test(pt.tag||''));
+    const main = parts.find(pt => !pt.lift && !/warm/i.test(pt.tag||'')) || parts[parts.length-1];
+    const rest = Object.assign({}, cn);
+    if(warm){ add(String(warm.tag||''), cnBits(cn, { warm:true })); rest.warmup = null; }
+    if(main){ add(String(main.tag||''), cnBits(cn, { main:true })); rest.caps = null; rest.intent = ''; rest.notes = ''; }
+    const left = (rest.warmup && rest.warmup.length) || (rest.caps && rest.caps.length) || rest.intent || rest.notes;
+    return { map: out, rest: left ? rest : null };
+  }
   function memberHtml2(){
     const progs = memProgs();
     if(!progs.length || memAdding){
@@ -2584,10 +2632,12 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       else if(memDay < today && entry) h += '<div class="logbar" style="margin-bottom:10px"><span>Missed this day?</span><button class="btn" type="button" id="mvToday" style="padding:7px 12px">Do it today</button></div>';
       h += '<div class="head" style="margin-bottom:10px"><span class="sched">'+esc(p.name)+' · '+longDate(showMoved ? mv.from : memDay)+(showMoved ? ' · doing it today' : '')+'</span><h1 style="font-size:clamp(28px,7.5vw,40px)">'+esc(entry.title)+'</h1></div>';
       if(entry.timer) h += '<button class="go" type="button" id="memTimer"><span class="tri" aria-hidden="true"></span>Start timer<small>'+(entry.timer.every(t => t.nocap)?'counts up':timerSummary(entry.timer))+'</small></button>';
-      h += cnotesHtml(cn);
+      const cmap = coachByTag(cn, entry.parts||[]);
+      h += cnotesHtml(cmap.rest);
+      const nkDay = memProg+'|'+(showMoved ? mv.from : memDay);
       const partHtml = pt => '<section class="part"><span class="tag">'+esc(pt.tag)+'</span><ul class="rx">'+pt.lines.map(l => lineHtml(l, pt.lift)).join('')+'</ul>'+liftNote(pt)+
         (pt.scale?'<p class="scale"><b>Scale it:</b> '+esc(pt.scale.replace(/^Scaled:\s*/,''))+'</p>':'')+
-        (pt.note?'<p class="note">'+esc(pt.note)+'</p>':'')+demoHtml(pt.lines.concat(pt.scale||[]))+ (pt.event && evById(pt.event) && meId && athById(meId) ? logBar(evById(pt.event)) + (pt.lift && LIFTS[pt.lift] ? partLogBar(pt, entry, memDay) : '') : partLogBar(pt, entry, memDay)) +'</section>';
+        notesTabs(nkDay+'|'+(pt.tag||''), athNotes(pt.note, pt.lines.concat(pt.scale||[])), cmap.map[String(pt.tag||'')]||'')+ (pt.event && evById(pt.event) && meId && athById(meId) ? logBar(evById(pt.event)) + (pt.lift && LIFTS[pt.lift] ? partLogBar(pt, entry, memDay) : '') : partLogBar(pt, entry, memDay)) +'</section>';
       const wv = partsWithItems(entry, showMoved ? mv.from : memDay, memProg, partHtml);
       h += ownDayHtml(wv.own) + '<div class="parts">'+wv.html+'</div>';
     }
@@ -3169,8 +3219,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(it.title) h += '<h3 class="it-t">'+esc(it.title)+'</h3>';
     h += '<ul class="rx">'+(it.lines||[]).map(l => lineHtml(l, it.lift, true)).join('')+'</ul>';
     if(it.lift && LIFTS[it.lift]) h += liftNote({ lift:it.lift, lines:it.lines||[] });
-    if(it.note) h += '<p class="note">'+esc(it.note)+'</p>';
-    h += demoHtml(it.lines||[]);
+    h += notesTabs('it|'+(it.id||it.tag||''), athNotes(it.note, it.lines||[]), '');
     const sb = (it._src === 'mine' || !it._src) && it.date && !/^(your numbers|coach note)$/i.test(it.tag||'') ? partLogBar({ tag: it.title || it.tag || '', lines: it.lines || [], lift: it.lift }, null, it.date) : '';
     if(sb.indexOf('data-psets') >= 0){
       h += sb + '<div class="row" style="justify-content:flex-end;margin-top:4px"><button class="linkbtn" type="button" data-ilog="'+esc(it.id)+'">'+(r ? 'Result: '+esc(r.s||'Done')+' · change' : 'Or log a result / note')+'</button></div>';
