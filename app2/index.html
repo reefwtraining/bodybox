@@ -2044,9 +2044,21 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const rs = allResults().filter(r => r.e === ev.id && r.d === div && inSex(r.a, sex)).sort(lbCmp(ev));
     let place = 0; return rs.map((r,i) => { if(i===0 || !lbSame(ev, rs[i-1], r)) place = i+1; return { r, place }; });
   }
+  let lbPer = store.get('bb-lbper') || 'week';
+  function inPer(date){
+    if(lbPer === 'all' || !date) return lbPer === 'all';
+    const t = new Date(todayStr()+'T12:00:00');
+    if(lbPer === 'month') return date.slice(0,7) === todayStr().slice(0,7);
+    // weekly board: Thursday through Wednesday, updated every Wednesday at 8 PM (Reef, Nov 14)
+    const now = new Date(), wed = new Date(now); wed.setHours(20,0,0,0); wed.setDate(now.getDate() - ((now.getDay() - 3 + 7) % 7)); if(wed > now) wed.setDate(wed.getDate() - 7);
+    const thu = new Date(wed); thu.setDate(wed.getDate() - 6);
+    const f = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    return date >= f(thu) && date <= f(wed);
+  }
+  const perLabel = () => lbPer === 'week' ? 'Week · updates Wed 8 PM' : lbPer === 'month' ? 'This month' : 'All-time';
   function standings(div, sex){
     const RS = allResults().filter(r => inSex(r.a, sex));
-    const evs = LB.events.filter(ev => RS.some(r => r.e === ev.id && r.d === div));
+    const evs = LB.events.filter(ev => inPer(ev.date) && RS.some(r => r.e === ev.id && r.d === div));
     const ids = [...new Set(RS.filter(r => r.d === div).map(r => r.a))];
     const rows = ids.map(id => ({ id, pts:0, done:0, wins:0, per:[] }));
     const byId = Object.fromEntries(rows.map(x => [x.id, x]));
@@ -2070,13 +2082,14 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(profId && athById(profId)) return renderProfilePage(v, profId);
     if(lbOpenEv && evById(lbOpenEv)) return renderBoardEvent(v, evById(lbOpenEv));
     const { rows, evs } = standings(lbDiv, lbSex);
-    let h = '<div class="head"><span class="sched">All-time · '+(LB.updated?'updated '+niceDate(LB.updated):'starting soon')+'</span><h1>Leaderboard</h1></div>';
-    h += '<p class="how">Your place in each workout is your points: 1st = 1 point, 2nd = 2 and so on. Lowest total wins. Miss a workout and you get last place plus one. Coaches update the board with every scored workout and lift each night.</p>';
+    let h = '<div class="head"><span class="sched">'+perLabel()+' · '+(LB.updated?'updated '+niceDate(LB.updated):'starting soon')+'</span><h1>Leaderboard</h1></div>';
+    h += '<p class="how">Your place in each workout is your points: 1st = 1 point, 2nd = 2 and so on. Lowest total wins. Miss a workout and you get last place plus one. The board updates every Wednesday at 8 PM with the week\'s scores (Thursday to Wednesday).</p>';
+    h += '<div class="divs" role="group" aria-label="Time period">'+[['week','Week'],['month','Month'],['all','All time']].map(([k,l]) => '<button class="prog" type="button" data-lbper="'+k+'" aria-pressed="'+(k===lbPer)+'">'+l+'</button>').join('')+'</div>';
     h += '<div class="divs" role="group" aria-label="Division">'+LB.divs.map(d => '<button class="prog" type="button" data-lbdiv="'+esc(d)+'" aria-pressed="'+(d===lbDiv)+'">'+esc(d)+'</button>').join('')+'</div>' + sexPills();
     if(canEditLB && lbSex !== 'all' && LB.athletes.some(a => !a.sex)) h += '<p class="how" style="margin-top:-6px">Coach tip: athletes without Men or Women set on their profile only show under All.</p>';
     if(lbMsg){ h += '<p class="example">'+lbMsg+'</p>'; }
     if(!rows.length){
-      h += '<div class="empty"><b>No scores yet</b>The '+esc(lbDiv)+(lbSex==='M'?' men\'s':lbSex==='F'?' women\'s':'')+' board fills in as soon as the first workout scores are added.</div>';
+      h += '<div class="empty"><b>No scores '+(lbPer==='week'?'this week':lbPer==='month'?'this month':'yet')+'</b>The '+esc(lbDiv)+(lbSex==='M'?' men\'s':lbSex==='F'?' women\'s':'')+' board fills in as soon as the first workout scores are added.</div>';
     } else {
       h += '<div style="overflow-x:auto"><table class="stand"><thead><tr><th>#</th><th>Athlete</th><th style="text-align:right">Pts</th><th style="text-align:right">Done</th></tr></thead><tbody>';
       rows.forEach(r => {
@@ -2085,7 +2098,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       });
       h += '</tbody></table></div>';
     }
-    const evAll = LB.events.slice().sort((a,b) => a.date < b.date ? 1 : -1);
+    const evAll = LB.events.filter(ev => lbPer === 'all' || inPer(ev.date)).sort((a,b) => a.date < b.date ? 1 : -1);
     if(evAll.length || canEditLB){
       h += '<h2 class="label" style="margin:22px 0 4px">Workouts on the board</h2><div class="evlist">'+
         (evAll.length ? evAll.map(ev => { const n = LB.results.filter(r => r.e === ev.id && r.d === lbDiv && inSex(r.a, lbSex)).length;
@@ -2109,6 +2122,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     h += dirtyBar();
     v.innerHTML = h;
     v.querySelectorAll('[data-lbdiv]').forEach(b => b.onclick = () => { lbDiv = b.dataset.lbdiv; store.set('bb-lbdiv', lbDiv); lbOpenAth = null; render(); });
+    v.querySelectorAll('[data-lbper]').forEach(b => b.onclick = () => { lbPer = b.dataset.lbper; store.set('bb-lbper', lbPer); lbOpenAth = null; render(); });
     v.querySelectorAll('[data-lbsex]').forEach(b => b.onclick = () => { lbSex = b.dataset.lbsex; store.set('bb-lbsex', lbSex); lbOpenAth = null; render(); });
     v.querySelectorAll('[data-ath]').forEach(t => t.onclick = () => { profId = t.dataset.ath; profEdit = false; render(); window.scrollTo(0,0); });
     v.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => { lbOpenEv = b.dataset.ev; lbArmed = null; render(); window.scrollTo(0,0); });
@@ -3001,7 +3015,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     document.querySelectorAll('.tabs [data-tab]').forEach(b => { if(b.dataset.tab === tab) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     const w = tab === 'workouts';
     $('progs').hidden = true; $('exampleNote').hidden = true;
-    $('hdrLbl').textContent = tab === 'plans' ? 'Join' : w ? longDate(todayStr()) : tab === 'named' ? 'Saved on this phone' : tab === 'numbers' ? (meId && athById(meId) ? 'Signed in' : 'Sign in') : tab === 'board' ? 'All-time' : tab === 'clock' ? 'Any workout' : '';
+    $('hdrLbl').textContent = tab === 'plans' ? 'Join' : w ? longDate(todayStr()) : tab === 'named' ? 'Saved on this phone' : tab === 'numbers' ? (meId && athById(meId) ? 'Signed in' : 'Sign in') : tab === 'board' ? (lbPer === 'week' ? 'This week' : lbPer === 'month' ? 'This month' : 'All-time') : tab === 'clock' ? 'Any workout' : '';
     if(tab === 'coach'){ renderCoachHub(); } else if(tab === 'moves'){ renderMoves(); } else if(w) renderWorkouts(); else if(tab === 'plans') renderPlans(); else if(tab === 'named') renderNamed(); else if(tab === 'board') renderBoard(); else if(tab === 'numbers') renderMe(); else if(tab === 'clock') renderClock(); else renderCalc();
     if(toastPR){ const t = document.createElement('div'); t.className = 'example'; t.style.marginBottom = '12px'; t.innerHTML = '<b>'+esc(toastPR)+'</b>'+(toastShare?' <button class="linkbtn" type="button" data-shareprs="1">Share it</button>':''); $('view').prepend(t); toastPR = ''; }
   }
