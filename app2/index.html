@@ -1402,7 +1402,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   const gymW = (lift, w) => !lift || !isDB(lift) ? roundW(w) : isKB(lift) ? nearKB(w) : Math.max(dbStep(), Math.round(w / dbStep()) * dbStep());
   // A dumbbell/kettlebell max shown as a weight that exists (estimates round down)
   const gymMax = (lift, v) => !isDB(lift) ? v : isKB(lift) ? nearKB(v, true) : Math.max(dbStep(), Math.floor(v / dbStep() + 1e-9) * dbStep());
-  const DEF_A = { v:1, unit:'lb', bar:45, log:[], scores:[], subs:[], name:'', evNotes:{}, unsync:[], done:[], personal:[], indr:{}, moves:{}, gone:[] };
+  const DEF_A = { v:1, unit:'lb', bar:45, log:[], scores:[], subs:[], name:'', evNotes:{}, unsync:[], done:[], personal:[], indr:{}, moves:{}, gone:[], skills:[] };
   let storeOK = true;
   function loadA(){
     try{ const raw = localStorage.getItem('bb-athlete'); if(raw){ const o = JSON.parse(raw); if(o && Array.isArray(o.log)) return Object.assign({}, DEF_A, o); } }
@@ -1432,6 +1432,64 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   }
 
   let openLift = null, armed = null;
+  /* ---------- gymnastics: max reps / holds, tracked like lifts ---------- */
+  const GYM = [
+    ['strict_pullup','Strict Pull-up','reps'],['kip_pullup','Kipping Pull-up','reps'],['c2b','Chest-to-Bar Pull-up','reps'],
+    ['t2b','Toes-to-Bar','reps'],['bar_mu','Bar Muscle-up','reps'],['ring_mu','Ring Muscle-up','reps'],
+    ['strict_hspu','Strict Handstand Push-up','reps'],['kip_hspu','Kipping Handstand Push-up','reps'],['hs_walk','Handstand Walk','ft'],
+    ['hs_hold','Handstand Hold','sec'],['ring_dip','Ring Dip','reps'],['pushup','Push-up','reps'],
+    ['du','Double-Under (unbroken)','reps'],['pistol','Pistol (per leg)','reps'],['rope_climb','Rope Climb (in a row)','reps'],
+    ['dead_hang','Dead Hang','sec'],['l_sit','L-Sit Hold','sec']
+  ];
+  const gymName = k => (GYM.find(g => g[0] === k) || [k,k])[1], gymUnit = k => (GYM.find(g => g[0] === k) || [0,0,'reps'])[2];
+  let openGym = null, gymArmed = null;
+  const gymEntries = k => (A.skills||[]).filter(e => e.k === k).sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.t||0) - (b.t||0));
+  function gymHtml(){
+    if(!Array.isArray(A.skills)) A.skills = [];
+    const have = GYM.filter(g => A.skills.some(e => e.k === g[0])).map(g => g[0]);
+    let h = '<div class="psec" style="margin-top:22px"><span class="label">Max reps and holds</span><h2>Gymnastics</h2></div>';
+    if(have.length){
+      h += '<div class="prs">';
+      have.forEach(k => {
+        const es = gymEntries(k), best = es.reduce((a,e) => e.n > a.n ? e : a, es[0]), gain = es.length > 1 ? best.n - es[0].n : 0;
+        h += '<button class="pr" type="button" data-gym="'+k+'" aria-expanded="'+(openGym===k)+'"><span class="nm">'+esc(gymName(k))+'</span>'+
+          '<span class="val">'+best.n+' <small>'+gymUnit(k)+'</small></span><span class="meta">'+niceDate(best.date)+(gain>0?' · <span class="up">+'+gain+'</span>':'')+'</span></button>';
+        if(openGym === k) h += gymDetail(k);
+      });
+      h += '</div>';
+    } else h += '<div class="empty"><b>No gymnastics yet</b>Tap a movement below to log your max reps or hold.</div>';
+    const none = GYM.filter(g => !have.includes(g[0]));
+    if(none.length) h += '<span class="label">'+(have.length?'Add more':'Movements')+'</span><div class="nolift">'+none.map(g => '<button class="chip" type="button" data-gymadd="'+g[0]+'">+ '+esc(g[1])+'</button>').join('')+'</div>';
+    if(openGym && !have.includes(openGym)) h += gymDetail(openGym);
+    return h;
+  }
+  function gymDetail(k){
+    const es = gymEntries(k), u = gymUnit(k);
+    const rows = es.slice().reverse().map(e => '<li><span class="d">'+niceDate(e.date)+'</span><span>'+e.n+' '+u+(e.note?'<span class="unote">'+esc(e.note)+'</span>':'')+'</span>'+
+      '<button type="button" data-gymdel="'+e.id+'" class="'+(gymArmed===e.id?'sure':'')+'">'+(gymArmed===e.id?'Delete?':'Remove')+'</button></li>').join('');
+    return '<div class="detail"><h3>'+esc(gymName(k))+'</h3>'+
+      '<div class="grid2"><label class="field"><span class="label">Max '+(u==='sec'?'seconds':u==='ft'?'feet':'unbroken reps')+'</span><input id="gymN" type="number" inputmode="numeric" min="0" step="1" placeholder="0"></label>'+
+      '<label class="field"><span class="label">Date</span><input id="gymD" type="date" value="'+todayStr()+'"></label></div>'+
+      '<label class="field"><span class="label">Note (optional)</span><input id="gymNote" maxlength="120" placeholder="e.g. banded, chest touched every rep"></label>'+
+      '<p class="err" id="gymErr"></p><div class="row"><button class="btn solid" type="button" id="gymSave" data-k="'+k+'">Save</button><button class="btn" type="button" id="gymClose">Close</button></div>'+
+      (rows?'<ul class="hist">'+rows+'</ul>':'')+'</div>';
+  }
+  function wireGym(v){
+    v.querySelectorAll('[data-gym]').forEach(b => b.onclick = () => { openGym = openGym === b.dataset.gym ? null : b.dataset.gym; gymArmed = null; render(); });
+    v.querySelectorAll('[data-gymadd]').forEach(b => b.onclick = () => { openGym = b.dataset.gymadd; gymArmed = null; render(); setTimeout(() => { const i = $('gymN'); if(i){ i.focus(); i.scrollIntoView({block:'center'}); } }, 50); });
+    const sv = $('gymSave'); if(sv) sv.onclick = () => {
+      const n = parseInt($('gymN').value, 10), d = $('gymD').value || todayStr();
+      if(isNaN(n) || n < 0){ $('gymErr').textContent = 'Enter a number.'; return; }
+      A.skills = A.skills || []; A.skills.push({ id: 'g'+Date.now().toString(36), k: sv.dataset.k, n, date: d, t: Date.now(), note: ($('gymNote').value||'').trim().slice(0,120) });
+      openGym = null; saveA(); render();
+    };
+    const cl = $('gymClose'); if(cl) cl.onclick = () => { openGym = null; render(); };
+    v.querySelectorAll('[data-gymdel]').forEach(b => b.onclick = e => {
+      e.stopPropagation(); const id = b.dataset.gymdel;
+      if(gymArmed !== id){ gymArmed = id; render(); return; }
+      A.skills = (A.skills||[]).filter(x => x.id !== id); A.gone = A.gone || []; if(!A.gone.includes(id)) A.gone.push(id); gymArmed = null; saveA(); render();
+    });
+  }
   function renderNumbers(prefix, after){
     const v = $('view');
     const have = LIFT_ORDER.filter(k => A.log.some(e => e.lift === k));
@@ -1462,6 +1520,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       if(nB.length) h += '<span class="label">'+(have.length?'Add more lifts':'Lifts')+'</span><div class="nolift">'+nB.map(chip).join('')+'</div>';
       if(nD.length) h += '<span class="label">Dumbbell &amp; kettlebell</span><div class="nolift">'+nD.map(chip).join('')+'</div>';
     }
+    h += gymHtml();
     h += phaseHtml();
     h += logbookHtml();
     h += '<div class="backup"><span class="label">Keep your numbers safe</span>'+
@@ -1483,7 +1542,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     });
     v.querySelectorAll('[data-logfor]').forEach(b => b.onclick = () => openLog(b.dataset.logfor));
     v.querySelectorAll('[data-calc]').forEach(b => b.onclick = () => { CALC.lift = b.dataset.calc; CALC.manual = null; setTab('calc'); });
-    wireLogbook(v);
+    wireLogbook(v); wireGym(v);
     $('bkSave').onclick = saveBackup;
     $('bkLoad').onchange = e => { const f = e.target.files[0]; e.target.value=''; if(f) restoreBackup(f); };
   }
@@ -3785,8 +3844,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       if(ca && typeof ca === 'object' && !Array.isArray(ca)){
         const fresh = !(A.log||[]).length && !(A.scores||[]).length && !(A.personal||[]).length;
         if(Array.isArray(ca.gone)){ A.gone = A.gone || []; ca.gone.forEach(x => { if(typeof x === 'string' && !A.gone.includes(x)) A.gone.push(x); }); }
-        const GONE = new Set(A.gone || []); if(GONE.size){ ['log','scores','personal','done'].forEach(f => { if(Array.isArray(ca[f])) ca[f] = ca[f].filter(x => !(x && GONE.has(x.id))); if(Array.isArray(A[f])){ const b4 = A[f].length; A[f] = A[f].filter(x => !(x && GONE.has(x.id))); if(A[f].length !== b4) n++; } }); }
-        ['log','scores','personal','done'].forEach(f => { if(Array.isArray(ca[f])){ if(!Array.isArray(A[f])) A[f] = []; n += union(A[f], ca[f], idk); const rv = new Map(ca[f].filter(x => x && x.vid && x.id).map(x => [x.id, x.vid])); A[f].forEach(x => { if(x && !x.vid && rv.has(x.id)){ x.vid = rv.get(x.id); n++; } }); } });
+        const GONE = new Set(A.gone || []); if(GONE.size){ ['log','scores','personal','done','skills'].forEach(f => { if(Array.isArray(ca[f])) ca[f] = ca[f].filter(x => !(x && GONE.has(x.id))); if(Array.isArray(A[f])){ const b4 = A[f].length; A[f] = A[f].filter(x => !(x && GONE.has(x.id))); if(A[f].length !== b4) n++; } }); }
+        ['log','scores','personal','done','skills'].forEach(f => { if(Array.isArray(ca[f])){ if(!Array.isArray(A[f])) A[f] = []; n += union(A[f], ca[f], idk); const rv = new Map(ca[f].filter(x => x && x.vid && x.id).map(x => [x.id, x.vid])); A[f].forEach(x => { if(x && !x.vid && rv.has(x.id)){ x.vid = rv.get(x.id); n++; } }); } });
         if(Array.isArray(ca.subs)){ if(!Array.isArray(A.subs)) A.subs = []; n += union(A.subs, ca.subs, x => x ? (x.e+'|'+x.a) : null); }
         if(Array.isArray(ca.unsync)){ union(A.unsync, ca.unsync, x => String(x)); }
         ['evNotes','evVids','indr','moves'].forEach(f => { const o = ca[f]; if(o && typeof o === 'object' && !Array.isArray(o)){ if(!A[f] || typeof A[f] !== 'object') A[f] = {}; Object.keys(o).forEach(k => { if(!(k in A[f])){ A[f][k] = o[k]; n++; } }); } });
