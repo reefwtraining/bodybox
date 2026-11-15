@@ -681,6 +681,7 @@ Rest 2:00"></textarea></label>
     <span class="label" id="setWhat">Log my sets</span>
     <h2 id="setTitle">Log my sets</h2>
     <label class="field"><span class="label">Date</span><input id="setDate" type="date" required=""></label>
+    <label class="row" id="setBwF" style="gap:8px"><input id="setBw" type="checkbox" style="width:20px;height:20px"> <span>Bodyweight (no weight added)</span></label>
     <div class="setrows" id="setRows"></div>
     <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="setAdd">+ Add set</button><button class="btn" type="button" id="setFill">Same weight all sets</button></div>
     <label class="field"><span class="label">Notes (optional)</span><textarea id="setNote" class="notein" maxlength="600" placeholder="How it moved, what to try next time"></textarea></label>
@@ -1619,7 +1620,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const rows = es.slice().reverse().map(e => {
       const w = conv(e.w, e.u, A.unit), est = conv(e1rm(e.w, e.reps), e.u, A.unit);
       const nt = e.src ? (A.evNotes[e.src] || '') : (e.note || '');
-      return '<li><span class="d">'+niceDate(e.date)+'</span><span>'+fmtW(Math.round(w*10)/10)+' × '+e.reps+(e.reps>1?' <span class="d">≈ '+fmtW(Math.round(est))+' max</span>':'')+(e.src?' <span class="d">· from the board</span>':'')+(nt?'<span class="unote">'+esc(nt)+'</span>':'')+(e.vid?' '+vidLink(e.vid):'')+'</span>'+
+      return '<li><span class="d">'+niceDate(e.date)+'</span><span>'+(e.bw ? 'BW' : fmtW(Math.round(w*10)/10))+' × '+e.reps+(e.reps>1?' <span class="d">≈ '+fmtW(Math.round(est))+' max</span>':'')+(e.src?' <span class="d">· from the board</span>':'')+(nt?'<span class="unote">'+esc(nt)+'</span>':'')+(e.vid?' '+vidLink(e.vid):'')+'</span>'+
              '<button type="button" data-del="'+e.id+'" class="'+(armed===e.id?'sure':'')+'">'+(armed===e.id?'Delete?':'Remove')+'</button></li>';
     }).join('');
     return '<div class="detail"><h3>'+esc(LIFTS[k])+'</h3>'+liftWarnings(k).map(w => '<p class="warnl">⚠ '+esc(w)+'</p>').join('')+goalBar(k)+chart+goalEditHtml(k)+
@@ -2714,37 +2715,44 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     return out.slice(0, 15);
   }
   function setRowHtml(i, reps, ph){
-    return '<div class="setrow"><span class="sn">Set '+(i+1)+'</span><label class="field"><span class="label">Weight ('+A.unit+')</span><input type="number" inputmode="decimal" min="0" step="any" class="sw" placeholder="'+esc(ph||'')+'"></label><label class="field"><span class="label">Reps</span><input type="number" inputmode="numeric" min="1" max="50" class="sr" value="'+(reps||'')+'"></label><button type="button" class="sx" aria-label="Remove set">×</button></div>';
+    return '<div class="setrow"><span class="sn">Set '+(i+1)+'</span><label class="field swf"><span class="label">Weight ('+A.unit+')</span><input type="number" inputmode="decimal" min="0" step="any" class="sw" placeholder="'+esc(ph||'')+'"></label><label class="field"><span class="label">Reps</span><input type="number" inputmode="numeric" min="1" max="50" class="sr" value="'+(reps||'')+'"></label><button type="button" class="sx" aria-label="Remove set">×</button></div>';
   }
   function renumberSets(){ document.querySelectorAll('#setRows .setrow').forEach((r, i) => { r.querySelector('.sn').textContent = 'Set '+(i+1); }); }
   function wireSetRows(){ document.querySelectorAll('#setRows .sx').forEach(b => b.onclick = () => { const rows = document.querySelectorAll('#setRows .setrow'); if(rows.length > 1){ b.closest('.setrow').remove(); renumberSets(); } }); }
   let setCur = null;
+  const BWRE = /toes|t2b|pull[- ]?ups?|chin[- ]?ups?|hspu|handstand|dips?\b|push[- ]?ups?|muscle[- ]?ups?|sit[- ]?ups?|knee raise|leg raise|l[- ]?sit|rope climb|burpee|plank|hollow/i;
+  function setBwMode(){ const b = $('setBw'); return !!(b && b.checked); }
+  function paintBw(){ const on = setBwMode(); document.querySelectorAll('#setRows .swf').forEach(f => { f.hidden = on; }); $('setFill').hidden = on; }
   function openSets(k){
     const c = SETCTX[k]; if(!c) return; setCur = c;
     const b = c.lift ? bestOf(c.lift) : null, last = c.lift ? lastOf(c.lift) : null;
     let plan = setPlan(c.lines); if(!plan.length && c.tag) plan = setPlan([c.tag]); if(plan.some(p => !p.reps) && c.tag){ const t = setPlan([c.tag]); const r = t.length ? t[0].reps : 0; plan.forEach(p => { if(!p.reps) p.reps = r; }); } if(!plan.length) plan = [{ reps: 0, pct: 0 }, { reps: 0, pct: 0 }, { reps: 0, pct: 0 }];
     $('setTitle').textContent = (c.lift && LIFTS[c.lift]) || c.name || 'Log my sets'; $('setWhat').textContent = 'Log my sets';
     $('setDate').value = c.date || todayStr(); $('setNote').value = ''; $('setVid').value = ''; $('setErr').textContent = '';
+    const bwable = !c.lift || !LIFTS[c.lift] || String(c.lift).startsWith('m_'); const bwTxt = String(c.tag||'')+' '+String(c.name||''); const bwDef = bwable && BWRE.test(bwTxt) && !/weighted/i.test(bwTxt);
+    $('setBwF').hidden = !bwable; $('setBw').checked = bwDef;
     $('setRows').innerHTML = plan.map((p, i) => { let ph = ''; if(p.w) ph = fmtW(p.w); else if(p.pct && b) ph = fmtW(gymW(c.lift, gymMax(c.lift, b.val) * p.pct / 100)); else if(last) ph = fmtW(conv(last.w, last.u, A.unit)); return setRowHtml(i, p.reps, ph); }).join('');
-    wireSetRows(); $('setSheet').hidden = false; setTimeout(() => { const f = document.querySelector('#setRows .sw'); if(f) f.focus(); }, 50);
+    wireSetRows(); paintBw(); $('setSheet').hidden = false; setTimeout(() => { const f = document.querySelector(setBwMode() ? '#setRows .sr' : '#setRows .sw'); if(f) f.focus(); }, 50);
   }
   function wireSetSheet(){
     $('setCancel').onclick = () => { $('setSheet').hidden = true; };
+    $('setBw').onchange = paintBw;
     $('setAdd').onclick = () => { const rows = document.querySelectorAll('#setRows .setrow'); const lastRow = rows[rows.length-1]; const w = lastRow ? lastRow.querySelector('.sw').value : '', r = lastRow ? lastRow.querySelector('.sr').value : '';
-      $('setRows').insertAdjacentHTML('beforeend', setRowHtml(rows.length, r, lastRow ? lastRow.querySelector('.sw').placeholder : '')); const nr = $('setRows').lastElementChild; if(w) nr.querySelector('.sw').value = w; wireSetRows(); nr.querySelector('.sw').focus(); };
+      $('setRows').insertAdjacentHTML('beforeend', setRowHtml(rows.length, r, lastRow ? lastRow.querySelector('.sw').placeholder : '')); const nr = $('setRows').lastElementChild; if(w) nr.querySelector('.sw').value = w; wireSetRows(); paintBw(); nr.querySelector(setBwMode() ? '.sr' : '.sw').focus(); };
     $('setFill').onclick = () => { const ws = [...document.querySelectorAll('#setRows .sw')]; const first = ws.find(x => x.value); if(!first){ $('setErr').textContent = 'Enter the weight for set 1 first.'; return; } ws.forEach(x => { if(!x.value) x.value = first.value; }); $('setErr').textContent = ''; };
     $('setForm').onsubmit = e => {
       e.preventDefault(); if(!setCur) return;
       const date = $('setDate').value; if(!date){ $('setErr').textContent = 'Pick the date.'; return; }
-      const rows = [...document.querySelectorAll('#setRows .setrow')].map(r => ({ w: parseFloat(r.querySelector('.sw').value), reps: parseInt(r.querySelector('.sr').value, 10) || 1 })).filter(x => x.w > 0);
-      if(!rows.length){ $('setErr').textContent = 'Enter the weight for at least one set.'; return; }
+      const bw = setBwMode();
+      const rows = [...document.querySelectorAll('#setRows .setrow')].map(r => ({ w: bw ? 0 : parseFloat(r.querySelector('.sw').value), reps: parseInt(r.querySelector('.sr').value, 10) || (bw ? 0 : 1) })).filter(x => bw ? x.reps > 0 : x.w > 0);
+      if(!rows.length){ $('setErr').textContent = bw ? 'Enter the reps for at least one set.' : 'Enter the weight for at least one set. Bodyweight? Tick the box above.'; return; }
       if(!setCur.lift){ setCur.lift = addMove(setCur.name || 'Lift'); if(!setCur.lift){ $('setErr').textContent = 'Couldn\'t save this movement.'; return; } }
       const svid = cleanVid($('setVid').value); if(svid === null){ $('setErr').textContent = 'That video link doesn\'t look right. Copy it from YouTube and paste it again.'; return; }
       const note = $('setNote').value.trim().slice(0,600), before = bestOf(setCur.lift), base = Date.now();
-      rows.forEach((x, i) => A.log.push(Object.assign({ id: base.toString(36)+i+Math.random().toString(36).slice(2,5), lift: setCur.lift, w: x.w, u: A.unit, reps: Math.min(50, x.reps), date, t: base + i, set: i+1 }, (note && i === 0) ? { note } : {}, (svid && i === 0) ? { vid: svid } : {})));
+      rows.forEach((x, i) => A.log.push(Object.assign({ id: base.toString(36)+i+Math.random().toString(36).slice(2,5), lift: setCur.lift, w: x.w, u: A.unit, reps: Math.min(50, x.reps), date, t: base + i, set: i+1 }, bw ? { bw: true } : {}, (note && i === 0) ? { note } : {}, (svid && i === 0) ? { vid: svid } : {})));
       saveA(); $('setSheet').hidden = true;
       const after = bestOf(setCur.lift);
-      toastPR = before && after.val > before.val ? 'New '+LIFTS[setCur.lift]+' PR: '+fmtW(after.val)+' '+A.unit+' (+'+fmtW(Math.round((after.val-before.val)*10)/10)+')' : '';
+      toastPR = !bw && before && after && after.val > before.val ? 'New '+LIFTS[setCur.lift]+' PR: '+fmtW(after.val)+' '+A.unit+' (+'+fmtW(Math.round((after.val-before.val)*10)/10)+')' : '';
       toastShare = null; render();
     };
   }
@@ -2757,7 +2765,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const k = setKey(pt, date);
       const btn = '<button class="btn solid" type="button" data-psets="'+esc(k)+'" style="padding:7px 12px">'+(done.length?'Add more sets':'Log my sets')+'</button>';
       SETCTX[k] = { lift: lk || null, name: pname, tag: pt.tag || '', date, lines: pt.lines || [] };
-      return '<div class="logbar"><span>'+(done.length ? 'Logged: <b>'+done.map(e => fmtW(conv(e.w, e.u, A.unit))+' × '+(e.reps||1)).join(', ')+'</b>' : 'Log every set: weight and reps')+'</span>'+btn+'</div>';
+      return '<div class="logbar"><span>'+(done.length ? 'Logged: <b>'+done.map(e => (e.bw ? 'BW' : fmtW(conv(e.w, e.u, A.unit)))+' × '+(e.reps||1)).join(', ')+'</b>' : 'Log every set: weight and reps')+'</span>'+btn+'</div>';
     }
     const src = partSrc(pt, date), r = (A.personal||[]).filter(x => x && x.src === src).slice(-1)[0];
     const title = pt.tag || (entry && entry.title) || 'Workout';
