@@ -605,7 +605,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
     <span class="label" id="irWhat">Your workout</span>
     <h2>Log my result</h2>
     <label class="field" id="irTbF"><span class="label">Tiebreak time (min:sec)</span><input id="irTb" type="text" inputmode="numeric" placeholder="9:45"><small class="vidhint">Your time when you finished the written workout (the board and challenges use this). Leave it blank if your version has no extra rounds.</small></label>
-    <label class="field" id="irTimeF"><span class="label" id="irTimeL">Time (min:sec)</span><input id="irTime" type="text" inputmode="numeric" placeholder="12:34"></label>
+    <label class="field" id="irTimeF"><span class="label" id="irTimeL">Time (min:sec)</span><input id="irTime" type="text" inputmode="numeric" placeholder="12:34 or 12.34"></label>
     <label class="field" id="irNumF"><span class="label">Total reps</span><input id="irNum" type="number" inputmode="decimal" min="0" step="any"></label>
     <div class="three" id="irLoadF"><label class="field"><span class="label" id="irLoadL">Weight (lb)</span><input id="irW" type="number" inputmode="decimal" min="1" step="any"></label><label class="field"><span class="label">Reps</span><select id="irReps"></select></label></div>
     <label class="field" id="irTxtF"><span class="label" id="irTxtL">Score</span><input id="irTxt" type="text" maxlength="80"></label>
@@ -697,7 +697,7 @@ Rest 2:00"></textarea></label>
     <span class="label" id="scWhat">Named workout</span>
     <h2>Log your score</h2>
     <label class="field"><span class="label">Division</span><select id="scDiv"></select></label>
-    <label class="field" id="scTimeF"><span class="label">Time (min:sec)</span><input id="scTime" type="text" inputmode="numeric" placeholder="12:34"></label>
+    <label class="field" id="scTimeF"><span class="label">Time (min:sec)</span><input id="scTime" type="text" inputmode="numeric" placeholder="12:34 or 12.34"></label>
     <label class="row" id="scCapF" style="gap:8px"><input id="scCap" type="checkbox" style="width:20px;height:20px"> <span>I hit the time cap</span></label>
     <label class="field" id="scNumF"><span class="label" id="scNumL">Score</span><input id="scNum" type="number" inputmode="decimal" step="any" min="0"></label>
     <label class="field" id="scTxtF"><span class="label" id="scTxtL">Score</span><input id="scTxt" type="text"></label>
@@ -715,7 +715,7 @@ Rest 2:00"></textarea></label>
     <h2>Log your score</h2>
     <div id="sbMv"></div>
     <label class="field" id="sbDivF"><span class="label">Division</span><select id="sbDiv"></select></label>
-    <label class="field" id="sbTimeF"><span class="label">Time (min:sec)</span><input id="sbTime" type="text" inputmode="numeric" placeholder="12:34"></label>
+    <label class="field" id="sbTimeF"><span class="label">Time (min:sec)</span><input id="sbTime" type="text" inputmode="numeric" placeholder="12:34 or 12.34"></label>
     <label class="field" id="sbNumF"><span class="label" id="sbNumL">Score</span><input id="sbNum" type="number" inputmode="decimal" step="any" min="0"></label>
     <label class="row" id="sbModF" style="gap:8px"><input id="sbMod" type="checkbox" style="width:20px;height:20px"> <span>I did a modified version (keeps it off the main board, still counts for my progress)</span></label>
     <label class="field"><span class="label">Notes for you (optional, not sent)</span><textarea id="sbNote" class="notein" maxlength="600" placeholder="Splits, scaling, how it felt"></textarea></label>
@@ -1958,7 +1958,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   if(!Array.isArray(A.scores)) A.scores = [];
   const NW = {}; (D.named||[]).forEach(c => c.workouts.forEach(w => { NW[w.id] = Object.assign({ coll:c.title }, w); }));
   let namedOpen = null, namedDiv = store.get('bb-div') || 'RX', armedS = null;
-  const parseTime = t => { const m = String(t).trim().match(/^(\d{1,3})(?::(\d{1,2}))?$/); if(!m) return null; return m[2] === undefined ? +m[1]*60 : +m[1]*60 + +m[2]; };
+  const parseTime = t => { let x = String(t).trim().replace(/\s*[.,;:\s]\s*/g, ':'); if(/^\d{3,4}$/.test(x)) x = x.slice(0,-2)+':'+x.slice(-2); const m = x.match(/^(\d{1,3})(?::(\d{1,2}))?$/); if(!m) return null; if(m[2] !== undefined && +m[2] > 59) return null; return m[2] === undefined ? +m[1]*60 : +m[1]*60 + +m[2]; }; // Nov 16: iPhone number pad has no colon, so 7.24, 7 24 and 724 all mean 7:24
   function scoreText(sc){
     const w = NW[sc.w]; if(!w) return '';
     if(w.score === 'time') return sc.capped ? 'CAP · '+sc.reps+' reps' : fmt(sc.val);
@@ -3000,7 +3000,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function openChLog(id){
     const S = SOC(); const c = ((S && S.challenges)||[]).find(x => x.id === id); if(!c) return;
     const k = c.what.score;
-    const inp = k === 'time' ? '<label class="field"><span class="label">Your time (min:sec)</span><input id="chV" inputmode="numeric" placeholder="12:34"></label><p class="how" style="margin:0 0 8px">Your version has more rounds than theirs? Enter your split time when you finished the shared part (the round they stop at), not your final time.</p><label class="field"><span class="label">Your division</span><select id="chDiv"><option>RX</option><option>Scaled</option><option>Scaled+</option></select></label><label class="field"><span class="label">Time cap for your division (min:sec)</span><input id="chCap" inputmode="numeric" placeholder="20:00"></label>' :
+    const inp = k === 'time' ? '<label class="field"><span class="label">Your time (min:sec)</span><input id="chV" inputmode="numeric" placeholder="12:34 or 12.34"></label><p class="how" style="margin:0 0 8px">Your version has more rounds than theirs? Enter your split time when you finished the shared part (the round they stop at), not your final time.</p><label class="field"><span class="label">Your division</span><select id="chDiv"><option>RX</option><option>Scaled</option><option>Scaled+</option></select></label><label class="field"><span class="label">Time cap for your division (min:sec)</span><input id="chCap" inputmode="numeric" placeholder="20:00"></label>' :
       k === 'load' ? '<label class="field"><span class="label">Weight ('+A.unit+')</span><input id="chV" type="number" inputmode="decimal" step="any" min="0"></label><label class="field"><span class="label">Standard</span><select id="chSex"><option value="M"'+(chMySex()==='M'?' selected':'')+'>Men\'s</option><option value="F"'+(chMySex()==='F'?' selected':'')+'>Women\'s (counts as weight ÷ 0.70)</option></select></label>' :
       k === 'more' ? '<label class="field"><span class="label">Total reps</span><input id="chV" type="number" inputmode="numeric" min="0"></label>' :
       '<label class="field"><span class="label">Your score</span><input id="chV" maxlength="40"></label>';
