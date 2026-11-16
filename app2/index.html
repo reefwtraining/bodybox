@@ -2934,14 +2934,16 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   /* ---------- social: head-to-head challenges + good job ---------- */
   const SOC = () => window.__bbSoc || null;
   window.__bbRerender = () => { try{ if(!document.getElementById('chSheet') && !document.querySelector('.sheet:not([hidden]) input:focus, .sheet:not([hidden]) textarea:focus')) render(); }catch(e){} };
-  const CH_RULE = { time:'Fastest time wins', more:'Most reps wins', load:'Heaviest wins', text:'Compare scores' };
+  const CH_RULE = { time:'Fastest time wins · each in your own division, scored against your time cap', more:'Most reps wins', load:'Heaviest wins · women\'s lifts count at the RX ratio (weight ÷ 0.70)', text:'Compare scores' };
+  const CH_F = 0.70; /* women's RX weights are about 70% of men's (95/135, 155/225) */
+  const chAdj = (c, s) => { if(!s) return null; if(c.what.score === 'load'){ const lb = conv(s.v, s.u||'lb', 'lb'); return s.sex === 'F' ? lb / CH_F : lb; } if(c.what.score === 'time' && s.cap > 0) return s.v / s.cap; return s.v; };
   const CH_DAYS = 7;
   function chState(c){ if(c.status === 'open' || c.status === 'accepted'){ if(Date.now() > (c.due || 0)) return 'expired'; } return c.status; }
-  function chScoreTxt(c, s){ if(!s) return ''; const k = c.what.score; return k === 'time' ? mmss(s.v) : k === 'load' ? fmtW(s.v)+' '+(s.u||'lb') : k === 'more' ? fmtW(s.v)+' reps' : (s.txt||''); }
+  function chScoreTxt(c, s){ if(!s) return ''; const k = c.what.score; return k === 'time' ? mmss(s.v)+(s.cap>0?' · '+Math.round(s.v/s.cap*100)+'% of '+mmss(s.cap)+(s.div?' '+s.div:''):'') : k === 'load' ? fmtW(s.v)+' '+(s.u||'lb')+(s.sex==='F'?' · counts as '+fmtW(Math.round(conv(s.v, s.u||'lb', 'lb')/CH_F))+' lb':'') : k === 'more' ? fmtW(s.v)+' reps' : (s.txt||''); }
   function chWinner(c){
     const a = (c.scores||{})[c.from.uid], b = (c.scores||{})[c.to.uid]; if(!a || !b || c.what.score === 'text') return null;
-    let av = a.v, bv = b.v; if(c.what.score === 'load'){ av = conv(a.v, a.u||'lb', 'lb'); bv = conv(b.v, b.u||'lb', 'lb'); }
-    if(av === bv) return 'tie'; return (c.what.score === 'time' ? av < bv : av > bv) ? c.from.uid : c.to.uid;
+    let av = chAdj(c, a), bv = chAdj(c, b); if(c.what.score === 'time' && !(a.cap > 0 && b.cap > 0)){ av = a.v; bv = b.v; }
+    if(Math.abs(av - bv) < 1e-9) return 'tie'; return (c.what.score === 'time' ? av < bv : av > bv) ? c.from.uid : c.to.uid;
   }
   function challengesHtml(){
     const S = SOC(); if(!S || !S.uid) return '';
@@ -2993,20 +2995,21 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       catch(err){ b.disabled = false; $('chErr').textContent = 'Couldn\'t send it. Check your internet and try again.'; }
     };
   }
+  function chMySex(){ try{ const me = (LB.athletes||[]).find(x => x.id === localStorage.getItem('bb-me')); return (me && me.sex) || ''; }catch(e){ return ''; } }
   function openChLog(id){
     const S = SOC(); const c = ((S && S.challenges)||[]).find(x => x.id === id); if(!c) return;
     const k = c.what.score;
-    const inp = k === 'time' ? '<label class="field"><span class="label">Your time (min:sec)</span><input id="chV" inputmode="numeric" placeholder="12:34"></label>' :
-      k === 'load' ? '<label class="field"><span class="label">Weight ('+A.unit+')</span><input id="chV" type="number" inputmode="decimal" step="any" min="0"></label>' :
+    const inp = k === 'time' ? '<label class="field"><span class="label">Your time (min:sec)</span><input id="chV" inputmode="numeric" placeholder="12:34"></label><label class="field"><span class="label">Your division</span><select id="chDiv"><option>RX</option><option>Scaled</option><option>Scaled+</option></select></label><label class="field"><span class="label">Time cap for your division (min:sec)</span><input id="chCap" inputmode="numeric" placeholder="20:00"></label>' :
+      k === 'load' ? '<label class="field"><span class="label">Weight ('+A.unit+')</span><input id="chV" type="number" inputmode="decimal" step="any" min="0"></label><label class="field"><span class="label">Standard</span><select id="chSex"><option value="M"'+(chMySex()==='M'?' selected':'')+'>Men\'s</option><option value="F"'+(chMySex()==='F'?' selected':'')+'>Women\'s (counts as weight ÷ 0.70)</option></select></label>' :
       k === 'more' ? '<label class="field"><span class="label">Total reps</span><input id="chV" type="number" inputmode="numeric" min="0"></label>' :
       '<label class="field"><span class="label">Your score</span><input id="chV" maxlength="40"></label>';
     const s = chSheet('<span class="label">vs '+esc((c.from.uid === S.uid ? c.to : c.from).name)+'</span><h2>'+esc(c.what.label)+'</h2>'+inp+'<div class="row"><button class="btn solid" type="submit">Save score</button><button class="btn" type="button" data-chx="1">Cancel</button></div>');
     setTimeout(() => { const i = $('chV'); if(i) i.focus(); }, 50);
     s.querySelector('form').onsubmit = async e => {
       e.preventDefault(); const raw = $('chV').value.trim(); let sc;
-      if(k === 'time'){ const t = parseTime(raw); if(t == null || t <= 0){ $('chErr').textContent = 'Enter your time like 12:34.'; return; } sc = { v:t }; }
+      if(k === 'time'){ const t = parseTime(raw); if(t == null || t <= 0){ $('chErr').textContent = 'Enter your time like 12:34.'; return; } const cap = parseTime(($('chCap').value||'').trim()); if(!(cap > 0)){ $('chErr').textContent = 'Enter your division\'s time cap like 20:00.'; return; } sc = { v:t, cap, div: $('chDiv').value }; }
       else if(k === 'text'){ if(!raw){ $('chErr').textContent = 'Enter your score.'; return; } sc = { txt: raw.slice(0,40) }; }
-      else { const n = parseFloat(raw); if(!(n > 0)){ $('chErr').textContent = 'Enter your score.'; return; } sc = k === 'load' ? { v:n, u:A.unit } : { v:n }; }
+      else { const n = parseFloat(raw); if(!(n > 0)){ $('chErr').textContent = 'Enter your score.'; return; } sc = k === 'load' ? { v:n, u:A.unit, sex: $('chSex').value } : { v:n }; }
       try{ await S.logScore(id, sc); s.remove(); render(); }catch(err){ $('chErr').textContent = 'Couldn\'t save. Check your internet and try again.'; }
     };
   }
