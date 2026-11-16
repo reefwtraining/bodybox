@@ -4634,8 +4634,9 @@ async function start(u, coach){
   card('<div class="gspin"></div><p>Loading your programs…</p>');
   let data = null, lb = null;
   try{
-    const [a, b] = await Promise.all([getDoc(doc(fs, 'content', 'data')), getDoc(doc(fs, 'content', 'lb'))]);
-    if(a.exists()) data = a.data().json; if(b.exists()) lb = b.data().json;
+    // big content is split: content/<name> holds part 1 and 'parts' = how many extra docs (content/<name>_1, _2, ...)
+    const readContent = async name => { const s = await getDoc(doc(fs, 'content', name)); if(!s.exists()) return null; const d = s.data(); if(!d.parts) return d.json; const ps = await Promise.all(Array.from({ length: d.parts }, (_, i) => getDoc(doc(fs, 'content', name + '_' + (i + 1))))); return (d.json || '') + ps.map(x => x.exists() ? (x.data().json || '') : '').join(''); };
+    [data, lb] = await Promise.all([readContent('data'), readContent('lb')]);
   }catch(e){}
   if(!data || !lb){
     if(coach){ window.__bbCoachReady = true; card('<h2>No programs loaded yet</h2><p>Coach view: load the content file Claude sent you (bodybox-content.json). It moves your programming and leaderboard into the new app.</p>'+contentPicker()+'<div class="grow"><button class="glink" id="gOut" type="button">Sign out</button></div>'); document.getElementById('gOut').onclick = () => signOut(auth); wirePicker(G); return; }
