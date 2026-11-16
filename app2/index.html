@@ -604,7 +604,8 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
   <form class="card" id="irForm" autocomplete="off">
     <span class="label" id="irWhat">Your workout</span>
     <h2>Log my result</h2>
-    <label class="field" id="irTimeF"><span class="label">Time (min:sec)</span><input id="irTime" type="text" inputmode="numeric" placeholder="12:34"></label>
+    <label class="field" id="irTbF"><span class="label">Tiebreak time (min:sec)</span><input id="irTb" type="text" inputmode="numeric" placeholder="9:45"><small class="vidhint">Your time when you finished the written workout (the board and challenges use this). Leave it blank if your version has no extra rounds.</small></label>
+    <label class="field" id="irTimeF"><span class="label" id="irTimeL">Time (min:sec)</span><input id="irTime" type="text" inputmode="numeric" placeholder="12:34"></label>
     <label class="field" id="irNumF"><span class="label">Total reps</span><input id="irNum" type="number" inputmode="decimal" min="0" step="any"></label>
     <div class="three" id="irLoadF"><label class="field"><span class="label" id="irLoadL">Weight (lb)</span><input id="irW" type="number" inputmode="decimal" min="1" step="any"></label><label class="field"><span class="label">Reps</span><select id="irReps"></select></label></div>
     <label class="field" id="irTxtF"><span class="label" id="irTxtL">Score</span><input id="irTxt" type="text" maxlength="80"></label>
@@ -3361,7 +3362,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function openIndLog(id){
     const it = findItem(id); if(!it) return; irFor = it; const r = (A.indr||{})[id] || {}; irFeel = r.feel || '';
     $('irWhat').textContent = (it.tag ? it.tag + ' · ' : '') + (it.title || 'Your workout');
-    $('irTimeF').hidden = it.score !== 'time'; $('irNumF').hidden = !(it.score === 'reps'); $('irLoadF').hidden = it.score !== 'load'; $('irTxtF').hidden = !(it.score === 'text' || it.score === 'none' || !it.score);
+    $('irTimeF').hidden = it.score !== 'time'; $('irTbF').hidden = it.score !== 'time'; $('irTimeL').textContent = it.score === 'time' ? 'Final time (min:sec)' : 'Time (min:sec)'; $('irTb').value = r.tb ? fmt(r.tb) : ''; $('irNumF').hidden = !(it.score === 'reps'); $('irLoadF').hidden = it.score !== 'load'; $('irTxtF').hidden = !(it.score === 'text' || it.score === 'none' || !it.score);
     $('irTxtL').textContent = it.score === 'none' || !it.score ? 'What you did (optional)' : 'Score';
     $('irTime').value = r.sec ? fmt(r.sec) : ''; $('irNum').value = r.n != null ? r.n : ''; $('irW').value = r.w || ''; $('irReps').value = r.reps || defaultReps(it); $('irTxt').value = r.txt || ''; $('irNote').value = r.note || ''; $('irVid').value = r.vid || '';
     $('irLoadL').textContent = 'Weight ('+A.unit+')'; $('irErr').textContent = ''; paintIrFeel();
@@ -3377,7 +3378,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     $('irForm').onsubmit = e => {
       e.preventDefault(); const it = irFor; if(!it) return;
       const r = { date: todayStr() <= it.date ? it.date : todayStr(), t: Date.now(), title: it.title || it.tag || 'Workout' };
-      if(it.score === 'time'){ const sec = parseTime($('irTime').value); if(sec == null || sec <= 0){ $('irErr').textContent = 'Enter your time like 12:34.'; return; } r.sec = sec; r.s = fmt(sec); }
+      if(it.score === 'time'){ const sec = parseTime($('irTime').value); if(sec == null || sec <= 0){ $('irErr').textContent = 'Enter your final time like 12:34.'; return; } r.sec = sec; r.s = fmt(sec);
+        const tbRaw = $('irTb').value.trim(); if(tbRaw){ const tb = parseTime(tbRaw); if(tb == null || tb <= 0 || tb > sec){ $('irErr').textContent = 'Your tiebreak time should be like 9:45 and not more than your final time.'; return; } r.tb = tb; r.s = fmt(sec) + ' · tiebreak ' + fmt(tb); } }
       else if(it.score === 'reps'){ const n = parseFloat($('irNum').value); if(!(n >= 0)){ $('irErr').textContent = 'Enter your reps.'; return; } r.n = n; r.s = fmtW(n)+' reps'; }
       else if(it.score === 'load'){ const w = parseFloat($('irW').value), reps = +$('irReps').value || 1; if(!(w > 0)){ $('irErr').textContent = 'Enter the weight.'; return; } r.w = w; r.reps = reps; r.s = fmtW(w)+' '+A.unit+' × '+reps; }
       else { const tx = $('irTxt').value.trim().slice(0,80); r.txt = tx; r.s = tx || 'Done'; }
@@ -3398,7 +3400,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const ev = it.board && it.ev ? evById(it.ev) : null, me = meId && athById(meId);
       if(ev && me){
         let v = null;
-        if(ev.type === 'time' && r.sec) v = r.sec; else if(ev.type === 'load' && r.w) v = A.unit === 'kg' ? Math.round(r.w*2.20462) : r.w; else if(ev.type !== 'time' && ev.type !== 'load' && r.n != null) v = r.n;
+        if(ev.type === 'time' && r.sec) v = r.tb || r.sec; else if(ev.type === 'load' && r.w) v = A.unit === 'kg' ? Math.round(r.w*2.20462) : r.w; else if(ev.type !== 'time' && ev.type !== 'load' && r.n != null) v = r.n;
         if(v != null){ sendRec = { id: lbUid(), a: meId, e: ev.id, d: me.div || LB.divs[0], v, t: Date.now() }; A.subs = A.subs.filter(x => !(x.e === ev.id && x.a === meId)); A.subs.push(sendRec); }
       }
       saveA(); $('irSheet').hidden = true; if(sendRec) openSend(sendRec); render();
