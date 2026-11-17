@@ -5137,7 +5137,7 @@ function initChat(u, coach){
     onSnapshot(query(collection(fs,'dms',me,'msgs'), orderBy('at','desc'), limit(150)), s => { T.dm[me] = s.docs.map(d => Object.assign({ id:d.id, ref:d.ref }, d.data())).reverse(); dot(); if(open) draw(); }, () => {});
   }
   function msgs(list, k){
-    if(!list || !list.length) return '<div class="ch-empty">'+(k === 'team' ? 'Say hi to the team. Everyone on BODYBOX sees this chat.' : coach ? 'No messages yet.' : 'Message your coaches here. Only you and the BODYBOX coaches see this.')+'</div>';
+    if(!list || !list.length) return '<div class="ch-empty">'+(k === 'team' ? 'Say hi to the team. Everyone on BODYBOX sees this chat.' : coach ? 'No messages yet.' : 'Message Coach Reef or Jameson here. Coach Reef: workouts and movements. Jameson: payments, your account and events. Only you and the BODYBOX staff see this.')+'</div>';
     return list.map(m => '<div class="ch-msg'+(m.uid === me ? ' me' : '')+'"><div class="ch-who"><span>'+esc(m.uid === me ? 'You' : (m.name||''))+'</span>'+badgeH(m.badge)+'<span>· '+(m.at ? when(m.at) : '')+'</span>'+((m.uid === me || coach) ? '<button class="ch-del" data-del="'+esc(m.id)+'" type="button">Delete</button>' : '')+'</div><div class="ch-text">'+esc(m.text||'').replace(/https?:\/\/[^\s<]+/g, u => '<a href="'+u+'" target="_blank" rel="noopener" style="color:#FF5A64;text-decoration:underline">'+(u.length > 48 ? u.slice(0, 45)+'…' : u)+'</a>')+'</div></div>').join('');
   }
   let draftV = null;
@@ -5437,7 +5437,7 @@ function payState(b){
   if(late < 5) return { k:'due', t:'Due '+fmtD(pt)+(late ? ' · '+late+' day'+(late>1?'s':'')+' late' : ' · today') };
   return { k:'late', t:'Not paid since '+fmtD(pt)+' · past the 5th' };
 }
-const PRICE_DEFAULT = 'BODYBOX prices (per month)\n- One program (Athlete Comp, Body Box Building or Cardio): $35\n- All 3 programs: $69\n- All 3 programs + personal programming from Coach Reef: $129\n- Garage Box: $25\nPayment is due on the 1st of every month. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back.\nPayments and account questions: teambodybox@gmail.com';
+const PRICE_DEFAULT = 'BODYBOX prices (per month)\n- One program (Athlete Comp, Body Box Building or Cardio): $35\n- All 3 programs: $69\n- All 3 programs + personal programming from Coach Reef: $129\n- Garage Box: $25\nPayment is due on the 1st of every month. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back.\nPayments and account questions: message Jameson in the app chat or email teambodybox@gmail.com';
 // Nov 17: how athletes pay. Venmo link opens Venmo with Team BodyBox, their amount and a note filled in.
 const payCfg = P => ({ venmo: String(P && P.venmo != null ? P.venmo : 'teambodybox').replace(/^@/, '').trim(), other: P && P.other != null ? P.other : 'Also: Cash App $bodybox, Apple Pay or cash' });
 const payMonth = b => { const ds = (b && b.paidThrough && b.paidThrough >= todayStr()) ? b.paidThrough : todayStr(); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+ds.slice(5,7)-1]; };
@@ -5486,7 +5486,7 @@ async function openPay(){
       if(await save(id, { paidThrough: nx, lastPaid: todayStr() })){ if(!r.approved || !(r.progs||[]).length) alert('Saved. Their programs are off. Turn them back on in Members.'); } draw(); });
     box.querySelectorAll('[data-price]').forEach(b => b.onclick = async () => { const r = rows.find(x => x.id === b.dataset.price); if(!confirm('Send the price sheet to '+(r.name||'them')+' in the app chat?')) return; b.disabled = true; try{ await sendDm(r.id, priceMsg(BILL._prices, prices)); b.textContent = 'Sent'; }catch(e){ b.textContent = 'Couldn\'t send'; b.disabled = false; } });
     box.querySelectorAll('[data-remind]').forEach(b => b.onclick = async () => { const r = rows.find(x => x.id === b.dataset.remind), s = payState(BILL[r.id]), first = (r.name||'').split(' ')[0];
-      const t = 'Hey '+first+', quick reminder: your BODYBOX payment '+(s.k === 'ok' ? 'is due '+fmtD(BILL[r.id].paidThrough) : 'is due')+'. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back. Questions: teambodybox@gmail.com' + payBlock(BILL._prices, BILL[r.id], first);
+      const t = 'Hey '+first+', quick reminder: your BODYBOX payment '+(s.k === 'ok' ? 'is due '+fmtD(BILL[r.id].paidThrough) : 'is due')+'. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back. Questions? Message Jameson in the app chat or email teambodybox@gmail.com' + payBlock(BILL._prices, BILL[r.id], first);
       const msg = prompt('Reminder to '+(r.name||'them')+' (edit if you want):', t); if(!msg) return; b.disabled = true; try{ await sendDm(r.id, msg); b.textContent = 'Sent'; }catch(e){ b.textContent = 'Couldn\'t send'; b.disabled = false; } });
   };
   draw();

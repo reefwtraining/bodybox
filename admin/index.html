@@ -153,7 +153,7 @@ const PROGS = [['comp','Athlete Comp'],['build','Building'],['cardio','Cardio'],
 const PERSONAL = ['personal','Personal'];
 const PLANS = { comp:'Athlete Comp', build:'Body Box Building', cardio:'Cardio', garage:'Garage Box', all3:'All 3 Programs', coach:'Personal Coaching', staff:'Coach access' };
 const PLAN_PROGS = { comp:['comp'], build:['build'], cardio:['cardio'], garage:['garage'], all3:['comp','build','cardio'], coach:['comp','build','cardio'] };
-const PRICE_DEFAULT = 'BODYBOX prices (per month)\n- One program (Athlete Comp, Body Box Building or Cardio): $35\n- All 3 programs: $69\n- All 3 programs + personal programming from Coach Reef: $129\n- Garage Box: $25\nPayment is due on the 1st of every month. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back.\nPayments and account questions: teambodybox@gmail.com';
+const PRICE_DEFAULT = 'BODYBOX prices (per month)\n- One program (Athlete Comp, Body Box Building or Cardio): $35\n- All 3 programs: $69\n- All 3 programs + personal programming from Coach Reef: $129\n- Garage Box: $25\nPayment is due on the 1st of every month. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back.\nPayments and account questions: message Jameson in the app chat or email teambodybox@gmail.com';
 
 const $ = s => document.querySelector(s), esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad = n => String(n).padStart(2,'0'), ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()), today = () => ymd(new Date());
@@ -360,7 +360,7 @@ const payBlock = (P, b, first) => { const c = payCfg(P), l = payLink(P, b, first
 const priceMsg = (P, txt) => { const c = payCfg(P); return (txt + (c.venmo ? '\nVenmo: https://venmo.com/u/'+c.venmo : '') + (c.other ? '\n'+c.other : '')).slice(0, 600); };
 const prices = () => priceMsg(D.bill._prices, (D.bill._prices && D.bill._prices.text) || PRICE_DEFAULT);
 const reminderText = r => { const b = D.bill[r.id] || {}, s = payState(b), first = (r.name||'').split(' ')[0];
-  return 'Hey '+first+', quick reminder: your BODYBOX payment '+(s.k === 'ok' ? 'is due '+fmtD(b.paidThrough) : 'is due')+'. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back. Questions: teambodybox@gmail.com' + payBlock(D.bill._prices, b, first); };
+  return 'Hey '+first+', quick reminder: your BODYBOX payment '+(s.k === 'ok' ? 'is due '+fmtD(b.paidThrough) : 'is due')+'. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back. Questions? Message Jameson in the app chat or email teambodybox@gmail.com' + payBlock(D.bill._prices, b, first); };
 const markPaid = r => { const b = D.bill[r.id] || {}, nx = addMonth(b.paidThrough || firstOfMonth(today())); return saveBill(r.id, { paidThrough: nx, lastPaid: today() }).then(ok => ({ ok, nx })); };
 function wireMembers(rows){
   const V = $('#view'), byId = id => D.members.find(x => x.id === id);
@@ -426,7 +426,7 @@ function inviteEmail(v){
     '4. We approve you. Usually same day. The app opens by itself once you\'re in.\n'+
     '5. Tap Me and check your numbers.\n6. Train and log every set and score.\n\n'+
     'Put it on your home screen: on iPhone open the link in Safari, tap Share, then Add to Home Screen. Open it from there and tap Turn on so you get the 8 PM "tomorrow\'s workout is up" alert.\n\n'+
-    'YOUR FREE WEEK\nYour 7-day free trial runs '+fmtD(v.trialStart)+' to '+fmtD(trialEnd)+'. '+(v.rate ? 'Then it\'s $'+v.rate+' a month. ' : '')+'Your first payment is due '+fmtD(v.firstPay)+(v.lineUp ? ', so you\'re on the same schedule as the rest of the team (the 1st of every month)' : '')+'. Payments and account questions: teambodybox@gmail.com\n\n'+
+    'YOUR FREE WEEK\nYour 7-day free trial runs '+fmtD(v.trialStart)+' to '+fmtD(trialEnd)+'. '+(v.rate ? 'Then it\'s $'+v.rate+' a month. ' : '')+'Your first payment is due '+fmtD(v.firstPay)+(v.lineUp ? ', so you\'re on the same schedule as the rest of the team (the 1st of every month)' : '')+'. Payments and account questions: message Jameson in the app chat or email teambodybox@gmail.com\n\n'+
     'Team BodyBox\nKEEP DOING GREAT THINGS' };
 }
 let INV = null;
