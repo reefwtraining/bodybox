@@ -525,11 +525,16 @@ function renderPrices(){
     '<div class="panel form"><b>How athletes pay</b><label>Venmo username<input id="pyV" maxlength="40" value="'+esc(c.venmo)+'" placeholder="teambodybox"></label>'+
     '<label>Other ways to pay (one line, shows under the Venmo link)<input id="pyO" maxlength="120" value="'+esc(c.other)+'" placeholder="Apple Pay: ask teambodybox@gmail.com"></label>'+
     '<p class="note" id="pyTest"></p><div><button class="btn" id="prSave" type="button">Save</button></div>'+
-    '<b style="margin-top:8px">What athletes get</b><div id="prPrev" style="white-space:pre-wrap;font-size:14px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px"></div></div></div>';
+    '<b style="margin-top:8px">What athletes get</b><div id="prPrev" style="white-space:pre-wrap;font-size:14px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px"></div></div></div>'+
+    '<div class="panel" style="margin-top:18px;grid-template-columns:minmax(220px,360px) 1fr;align-items:start;gap:20px"><a href="../img/bodybox-prices.png" target="_blank" rel="noopener"><img src="../img/bodybox-prices.png" alt="BODYBOX prices picture" style="width:100%;border-radius:12px;border:1px solid var(--line);display:block"></a>'+
+    '<div class="form"><b>Prices picture</b><p class="note">Text it, post it in a story, or attach it to an email. Same prices as the sheet: $35 a program, $69 for all 3, $129 personal, $25 Garage Box, 7 days free, due the 1st.</p>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="../img/bodybox-prices.png" download="BODYBOX-prices.png" style="text-decoration:none">Download picture</a><button class="btn ghost" type="button" id="prImgLink">Copy picture link</button></div>'+
+    '<p class="note">Link: https://reefwtraining.github.io/bodybox/img/bodybox-prices.png</p></div></div>';
   const t = $('#prText'), cur = () => ({ text: t.value, venmo: $('#pyV').value.replace(/^@/, '').trim(), other: $('#pyO').value.trim() });
   const upd = () => { const C = cur(), full = priceMsg(C, C.text); $('#prLeft').textContent = Math.max(0, 600 - (C.text + (C.venmo ? '\nVenmo: https://venmo.com/u/'+C.venmo : '') + (C.other ? '\n'+C.other : '')).length)+' characters left (with the pay lines)'; $('#prPrev').textContent = full;
     const l = payLink(C, { rate: 30 }, 'Ashley'); $('#pyTest').innerHTML = l ? 'Test the Venmo link (a $30 example): <a href="'+esc(l)+'" target="_blank" rel="noopener">open</a>' : 'No Venmo username: reminders go out without a pay link.'; };
   [t, $('#pyV'), $('#pyO')].forEach(x => x.oninput = upd); upd();
+  $('#prImgLink').onclick = async () => { const l = 'https://reefwtraining.github.io/bodybox/img/bodybox-prices.png'; try{ await navigator.clipboard.writeText(l); toast('Picture link copied'); }catch(e){ prompt('Copy this link:', l); } };
   $('#prSave').onclick = async () => { const C = cur();
     try{ await setDoc(doc(fs,'billing','_prices'), { text: C.text.slice(0,600), venmo: C.venmo, other: C.other.slice(0,120), by: ME.name, at: serverTimestamp() }); toast('Saved'); }catch(e){ alert('Couldn\'t save.'); } };
 }
