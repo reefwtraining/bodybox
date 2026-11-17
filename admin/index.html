@@ -352,7 +352,7 @@ async function saveBill(id, patch){
 }
 async function sendDm(uid, text){ await addDoc(collection(fs, 'dms', uid, 'msgs'), { uid: ME.uid, name: ME.name, badge: ME.badge, text: String(text).slice(0, 600), at: Date.now() }); }
 // Nov 17: how athletes pay. Venmo link opens Venmo with Team BodyBox, their amount and a note filled in.
-const payCfg = P => ({ venmo: String(P && P.venmo != null ? P.venmo : 'teambodybox').replace(/^@/, '').trim(), other: P && P.other != null ? P.other : 'Apple Pay: ask teambodybox@gmail.com' });
+const payCfg = P => ({ venmo: String(P && P.venmo != null ? P.venmo : 'teambodybox').replace(/^@/, '').trim(), other: P && P.other != null ? P.other : 'Also: Cash App $bodybox, Apple Pay or cash' });
 const payMonth = b => { const ds = (b && b.paidThrough && b.paidThrough >= today()) ? b.paidThrough : today(); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+ds.slice(5,7)-1]; };
 const payLink = (P, b, first) => { const v = payCfg(P).venmo; if(!v) return ''; const amt = b && +b.rate > 0 ? +b.rate : 0; return 'https://venmo.com/?txn=pay&recipients='+encodeURIComponent(v)+(amt ? '&amount='+amt : '')+'&note='+encodeURIComponent('BODYBOX '+payMonth(b)+(first ? ' - '+first : '')); };
 const payBlock = (P, b, first) => { const c = payCfg(P), l = payLink(P, b, first); return (l ? '\nPay with Venmo (@'+c.venmo+'): '+l : '') + (c.other ? '\n'+c.other : ''); };
@@ -526,9 +526,9 @@ function renderPrices(){
     '<label>Other ways to pay (one line, shows under the Venmo link)<input id="pyO" maxlength="120" value="'+esc(c.other)+'" placeholder="Apple Pay: ask teambodybox@gmail.com"></label>'+
     '<p class="note" id="pyTest"></p><div><button class="btn" id="prSave" type="button">Save</button></div>'+
     '<b style="margin-top:8px">What athletes get</b><div id="prPrev" style="white-space:pre-wrap;font-size:14px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px"></div></div></div>'+
-    '<div class="panel" style="margin-top:18px;grid-template-columns:minmax(220px,360px) 1fr;align-items:start;gap:20px"><a href="../img/bodybox-prices.png" target="_blank" rel="noopener"><img src="../img/bodybox-prices.png" alt="BODYBOX prices picture" style="width:100%;border-radius:12px;border:1px solid var(--line);display:block"></a>'+
-    '<div class="form"><b>Prices picture</b><p class="note">Text it, post it in a story, or attach it to an email. Same prices as the sheet: $35 a program, $69 for all 3, $129 personal, $25 Garage Box, 7 days free, due the 1st.</p>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="../img/bodybox-prices.png" download="BODYBOX-prices.png" style="text-decoration:none">Download picture</a><button class="btn ghost" type="button" id="prImgLink">Copy picture link</button></div>'+
+    '<div class="panel" style="margin-top:18px;grid-template-columns:minmax(220px,360px) 1fr;align-items:start;gap:20px"><a href="../img/bodybox-prices.png" target="_blank" rel="noopener"><img src="../img/bodybox-prices.png" alt="BODYBOX Programs flyer with prices" style="width:100%;border-radius:12px;border:1px solid var(--line);display:block"></a>'+
+    '<div class="form"><b>BODYBOX Programs flyer</b><p class="note">The prices flyer. Text the picture, attach it to an email, or print the PDF.</p>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="../img/bodybox-prices.png" download="BODYBOX-Programs-Flyer.png" style="text-decoration:none">Download picture</a><a class="btn ghost" href="../img/bodybox-prices.pdf" download="BODYBOX-Programs-Flyer.pdf" style="text-decoration:none">Download PDF to print</a><button class="btn ghost" type="button" id="prImgLink">Copy picture link</button></div>'+
     '<p class="note">Link: https://reefwtraining.github.io/bodybox/img/bodybox-prices.png</p></div></div>';
   const t = $('#prText'), cur = () => ({ text: t.value, venmo: $('#pyV').value.replace(/^@/, '').trim(), other: $('#pyO').value.trim() });
   const upd = () => { const C = cur(), full = priceMsg(C, C.text); $('#prLeft').textContent = Math.max(0, 600 - (C.text + (C.venmo ? '\nVenmo: https://venmo.com/u/'+C.venmo : '') + (C.other ? '\n'+C.other : '')).length)+' characters left (with the pay lines)'; $('#prPrev').textContent = full;

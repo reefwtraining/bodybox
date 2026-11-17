@@ -5439,7 +5439,7 @@ function payState(b){
 }
 const PRICE_DEFAULT = 'BODYBOX prices (per month)\n- One program (Athlete Comp, Body Box Building or Cardio): $35\n- All 3 programs: $69\n- All 3 programs + personal programming from Coach Reef: $129\n- Garage Box: $25\nPayment is due on the 1st of every month. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back.\nPayments and account questions: teambodybox@gmail.com';
 // Nov 17: how athletes pay. Venmo link opens Venmo with Team BodyBox, their amount and a note filled in.
-const payCfg = P => ({ venmo: String(P && P.venmo != null ? P.venmo : 'teambodybox').replace(/^@/, '').trim(), other: P && P.other != null ? P.other : 'Apple Pay: ask teambodybox@gmail.com' });
+const payCfg = P => ({ venmo: String(P && P.venmo != null ? P.venmo : 'teambodybox').replace(/^@/, '').trim(), other: P && P.other != null ? P.other : 'Also: Cash App $bodybox, Apple Pay or cash' });
 const payMonth = b => { const ds = (b && b.paidThrough && b.paidThrough >= todayStr()) ? b.paidThrough : todayStr(); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+ds.slice(5,7)-1]; };
 const payLink = (P, b, first) => { const v = payCfg(P).venmo; if(!v) return ''; const amt = b && +b.rate > 0 ? +b.rate : 0; return 'https://venmo.com/?txn=pay&recipients='+encodeURIComponent(v)+(amt ? '&amount='+amt : '')+'&note='+encodeURIComponent('BODYBOX '+payMonth(b)+(first ? ' - '+first : '')); };
 const payBlock = (P, b, first) => { const c = payCfg(P), l = payLink(P, b, first); return (l ? '\nPay with Venmo (@'+c.venmo+'): '+l : '') + (c.other ? '\n'+c.other : ''); };
