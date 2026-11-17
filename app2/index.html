@@ -584,6 +584,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .rl li:first-child{border-top:0}
 .rl .w{font-weight:600;font-size:14px}.rl .d{font-size:12px;color:var(--muted)}
 .rl .v{font:700 15px var(--mono);text-align:right;white-space:nowrap}.rl .v small{display:block;font:500 11px var(--body);color:var(--muted)}
+.mech{margin-top:22px}.mech:empty{display:none}
 details.more{margin:14px 0}details.more summary{cursor:pointer;color:#FF5A64;font-weight:700;font-size:14px;margin-bottom:8px}
 .set-photo{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .set-photo .avatar{width:84px;height:84px;font-size:28px}
@@ -2904,6 +2905,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     else if(meTab === 'lifts') h += liftsTabHtml();
     else if(meTab === 'scores') h += profileHtml(me, true, 'body');
     else h += logbookHtml() + personalHtml() + meIndHtml() + phaseHtml() + recapHtml() + lifeHtml();
+    h += '<div class="mech">'+challengesHtml()+'</div>'; // Nov 17: challenges sit at the bottom of the Me page
     v.innerHTML = h;
     v.querySelectorAll('[data-metab]').forEach(b => b.onclick = () => { meTab = b.dataset.metab; render(); const t = v.querySelector('.metabs'); if(t && t.getBoundingClientRect().top < 0) t.scrollIntoView(); });
     v.querySelectorAll('[data-klift]').forEach(b => b.onclick = () => { meTab = 'lifts'; openLift = b.dataset.klift; render(); setTimeout(() => { const x = v.querySelector('[data-lift="'+b.dataset.klift+'"]'); if(x) x.scrollIntoView({ block:'center' }); }, 30); });
@@ -2925,7 +2927,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         '<p class="err" id="liErr"></p><div class="row"><button class="btn solid" type="submit">Sign in</button></div>'+
         '<p>No PIN yet? Ask a coach to set up your login with your email and a 4-digit PIN.</p><div class="row"><button class="linkbtn" type="button" data-plans="1">New here? See plans & join</button></div></form>';
     }
-    if(me){ renderMeTabs(me, (isCoachKey() ? '<div class="row" style="margin:0 0 12px"><button class="btn solid" type="button" data-hub="1">Coach hub</button></div>' : '') + coachTimersHtml() + challengesHtml()); return; }
+    if(me){ renderMeTabs(me, (isCoachKey() ? '<div class="row" style="margin:0 0 12px"><button class="btn solid" type="button" data-hub="1">Coach hub</button></div>' : '') + coachTimersHtml()); return; }
     pre = coachTimersHtml() + challengesHtml() + pre;
     if(isCoachKey()) pre = '<div class="row" style="margin:0 0 12px"><button class="btn solid" type="button" data-hub="1">Coach hub</button></div>' + pre;
     renderNumbers(pre, v => {
