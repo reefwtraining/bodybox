@@ -553,6 +553,38 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .set-top{display:flex;justify-content:space-between;align-items:center;position:sticky;top:-12px;background:var(--bg);padding:8px 0;z-index:2}
 .set-top h2{font-family:var(--display);font-size:32px;text-transform:uppercase;margin:0;font-weight:400}
 .set-flash{margin:0;color:#6FBF73;font-weight:600}
+.wk{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--panel);display:grid;gap:12px;margin:0 0 6px}
+.wk-h{display:flex;justify-content:space-between;align-items:baseline}
+.wk-h b{font:400 22px var(--display);text-transform:uppercase;letter-spacing:.02em}
+.wk-h span{color:var(--muted);font-size:12px}
+.wk-g{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.wk-g div{display:grid;gap:2px;min-width:0}
+.wk-g b{font:700 24px var(--mono);color:var(--chalk)}.wk-g b small{font-size:14px;color:var(--muted)}
+.wk-g b.r{color:#FF5A64}
+.wk-g span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.wk-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.wk-bar i{display:block;height:100%;background:#C8102E}
+.wk-note{font-size:14px;color:var(--chalk);margin:0}.wk-note b{color:#FF5A64}
+.metabs{display:flex;gap:4px;position:sticky;top:0;background:var(--bg);padding:6px 0 0;z-index:4;margin:10px 0 12px;border-bottom:1px solid var(--line)}
+.metabs button{flex:1;border:0;background:transparent;color:var(--muted);font:700 13px var(--body);text-transform:uppercase;letter-spacing:.08em;padding:10px 0;border-bottom:3px solid transparent;cursor:pointer}
+.metabs button.on{color:var(--chalk);border-bottom-color:#C8102E}
+.key{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kl{border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:2px;background:var(--panel);text-align:left;color:inherit;font:inherit;cursor:pointer}
+.kl span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kl b{font:700 22px var(--mono);color:var(--chalk)}
+.kl small{font-size:11px;color:var(--muted)}
+.kl .up{color:#6FBF73;font-weight:700;font-size:11px;text-transform:none;letter-spacing:0}
+.kl.pr{border-color:#C8102E}
+.kl .prb{justify-self:start;background:#C8102E;color:#fff!important;font:700 10px var(--body);letter-spacing:.08em;padding:2px 6px;border-radius:4px;margin-bottom:2px}
+.kl.old{opacity:.45}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;margin:18px 0 8px}
+.sec-h h3{margin:0;font:400 20px var(--display);text-transform:uppercase}
+.sec-a{border:0;background:none;color:#FF5A64;font:700 13px var(--body);cursor:pointer;padding:0}
+.rl{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.rl li{display:flex;justify-content:space-between;align-items:center;padding:11px 12px;border-top:1px solid var(--line);gap:10px}
+.rl li:first-child{border-top:0}
+.rl .w{font-weight:600;font-size:14px}.rl .d{font-size:12px;color:var(--muted)}
+.rl .v{font:700 15px var(--mono);text-align:right;white-space:nowrap}.rl .v small{display:block;font:500 11px var(--body);color:var(--muted)}
+details.more{margin:14px 0}details.more summary{cursor:pointer;color:#FF5A64;font-weight:700;font-size:14px;margin-bottom:8px}
 .set-photo{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .set-photo .avatar{width:84px;height:84px;font-size:28px}
 .set-links{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
@@ -1825,8 +1857,11 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
          '<p>Your numbers are saved on this phone only. Save a backup file now and then, and restore it if you switch phones or clear your browser. Full athlete accounts come when the app moves to its own home.</p>'+
          '<div class="row"><button class="btn" type="button" id="bkSave">Save a backup</button><label class="btn">Restore a backup<input id="bkLoad" type="file" accept="application/json,.json" hidden></label></div><p id="bkMsg"></p></div>';
     v.innerHTML = h;
-    $('logBtn').onclick = () => openLog(null);
     if(after) after(v);
+    wireNumbers(v);
+  }
+  function wireNumbers(v){
+    const lb = $('logBtn'); if(lb) lb.onclick = () => openLog(null);
     v.querySelectorAll('[data-unit]').forEach(b => b.onclick = () => { A.unit = b.dataset.unit; A.bar = A.unit==='kg' ? 20 : 45; saveA(); render(); });
     v.querySelectorAll('[data-lift]').forEach(b => b.onclick = () => { openLift = openLift === b.dataset.lift ? null : b.dataset.lift; armed = null; render(); });
     v.querySelectorAll('[data-add]').forEach(b => b.onclick = () => openLog(b.dataset.add));
@@ -1841,8 +1876,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     v.querySelectorAll('[data-logfor]').forEach(b => b.onclick = () => openLog(b.dataset.logfor));
     v.querySelectorAll('[data-calc]').forEach(b => b.onclick = () => { CALC.lift = b.dataset.calc; CALC.manual = null; setTab('calc'); });
     wireLogbook(v); wireGym(v);
-    $('bkSave').onclick = saveBackup;
-    $('bkLoad').onchange = e => { const f = e.target.files[0]; e.target.value=''; if(f) restoreBackup(f); };
+    const bs = $('bkSave'); if(bs) bs.onclick = saveBackup;
+    const bl = $('bkLoad'); if(bl) bl.onchange = e => { const f = e.target.files[0]; e.target.value=''; if(f) restoreBackup(f); };
   }
   function detailHtml(k){
     const es = entriesOf(k);
@@ -2569,7 +2604,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const a = athById(id); if(a && a.div){ const m = out.boards.find(b => b.div === a.div); if(m) out.main = m; }
     return out;
   }
-  function profileHtml(id, mine){
+  function profileHtml(id, mine, part){
     const a = athById(id) || { id, name: A.name || 'Athlete' };
     const st = athById(id) ? athStats(id) : { boards:[], done:0, wins:0, podiums:0, results:[], main:null };
     let h = '<div class="prof'+(mine?' mine':'')+'">'+(mine ? '<button class="setbtn" type="button" id="setOpen" aria-label="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>' : '')+avatarHtml(a)+'<div style="min-width:0"><span class="label">'+(mine?'My profile':'Athlete')+'</span><h1>'+esc(a.name)+'</h1>'+
@@ -2577,13 +2612,14 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       '<div class="badges">'+(a.div?'<span class="badge gold">'+esc(a.div)+'</span>':'')+(a.sex?'<span class="badge">'+(a.sex==='F'?'Women':'Men')+'</span>':'')+(a.coach?'<span class="badge">Coach</span>':'')+
       '<span class="badge">Rebuilt Training</span>'+(a.since?'<span class="badge">Since '+esc(niceDate(a.since).replace(/^\w+ \d+, /,''))+'</span>':'')+'</div></div></div>';
     h += '<div class="profx">'+(mine ? meViewHtml() : socialsHtml(false))+'</div>'; // Nov 17: about me + socials sit with the profile pic; editing lives in Settings
+    if(part === 'head') return h; if(part === 'body') h = '';
     h += '<div class="stats">'+
       '<div class="stat"><b>'+(st.main?'#'+st.main.rank:'–')+'</b><span>'+(st.main?esc(st.main.div)+' rank':'Rank')+'</span></div>'+
       '<div class="stat"><b>'+(st.main?st.main.pts:'–')+'</b><span>Points</span></div>'+
       '<div class="stat"><b>'+st.done+'</b><span>Workouts</span></div>'+
       '<div class="stat"><b>'+st.wins+'</b><span>1st places</span></div></div>';
     if(st.boards.length > 1) h += '<p class="how">Also on: '+st.boards.filter(b => b !== st.main).map(b => esc(b.div)+' #'+b.rank+' of '+b.of).join(' · ')+'</p>';
-    if(mine){
+    if(mine && part !== 'body'){
       const lifts = LIFT_ORDER.filter(k => A.log.some(e => e.lift === k)).slice(0,6);
       const named = Object.keys(NW).filter(k => A.scores.some(x => x.w === k)).slice(0,6);
       if(lifts.length || named.length){
@@ -2786,6 +2822,96 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     el.querySelector('#setOut').onclick = () => { if(window.__bbSignOut){ window.__bbSignOut(); } else { meId = ''; store.del('bb-me'); close(); } };
     el.scrollTop = top;
   }
+  /* ---------- Me page in tabs: This week card + Overview / Lifts / Scores / Log (Nov 17) ---------- */
+  let meTab = 'over';
+  const KEY_LIFTS = ['back_squat','front_squat','deadlift','clean','snatch','clean_jerk'];
+  function liftCard(k){
+    const b = bestOf(k); if(!b) return '';
+    const es0 = entriesOf(k), es = es0.some(e => !e.nomax) ? es0.filter(e => !e.nomax) : es0, first = es[0];
+    const firstV = first ? conv(e1rm(first.w, first.reps), first.u, A.unit) : 0, gain = es.length > 1 ? Math.round(b.val - firstV) : 0;
+    const age = (Date.now() - parse(b.e.date).getTime()) / 864e5;
+    const prev = es.filter(e => e !== b.e && e.date <= b.e.date), isPR = age <= 7 && prev.length > 0;
+    const old = age > 56;
+    return '<button type="button" class="kl'+(isPR?' pr':'')+(old?' old':'')+'" data-klift="'+k+'">'+(isPR?'<span class="prb">NEW PR</span>':'')+'<span>'+esc(LIFTS[k])+'</span><b>'+fmtW(gymMax(k, b.val))+'</b>'+
+      '<small>'+(gain>0?'<span class="up">+'+gain+'</span> · ':'')+esc(niceDate(b.e.date).replace(/, \d{4}$/,''))+'</small></button>';
+  }
+  function keyLiftsHtml(withAll){
+    let ks = KEY_LIFTS.filter(k => bestOf(k));
+    if(ks.length < 6) ks = ks.concat(LIFT_ORDER.filter(k => !ks.includes(k) && bestOf(k)).slice(0, 6 - ks.length));
+    const total = LIFT_ORDER.filter(k => bestOf(k)).length;
+    let h = '<div class="sec-h"><h3>Key lifts</h3>'+(withAll && total > ks.length ? '<button class="sec-a" type="button" data-metab="lifts">See all '+total+' →</button>' : '')+'</div>';
+    if(!ks.length) return h + '<div class="empty"><b>No lifts yet</b>Tap + Log a lift on the Lifts tab to add your first max.</div>';
+    return h + '<div class="key">'+ks.map(liftCard).join('')+'</div>';
+  }
+  function bigJump(){
+    const cut = iso(new Date(Date.now() - 30*864e5)); let top = null;
+    LIFT_ORDER.forEach(k => { const es = entriesOf(k).filter(e => !e.nomax); if(es.length < 2) return;
+      const v = e => conv(e1rm(e.w, e.reps), e.u, A.unit);
+      const old = es.filter(e => e.date < cut), base = old.length ? old.reduce((m,e) => Math.max(m, v(e)), 0) : v(es[0]), recent = es.filter(e => e.date >= cut && e !== (old.length ? null : es[0])).reduce((m,e) => Math.max(m, v(e)), 0), before = base;
+      if(before && recent > before){ const g = Math.round(recent - before); if(!top || g > top.g) top = { k, g }; } });
+    return top;
+  }
+  function weekCardHtml(me){
+    const ws = weekStats(), st = weekStreak(), main = athById(me) ? athStats(me).main : null, j = bigJump();
+    const d0 = parse(weekKey(todayStr())), d1 = new Date(d0); d1.setDate(d1.getDate()+5);
+    const rng = MON[d0.getMonth()]+' '+d0.getDate()+' – '+(d1.getMonth()!==d0.getMonth()?MON[d1.getMonth()]+' ':'')+d1.getDate();
+    const pct = Math.min(100, Math.round(ws.days/6*100));
+    return '<div class="wk"><div class="wk-h"><b>This week</b><span>'+rng+'</span></div><div class="wk-g">'+
+      '<div><b>'+ws.days+'<small>/6</small></b><span>Days trained</span></div><div><b'+(ws.prs?' class="r"':'')+'>'+ws.prs+'</b><span>New PR'+(ws.prs===1?'':'s')+'</span></div>'+
+      '<div><b>'+st+'</b><span>Week streak</span></div><div><b>'+(main?'#'+main.rank:'–')+'</b><span>'+(main?esc(main.div)+' rank':'Rank')+'</span></div></div>'+
+      '<div class="wk-bar"><i style="width:'+pct+'%"></i></div>'+
+      (j ? '<p class="wk-note">Biggest jump this month: <b>'+esc(LIFTS[j.k])+' +'+j.g+' '+A.unit+'</b></p>' : '<p class="wk-note" style="color:var(--muted)">Log your lifts this month to see your biggest jump here.</p>')+'</div>';
+  }
+  function recentScoresHtml(me, n){
+    const st = athById(me) ? athStats(me) : { results: [] };
+    const rs = st.results.slice().sort((a,b) => a.ev.date < b.ev.date ? 1 : -1).slice(0, n);
+    let h = '<div class="sec-h"><h3>Recent scores</h3>'+(st.results.length > n ? '<button class="sec-a" type="button" data-metab="scores">All →</button>' : '')+'</div>';
+    if(!rs.length) return h + '<p class="how">Your board scores show up here.</p>';
+    return h + '<ul class="rl">'+rs.map(x => '<li><div><div class="w">'+esc(x.ev.name)+'</div><div class="d">'+esc(niceDate(x.ev.date).replace(/, \d{4}$/,''))+' · '+esc(x.div)+'</div></div><div class="v">'+esc(lbScore(x.ev, x.r))+'<small>'+ordinal(x.place)+' of '+x.of+'</small></div></li>').join('')+'</ul>';
+  }
+  function liftsTabHtml(){
+    const have = LIFT_ORDER.filter(k => A.log.some(e => e.lift === k)), none = LIFT_ORDER.filter(k => !have.includes(k));
+    let h = '<div class="n-top"><button class="btn solid" type="button" id="logBtn">+ Log a lift</button>'+
+      '<div class="seg" role="group" aria-label="Units"><button type="button" data-unit="lb" aria-pressed="'+(A.unit==='lb')+'">lb</button><button type="button" data-unit="kg" aria-pressed="'+(A.unit==='kg')+'">kg</button></div></div>';
+    h += keyLiftsHtml(false);
+    if(have.length){
+      h += '<div class="sec-h"><h3>All lifts</h3></div><div class="prs">';
+      const haveO = have.filter(k => !isDB(k)).concat(have.filter(isDB)); let dbHead = false;
+      haveO.forEach(k => {
+        if(isDB(k) && !dbHead){ dbHead = true; h += '</div><span class="label" style="display:block;margin:14px 0 6px">Dumbbell &amp; kettlebell</span><div class="prs">'; }
+        const b = bestOf(k);
+        h += '<button class="pr" type="button" data-lift="'+k+'" aria-expanded="'+(openLift===k)+'"><span class="nm">'+esc(LIFTS[k])+'</span>'+
+             '<span class="val">'+fmtW(gymMax(k, b.val))+' <small>'+A.unit+perTxt(k)+(b.est?' est.':'')+'</small></span>'+
+             '<span class="meta">'+niceDate(b.e.date)+'</span>'+goalBar(k, true)+'</button>';
+        if(openLift === k) h += detailHtml(k);
+      });
+      h += '</div>';
+    }
+    if(none.length){
+      const chip = k => '<button class="chip" type="button" data-add="'+k+'">+ '+esc(LIFTS[k])+'</button>';
+      h += '<details class="more"><summary>Add another lift ('+none.length+')</summary><div class="nolift">'+none.map(chip).join('')+'</div></details>';
+    }
+    h += gymHtml();
+    h += '<div class="row" style="margin:16px 0 6px"><button class="btn" type="button" data-movelib="1">Exercise library</button></div>';
+    return h;
+  }
+  function renderMeTabs(me, top){
+    const v = $('view');
+    const T = [['over','Overview'],['lifts','Lifts'],['scores','Scores'],['log','Log']];
+    let h = top + profileHtml(me, true, 'head') + weekCardHtml(me) +
+      '<div class="metabs" role="tablist">'+T.map(([k,n]) => '<button type="button" role="tab" data-metab="'+k+'" class="'+(meTab===k?'on':'')+'" aria-selected="'+(meTab===k)+'">'+n+'</button>').join('')+'</div>';
+    if(meTab === 'over') h += keyLiftsHtml(true) + recentScoresHtml(me, 3) + goalsHtml();
+    else if(meTab === 'lifts') h += liftsTabHtml();
+    else if(meTab === 'scores') h += profileHtml(me, true, 'body');
+    else h += logbookHtml() + personalHtml() + meIndHtml() + phaseHtml() + recapHtml() + lifeHtml();
+    v.innerHTML = h;
+    v.querySelectorAll('[data-metab]').forEach(b => b.onclick = () => { meTab = b.dataset.metab; render(); const t = v.querySelector('.metabs'); if(t && t.getBoundingClientRect().top < 0) t.scrollIntoView(); });
+    v.querySelectorAll('[data-klift]').forEach(b => b.onclick = () => { meTab = 'lifts'; openLift = b.dataset.klift; render(); setTimeout(() => { const x = v.querySelector('[data-lift="'+b.dataset.klift+'"]'); if(x) x.scrollIntoView({ block:'center' }); }, 30); });
+    v.querySelectorAll('[data-hub]').forEach(b => b.onclick = () => { coachAth = null; setTab('coach'); });
+    wireMeInd(); const pa = $('pwAdd'); if(pa) pa.onclick = openPersonal;
+    wireProfile(v, me); const so = v.querySelector('#setOpen'); if(so) so.onclick = () => openSettings();
+    wireNumbers(v);
+  }
   function renderMe(){
     const me = meId && athById(meId) ? meId : '';
     let pre = '';
@@ -2799,6 +2925,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         '<p class="err" id="liErr"></p><div class="row"><button class="btn solid" type="submit">Sign in</button></div>'+
         '<p>No PIN yet? Ask a coach to set up your login with your email and a 4-digit PIN.</p><div class="row"><button class="linkbtn" type="button" data-plans="1">New here? See plans & join</button></div></form>';
     }
+    if(me){ renderMeTabs(me, (isCoachKey() ? '<div class="row" style="margin:0 0 12px"><button class="btn solid" type="button" data-hub="1">Coach hub</button></div>' : '') + coachTimersHtml() + challengesHtml()); return; }
     pre = coachTimersHtml() + challengesHtml() + pre;
     if(isCoachKey()) pre = '<div class="row" style="margin:0 0 12px"><button class="btn solid" type="button" data-hub="1">Coach hub</button></div>' + pre;
     renderNumbers(pre, v => {
