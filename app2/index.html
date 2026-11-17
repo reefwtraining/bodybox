@@ -4845,7 +4845,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 #bbMembers .mhub{display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid #2A2A2A;padding-top:10px}
 #bbMembers .mbtns{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
 #bbMembers .mtag{display:inline-block;background:#2A2A2A;color:#E8B44C;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;align-self:center}
-#bbMembers .pst{font-weight:600}#bbMembers .pst.ok{color:#6FBF73!important}#bbMembers .pst.due{color:#E8B44C!important}#bbMembers .pst.late{color:#FF5A64!important}#bbMembers .pst.none{color:#8F8B84!important}
+#bbMembers .pst{font-weight:600}#bbMembers .pst.ok{color:#6FBF73!important}#bbMembers .pst.due{color:#E8B44C!important}#bbMembers .pst.late{color:#FF5A64!important}#bbMembers .pst.none{color:#8F8B84!important}#bbMembers .pst.free{color:#C9C5BE!important}
 #bbMembers .prow{border:1px solid #2A2A2A;border-radius:12px;padding:12px;display:grid;gap:8px;background:#151515}
 #bbMembers .prow small{display:block;color:#8F8B84;font-size:13px}
 #bbMembers .ptop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
@@ -5324,7 +5324,7 @@ async function openMembers(){
   const locked = r => adm && (isStaffRow(r) || r.admin);
   const progBtns = r => '<div class="mprogs">'+(adm ? PROGS : PROGS.concat([PERSONAL])).map(p => '<button class="'+((r.progs||[]).includes(p[0])?'':'ghost')+'" data-prog="'+r.id+'|'+p[0]+'">'+p[1]+'</button>').join('')+
     (adm && (r.progs||[]).includes('personal') ? '<span class="mtag">Personal is on (Coach Reef sets this)</span>' : '')+'</div>';
-  const billLine = r => { const b = BILL[r.id]; if(!r.approved || isStaffRow(r)) return ''; const s = payState(b); return '<small class="pst '+s.k+'">'+esc(s.t)+(b && b.rate ? ' · $'+esc(b.rate)+'/mo' : '')+'</small>'; };
+  const billLine = r => { const b = BILL[r.id]; if(!r.approved || isStaffRow(r)) return ''; const s = payState(b); return '<small class="pst '+s.k+'">'+esc(s.t)+(b && b.rate && b.rate !== '0' ? ' · $'+esc(b.rate)+'/mo' : '')+'</small>'; };
   box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p style="color:#8F8B84;margin:0">'+pend+' waiting for approval · '+(rows.length-pend)+' approved. Tap a program to turn it on or off for that person (red = on). No codes needed.'+(adm ? ' Coaches and Personal stay with Coach Reef.' : '')+'</p>'+
     rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b>'+((r.coachBadge||(staffOf(r)&&staffOf(r).badge))?' '+window.__bbBadgeHtml(esc(r.coachBadge||staffOf(r).badge)).replace('<span></span>','<span>'+esc(r.coachBadge||staffOf(r).badge)+'</span>'):'')+(r.admin?' <span class="mtag">Admin</span>':'')+'<small>'+esc(r.email)+'</small>'+(staffOf(r)?'<small style="color:#E8B44C">Coach · gets '+esc((staffOf(r).timers||[]).map(t => t.name).join(' + '))+' on approval</small>':'')+((r.wants&&r.wants.length)?'<small>Picked: '+esc(r.wants.includes('staff') ? 'Coach access' : PLANS.filter(p => r.wants.includes(p.id)).map(p => p.name).join(' + '))+'</small>':'<small>Hasn\'t picked programs yet</small>')+((r.codeProgs&&r.codeProgs.length)?'<small>Code opens: '+esc(r.codeProgs.map(progName).join(', '))+'</small>':'')+billLine(r)+'</div>'+
       (locked(r) ? '<small class="mtag">'+(r.admin ? 'Admin' : 'Coach Reef handles coaches')+'</small>' : r.approved ? '<div class="mbtns">'+(!adm && !isStaffRow(r) ? '<button class="ghost" data-adm="'+r.id+'">'+(r.admin ? 'Admin ✓' : 'Make admin')+'</button>' : '')+'<button class="ghost" data-off="'+r.id+'">'+(adm ? 'Pause access' : 'Remove access')+'</button></div>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>'+(r.approved && !locked(r) ? progBtns(r) : '')).join('')+
@@ -5429,6 +5429,7 @@ async function billMap(){ const M = {}; try{ const s = await getDocs(collection(
 // Paid through = the day the next payment is due. Due the 1st; paused 7:59 PM on the 1st; paid by the 5th = back on; after the 5th = off BODYBOX.
 function payState(b){
   const pt = b && b.paidThrough, td = todayStr();
+  if(b && String(b.rate) === '0') return { k:'free', t:'No charge (full discount)' };
   if(!pt) return { k:'none', t:'Payment not set' };
   if(pt > td) return { k:'ok', t:'Paid through '+fmtD(pt) };
   const late = dayDiff(td, pt);
@@ -5445,13 +5446,13 @@ async function openPay(){
   try{ const s = await getDocs(collection(fs, 'members')); s.forEach(d => rows.push(Object.assign({ id: d.id }, d.data()))); }catch(e){ box.querySelector('.mcard').innerHTML = '<h3>Payments</h3><p>Couldn\'t load members.</p>'; return; }
   rows = rows.filter(r => r.approved && !COACHES.includes((r.email||'').toLowerCase()) && !(r.wants||[]).includes('staff') && !(r.staffProgs||[]).length);
   const BILL = await billMap(); let prices = (BILL._prices && BILL._prices.text) || PRICE_DEFAULT;
-  const order = { late:0, due:1, none:2, ok:3 };
+  const order = { late:0, due:1, none:2, ok:3, free:4 };
   rows.sort((a,b) => order[payState(BILL[a.id]).k] - order[payState(BILL[b.id]).k] || (a.name||'').localeCompare(b.name||''));
   const n = k => rows.filter(r => payState(BILL[r.id]).k === k).length;
   const total = rows.reduce((t,r) => t + (+(BILL[r.id]||{}).rate || 0), 0);
   const draw = () => {
     box.querySelector('.mcard').innerHTML = '<h3>Payments</h3>'+
-      '<div class="dstats"><div><b style="color:#6FBF73">'+n('ok')+'</b><span>Paid up</span></div><div><b style="color:#E8B44C">'+n('due')+'</b><span>Due now (till the 5th)</span></div><div><b style="color:#FF5A64">'+n('late')+'</b><span>Past the 5th</span></div><div><b>$'+total+'</b><span>Monthly total</span></div></div>'+
+      '<div class="dstats"><div><b style="color:#6FBF73">'+n('ok')+'</b><span>Paid up'+(n('free') ? ' · '+n('free')+' no charge' : '')+'</span></div><div><b style="color:#E8B44C">'+n('due')+'</b><span>Due now (till the 5th)</span></div><div><b style="color:#FF5A64">'+n('late')+'</b><span>Past the 5th</span></div><div><b>$'+total+'</b><span>Monthly total</span></div></div>'+
       '<p style="color:#8F8B84;margin:0">Due the 1st. Not in by 7:59 PM on the 1st, programming pauses (Members → Pause access). Paid by the 5th, turn it back on. "Paid through" is the day their next payment is due.</p>'+
       rows.map(r => { const b = BILL[r.id] || {}, s = payState(b);
         return '<div class="prow"><div class="ptop"><div><b>'+esc(r.name||r.email)+'</b><small>'+esc((r.progs||[]).map(progName).join(', ') || 'No programs on')+'</small><small class="pst '+s.k+'">'+esc(s.t)+'</small></div><button type="button" data-paid="'+r.id+'">Paid 1 month</button></div>'+
