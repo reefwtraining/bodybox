@@ -1554,7 +1554,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 
 
   /* ---------- post to the athlete's own YouTube (Nov 16). Hidden until YT_CLIENT is set (Google Cloud OAuth web client for reefwtraining.github.io) ---------- */
-  const YT_CLIENT = '';
+  const YT_CLIENT = '212485533701-08269guo8tgtr29suaimmt5hb7b862h6.apps.googleusercontent.com';
   const YT = { tok:null, exp:0, tc:null, busy:false, title:'' };
   const ytLinked = () => { try{ return localStorage.getItem('bb-yt') || ''; }catch(e){ return ''; } };
   function ytLoad(){ return new Promise((res, rej) => { if(window.google && google.accounts && google.accounts.oauth2) return res(); const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = () => res(); sc.onerror = () => rej(new Error('gsi')); document.head.appendChild(sc); }); }
