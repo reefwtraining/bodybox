@@ -563,6 +563,8 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .soc b{font-weight:700}.soc-ig b{color:#E1306C}.soc-yt b{color:#FF0000}.soc-tt b{color:#25F4EE}
 .socf{display:grid;gap:8px}.socf[hidden]{display:none}
 .lbf{display:flex;gap:8px;margin:8px 0 12px;flex-wrap:wrap}
+.vbtn{flex:0 0 auto;background:#C8102E;color:#fff;border-radius:999px;padding:7px 12px;font:700 13px var(--body);text-decoration:none;white-space:nowrap}
+.pvids{margin:6px 0 16px}
 .lastt{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:6px 0 10px;padding:8px 12px;border-radius:10px;background:rgba(244,242,238,.06);border:1px dashed var(--line)}
 .lastt span{font:700 11px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.lastt b{font:700 16px var(--mono);color:var(--chalk)}
 .fbk{border:1px solid #C8102E;border-radius:14px;padding:14px;margin:0 0 14px;display:grid;gap:12px;background:rgba(200,16,46,.07)}
@@ -752,6 +754,7 @@ details.more{margin:14px 0}details.more summary{cursor:pointer;color:#FF5A64;fon
     <label class="field"><span class="label">Score (optional)</span><input id="pwScore" type="text" maxlength="60" placeholder="14:20, 5 rounds, 225 × 5"></label>
     <span class="label">How did it feel?</span><div class="feelrow" id="pwFeel" role="group" aria-label="How did it feel"></div>
     <label class="field"><span class="label">Notes (optional)</span><textarea id="pwNote" class="notein" maxlength="600"></textarea></label>
+    <label class="field"><span class="label">Video link for review (optional)</span><input id="pwVid" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="300" placeholder="Paste your YouTube link"></label>
     <p class="err" id="pwErr"></p>
     <div class="row"><button class="btn solid" type="submit">Save</button><button class="btn" type="button" id="pwCancel">Cancel</button></div>
   </form>
@@ -2791,6 +2794,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   async function fillSocialsOf(v, id){
     const el = v.querySelector('[data-socof]'); if(!el || !id) return;
     try{ const b = window.claude && await window.claude.use('socials'); const r = b ? await b.of(id) : null; if(r){ let h = ''; const ab = r.about ? aboutView(r.about) : ''; if(ab) h += ab; const sl = socLinks(r.socials || {}); if(sl) h += '<span class="label">Socials</span><div class="socs">'+sl+'</div>'; if(h){ el.className = 'socbox'; el.innerHTML = h; } } }catch(e){}
+    if(canEditLB){ try{ const b = window.claude && await window.claude.use('seen'); const X = b && b.dataOf ? await b.dataOf(id) : null; const vh = X ? vidsHtml(vidsOfA(X)) : ''; if(vh){ const d = document.createElement('div'); d.className = 'pvids'; d.innerHTML = vh; el.after(d); } }catch(e){} }
   }
   /* ---------- profile details on the Me page: birthday, gyms (max 3), bio, male/female (Nov 17) ---------- */
   const GYMS = ['Rebuilt Training','Garage / Home gym','Equinox','Chelsea Piers Fitness','Life Time','Crunch Fitness','Planet Fitness','LA Fitness','Blink Fitness','Retro Fitness','New York Sports Club','Gold\'s Gym','Anytime Fitness','The Edge Fitness Clubs','Club Metro USA','YMCA','Dogpound','Brick New York','Tone House','Barry\'s','Solace New York','Gotham Gym','Hotel / travel gym'];
@@ -2961,15 +2965,32 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     h += '<div class="row" style="margin:16px 0 6px"><button class="btn" type="button" data-movelib="1">Exercise library</button></div>';
     return h;
   }
+  /* ---------- every workout video an athlete attached, scored or not (Nov 17) ---------- */
+  function vidsOfA(X){
+    const out = [], nmL = k => (LIFTS[k] || String(k||'').replace(/^m_/,'').replace(/_/g,' '));
+    (X.log||[]).forEach(e => { if(e && e.vid) out.push({ date: e.date, what: nmL(e.lift), s: e.w+' '+(e.u||'lb')+' × '+e.reps, vid: e.vid }); });
+    (X.scores||[]).forEach(x => { if(x && x.vid) out.push({ date: x.date, what: (NW[x.w]||{}).name || 'Named workout', s: x.txt || '', vid: x.vid }); });
+    (X.personal||[]).forEach(x => { if(x && x.vid) out.push({ date: x.date, what: x.title || 'Workout', s: x.s || '', vid: x.vid }); });
+    Object.values(X.indr||{}).forEach(x => { if(x && x.vid) out.push({ date: x.date, what: x.title || 'Workout', s: x.s || '', vid: x.vid }); });
+    Object.entries(X.evVids||{}).forEach(([k,v]) => { if(v){ const ev = evById(k); out.push({ date: ev ? ev.date : '', what: ev ? ev.name : 'Board workout', s: '', vid: v }); } });
+    (X.ytPosts||[]).forEach(x => { if(x && x.url) out.push({ date: x.date, what: x.title || 'Video', s: 'Posted to YouTube', vid: x.url }); });
+    const seen = new Set(); return out.filter(x => { const k = x.vid.split('?')[0]; if(seen.has(k)) return false; seen.add(k); return true; }).sort((a,b) => (a.date||'') < (b.date||'') ? 1 : -1);
+  }
+  function vidsHtml(list, n){
+    if(!list || !list.length) return '';
+    const show = n ? list.slice(0, n) : list;
+    return '<div class="sec-h"><h3>Videos</h3>'+(n && list.length > n ? '<button class="sec-a" type="button" data-metab="log">All '+list.length+' →</button>' : '')+'</div><ul class="rl">'+show.map(x =>
+      '<li><div style="min-width:0"><div class="w">'+esc(x.what)+'</div><div class="d">'+esc([x.date ? niceDate(x.date).replace(/, \d{4}$/,'') : '', x.s].filter(Boolean).join(' · '))+'</div></div><a class="vbtn" href="'+esc(x.vid)+'" target="_blank" rel="noopener">▶ Watch</a></li>').join('')+'</ul>';
+  }
   function renderMeTabs(me, top){
     const v = $('view');
     const T = [['over','Overview'],['lifts','Lifts'],['scores','Scores'],['log','Log']];
     let h = top + profileHtml(me, true, 'head') + feedbackHtml() + weekCardHtml(me) +
       '<div class="metabs" role="tablist">'+T.map(([k,n]) => '<button type="button" role="tab" data-metab="'+k+'" class="'+(meTab===k?'on':'')+'" aria-selected="'+(meTab===k)+'">'+n+'</button>').join('')+'</div>';
-    if(meTab === 'over') h += keyLiftsHtml(true) + recentScoresHtml(me, 3) + badgesHtml() + goalsHtml();
+    if(meTab === 'over') h += keyLiftsHtml(true) + recentScoresHtml(me, 3) + vidsHtml(vidsOfA(A), 3) + badgesHtml() + goalsHtml();
     else if(meTab === 'lifts') h += liftsTabHtml();
     else if(meTab === 'scores') h += profileHtml(me, true, 'body');
-    else { recapHtml.noBadges = true; h += logbookHtml() + personalHtml() + meIndHtml() + phaseHtml() + recapHtml() + lifeHtml(); recapHtml.noBadges = false; }
+    else { recapHtml.noBadges = true; h += vidsHtml(vidsOfA(A)) + logbookHtml() + personalHtml() + meIndHtml() + phaseHtml() + recapHtml() + lifeHtml(); recapHtml.noBadges = false; }
     h += '<div class="mech">'+challengesHtml()+'</div>'; // Nov 17: challenges sit at the bottom of the Me page
     v.innerHTML = h;
     v.querySelectorAll('[data-metab]').forEach(b => b.onclick = () => { meTab = b.dataset.metab; render(); const t = v.querySelector('.metabs'); if(t && t.getBoundingClientRect().top < 0) t.scrollIntoView(); });
@@ -4000,7 +4021,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   let pwFeel = '', pwSrc = '';
   function openPersonal(pre){
     pre = pre && pre.title ? pre : null;
-    $('pwDate').value = (pre && pre.date) || todayStr(); ['pwTitle','pwWhat','pwScore','pwNote'].forEach(id => $(id).value = ''); pwFeel = ''; paintPwFeel(); $('pwErr').textContent = '';
+    $('pwDate').value = (pre && pre.date) || todayStr(); ['pwTitle','pwWhat','pwScore','pwNote','pwVid'].forEach(id => $(id).value = ''); pwFeel = ''; paintPwFeel(); $('pwErr').textContent = '';
     pwSrc = pre ? (pre.src || '') : '';
     if(pre){ $('pwTitle').value = pre.title.slice(0,80); $('pwWhat').value = (pre.what || '').slice(0,1200); }
     $('pwSheet').hidden = false; setTimeout(() => $(pre ? 'pwScore' : 'pwTitle').focus(), 40);
@@ -4018,6 +4039,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const rec = { id: uid(), kind:'own', date, t: Date.now(), title, what: $('pwWhat').value.trim().slice(0,1200), s: $('pwScore').value.trim().slice(0,60) };
       if(pwFeel) rec.feel = (FEELS.find(x => x[0] === pwFeel)||['',''])[1].toLowerCase();
       const note = $('pwNote').value.trim().slice(0,600); if(note) rec.note = note;
+      const pv = cleanVid($('pwVid').value); if(pv === null){ $('pwErr').textContent = 'That video link doesn\'t look right. Copy it from YouTube and paste it again.'; return; } if(pv) rec.vid = pv;
       if(pwSrc){ rec.src = pwSrc; pwSrc = ''; }
       A.personal = A.personal || []; A.personal.push(rec); saveA(); $('pwSheet').hidden = true; render();
     };
@@ -4988,7 +5010,8 @@ function shims(u, coach){
   } };
   const downloads = { save: async ({ filename, data }) => { const blob = data instanceof Blob ? data : new Blob([data]); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); } };
   const assets = { upload: async blob => ({ url: await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); }) }) };
-  const seen = { of: async meId => { if(!coach) return null; const q = await getDocs(query(collection(fs,'members'), where('meId','==',meId))); let out = null;
+  const seen = { dataOf: async meId => { if(!coach) return null; const q = await getDocs(query(collection(fs,'members'), where('meId','==',meId))); for(const m of q.docs){ const s = await getDoc(doc(fs,'data','users',m.id,'bodybox')); if(s.exists()){ try{ return (JSON.parse(s.data().json)||{}).A || null; }catch(e){} } } return null; },
+    of: async meId => { if(!coach) return null; const q = await getDocs(query(collection(fs,'members'), where('meId','==',meId))); let out = null;
     for(const m of q.docs){ const s = await getDoc(doc(fs,'data','users',m.id,'bodybox')); if(s.exists()){ try{ const A = (JSON.parse(s.data().json)||{}).A || {}; out = Object.assign(out || {}, A.seen || {}); }catch(e){} } } return out || {}; } };
   const socials = { save: async o => { await updateDoc(doc(fs,'members',u.uid), { socials: o }); },
     savePhoto: async url => { await updateDoc(doc(fs,'members',u.uid), { photo: url || '' }); },
