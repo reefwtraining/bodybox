@@ -2664,7 +2664,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       '<div class="row"><button class="linkbtn" type="button" id="socEdit">'+(socLinks(o) ? 'Edit my socials' : 'Add my socials')+'</button></div></section>';
   }
   function wireSocials(v){
-    const ed = v.querySelector('#socEdit'); if(!ed) return; const box = v.querySelector('.socbox');
+    const ed = v.querySelector('#socEdit'); if(!ed) return; const box = ed.closest('.socbox');
     ed.onclick = () => { box.querySelector('.socf').hidden = false; ed.parentNode.hidden = true; };
     v.querySelector('#socCancel').onclick = () => render();
     v.querySelector('#socSave').onclick = async () => {
@@ -2706,7 +2706,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       '</div><div class="row"><button class="linkbtn" type="button" id="abEdit">'+(has ? 'Edit about me' : 'Add about me')+'</button></div></section>';
   }
   function wireAbout(v){
-    const ed = v.querySelector('#abEdit'); if(!ed) return; const box = v.querySelector('.abbox');
+    const ed = v.querySelector('#abEdit'); if(!ed) return; const box = ed.closest('.abbox');
     const st = { sex: (A.about||{}).sex || '', gyms: ((A.about||{}).gyms || []).slice() };
     const paint = () => {
       $('abPick').innerHTML = st.gyms.length ? st.gyms.map((g,i) => '<span class="ab-gym on">'+esc(g)+' <button type="button" data-gx="'+i+'" aria-label="Remove">&#10005;</button></span>').join('') : '<span style="color:var(--muted);font-size:13px">No gyms yet</span>';
