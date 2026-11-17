@@ -538,6 +538,12 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .yt-ch{color:var(--muted);font-size:13px}
 .yt input{font:inherit;background:var(--panel);color:var(--chalk);border:1px solid var(--line);border-radius:6px;padding:10px 12px;width:100%;box-sizing:border-box}
 .yt[hidden]{display:none!important}
+.socbox{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0;display:grid;gap:10px}
+.socs{display:flex;flex-wrap:wrap;gap:8px}
+.socs:empty{display:none}
+.soc{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:7px 12px;color:var(--chalk);text-decoration:none;font-size:14px}
+.soc b{font-weight:700}.soc-ig b{color:#E1306C}.soc-yt b{color:#FF0000}.soc-tt b{color:#25F4EE}
+.socf{display:grid;gap:8px}.socf[hidden]{display:none}
 .lv-set[hidden],.lv-rounds[hidden],#vcLive[hidden]{display:none!important}
 .vc-status{font-family:var(--mono);color:var(--chalk)!important}
 .vc-done video{max-height:60vh;border-radius:8px}
@@ -2624,11 +2630,39 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
     return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
   }
+  /* ---------- socials on the Me page (Nov 17) ---------- */
+  const SOCN = [['ig','Instagram','instagram.com/'],['yt','YouTube','youtube.com/@'],['tt','TikTok','tiktok.com/@']];
+  const socHandle = v => String(v||'').trim().replace(/^https?:\/\/(www\.)?(instagram\.com|youtube\.com|tiktok\.com)\/@?/i,'').replace(/^@/,'').replace(/[/?#].*$/,'').slice(0,40);
+  const socUrl = (k, h) => 'https://' + SOCN.find(x => x[0]===k)[2] + encodeURIComponent(h);
+  function socLinks(o){ return SOCN.filter(([k]) => o && o[k]).map(([k,n]) => '<a class="soc soc-'+k+'" href="'+esc(socUrl(k,o[k]))+'" target="_blank" rel="noopener"><b>'+n+'</b> @'+esc(o[k])+'</a>').join(''); }
+  function socialsHtml(mine){
+    const o = A.socials || {};
+    if(!mine) return '<div class="socs" data-socof=""></div>';
+    return '<section class="socbox"><span class="label">My socials</span><div class="socs">'+(socLinks(o) || '<span style="color:var(--muted);font-size:14px">Add your handles so the team can find you.</span>')+'</div>'+
+      '<div class="socf" hidden="">'+SOCN.map(([k,n]) => '<label class="field"><span class="label">'+n+'</span><input data-soc="'+k+'" value="'+esc(o[k]||'')+'" placeholder="@yourname" autocapitalize="off" autocorrect="off" spellcheck="false"></label>').join('')+
+      '<div class="row"><button class="btn solid" type="button" id="socSave">Save</button><button class="linkbtn" type="button" id="socCancel">Cancel</button></div></div>'+
+      '<div class="row"><button class="linkbtn" type="button" id="socEdit">'+(socLinks(o) ? 'Edit my socials' : 'Add my socials')+'</button></div></section>';
+  }
+  function wireSocials(v){
+    const ed = v.querySelector('#socEdit'); if(!ed) return; const box = v.querySelector('.socbox');
+    ed.onclick = () => { box.querySelector('.socf').hidden = false; ed.parentNode.hidden = true; };
+    v.querySelector('#socCancel').onclick = () => render();
+    v.querySelector('#socSave').onclick = async () => {
+      const o = {}; box.querySelectorAll('[data-soc]').forEach(i => { const h = socHandle(i.value); if(h) o[i.dataset.soc] = h; });
+      A.socials = o; saveA();
+      try{ const b = window.claude && await window.claude.use('socials'); if(b) await b.save(o); }catch(e){}
+      render();
+    };
+  }
+  async function fillSocialsOf(v, id){
+    const el = v.querySelector('[data-socof]'); if(!el || !id) return;
+    try{ const b = window.claude && await window.claude.use('socials'); const o = b ? await b.of(id) : null; if(o){ const h = socLinks(o); if(h) el.innerHTML = '<span class="label">Socials</span>'+h; } }catch(e){}
+  }
   function renderMe(){
     const me = meId && athById(meId) ? meId : '';
     let pre = '';
     if(me){
-      pre = profileHtml(me, true) + '<div class="row" style="margin:8px 0 6px;gap:14px;align-items:center"><button class="linkbtn" type="button" data-unme="1">Sign out</button><a class="linkbtn" href="https://reefwtraining.github.io/bodybox/" target="_blank" rel="noopener">BODYBOX website ↗</a></div>' + meIndHtml() + personalHtml();
+      pre = profileHtml(me, true) + socialsHtml(true) + '<div class="row" style="margin:8px 0 6px;gap:14px;align-items:center"><button class="linkbtn" type="button" data-unme="1">Sign out</button><a class="linkbtn" href="https://reefwtraining.github.io/bodybox/" target="_blank" rel="noopener">BODYBOX website ↗</a></div>' + meIndHtml() + personalHtml();
     } else {
       pre = '<div class="prof">'+avatarHtml(null)+'<div style="min-width:0"><span class="label">My profile</span><h1>Sign in</h1><p class="tagl">See your rank, points and scores</p></div></div>'+
         '<form class="connect" id="loginForm" autocomplete="on"><span class="label">Athlete sign in</span><h2>Welcome back</h2>'+
@@ -2642,7 +2676,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     renderNumbers(pre, v => {
       v.querySelectorAll('[data-hub]').forEach(b => b.onclick = () => { coachAth = null; setTab('coach'); });
       if(me){ wireMeInd(); const pa = $('pwAdd'); if(pa) pa.onclick = openPersonal; }
-      if(me) wireProfile(v, me);
+      if(me){ wireProfile(v, me); wireSocials(v); }
       else {
         v.querySelectorAll('[data-plans]').forEach(b => b.onclick = () => setTab('plans'));
         const f = $('loginForm');
@@ -2660,11 +2694,11 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     });
   }
   function renderProfilePage(v, id){
-    let h = '<button class="back" type="button" id="profBack">← Leaderboard</button>' + profileHtml(id, id === meId);
+    let h = '<button class="back" type="button" id="profBack">← Leaderboard</button>' + profileHtml(id, id === meId) + (id === meId ? '' : socialsHtml(false));
     h += dirtyBar();
     v.innerHTML = h;
     $('profBack').onclick = () => { profId = null; profEdit = false; render(); };
-    wireProfile(v, id); wireDirty();
+    wireProfile(v, id); wireDirty(); if(id !== meId) fillSocialsOf(v, id);
   }
 
   /* ---------- daily announcement ---------- */
@@ -4604,7 +4638,9 @@ function shims(u, coach){
   const assets = { upload: async blob => ({ url: await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); }) }) };
   const seen = { of: async meId => { if(!coach) return null; const q = await getDocs(query(collection(fs,'members'), where('meId','==',meId))); let out = null;
     for(const m of q.docs){ const s = await getDoc(doc(fs,'data','users',m.id,'bodybox')); if(s.exists()){ try{ const A = (JSON.parse(s.data().json)||{}).A || {}; out = Object.assign(out || {}, A.seen || {}); }catch(e){} } } return out || {}; } };
-  const map = { db: dbShim(u), user, artifact, downloads, assets, seen };
+  const socials = { save: async o => { await updateDoc(doc(fs,'members',u.uid), { socials: o }); },
+    of: async meId => { const q = await getDocs(query(collection(fs,'members'), where('meId','==',meId))); for(const m of q.docs){ const so = m.data().socials; if(so) return so; } return null; } };
+  const map = { db: dbShim(u), user, artifact, downloads, assets, seen, socials };
   window.claude = { use: async n => map[n] || null };
 }
 
