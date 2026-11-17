@@ -511,6 +511,28 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .vc-field select{font:inherit;background:var(--panel);color:var(--chalk);border:1px solid var(--line);border-radius:6px;padding:10px 12px;width:100%}
 .vc-prog{height:10px;background:var(--panel);border-radius:5px;overflow:hidden;border:1px solid var(--line)}
 .vc-prog i{display:block;height:100%;width:0;background:var(--gold)}
+#vcLive{position:fixed;inset:0;z-index:40;background:#000;color:#fff;overflow:hidden}
+#vcLCv{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.lv-top{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;z-index:3;background:linear-gradient(rgba(0,0,0,.55),transparent)}
+.lv-ic{width:44px;height:44px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:20px;cursor:pointer}
+.lv-chip{font:700 13px "JetBrains Mono",ui-monospace,monospace;letter-spacing:1px;text-transform:uppercase;background:#C8102E;padding:7px 12px;border-radius:999px}
+.lv-tap{position:absolute;inset:70px 0 130px;z-index:2}
+.lv-set{position:absolute;left:0;right:0;bottom:118px;z-index:3;padding:12px 14px 4px;background:linear-gradient(transparent,rgba(0,0,0,.75) 30%);display:grid;gap:10px}
+.lv-modes{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.lv-modes button{flex:0 0 auto;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.4);color:#fff;border-radius:999px;padding:9px 14px;font:700 13px "Barlow",Arial,sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer}
+.lv-modes button.on{background:#fff;color:#000;border-color:#fff}
+.lv-fields{display:flex;gap:10px;flex-wrap:wrap}
+.lv-fields label{display:grid;gap:4px;font:600 11px "Barlow",Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;color:#ddd}
+.lv-fields input{width:78px;font:700 18px "JetBrains Mono",ui-monospace,monospace;background:rgba(0,0,0,.5);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:8px}
+.lv-msg{margin:0;font:500 13px "Barlow",Arial,sans-serif;color:#eee}
+.lv-rounds{position:absolute;left:0;right:0;bottom:118px;z-index:3;display:flex;align-items:center;gap:12px;padding:10px 14px;font:600 13px "Barlow",Arial,sans-serif;color:#ddd}
+.lv-rounds button{border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.5);color:#fff;border-radius:999px;padding:8px 14px;font:700 14px "JetBrains Mono",monospace}
+.lv-bot{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;justify-content:center;padding:18px 0 calc(22px + env(safe-area-inset-bottom,0px))}
+.lv-rec{width:78px;height:78px;border-radius:50%;border:5px solid #fff;background:transparent;display:grid;place-items:center;cursor:pointer;padding:0}
+.lv-rec i{width:58px;height:58px;border-radius:50%;background:#E5222F;transition:all .2s}
+.lv-rec.on i{width:30px;height:30px;border-radius:6px}
+.lv-rec:disabled{opacity:.4}
+.lv-set[hidden],.lv-rounds[hidden],#vcLive[hidden]{display:none!important}
 .vc-status{font-family:var(--mono);color:var(--chalk)!important}
 .vc-done video{max-height:60vh;border-radius:8px}
 .vc-warn{background:rgba(229,83,75,.12);border:1px solid rgba(229,83,75,.45);color:var(--chalk)!important;border-radius:6px;padding:10px 12px}
@@ -782,17 +804,31 @@ Rest 2:00"></textarea></label>
   <div class="vc-top"><div><span class="label">Video clock</span><h2>Put the clock on your video</h2></div><button class="t-close" id="vcClose" type="button">Close</button></div>
 
   <div id="vcPick" class="vc-in" style="padding:0">
-   <p>Film your workout, then add the clock here. The app plays your video and saves a new copy with the running clock, the date and the BODYBOX logo on it.</p>
+   <p>Record your workout with the BODYBOX clock right on the screen. Tap Record and you get a 10-second countdown, then the clock starts. The video saves with the clock, the date and the BODYBOX logo on it.</p>
    <div class="row">
-    <label class="btn solid">Record a video<input id="vcCam" type="file" accept="video/*" capture="environment" hidden=""></label>
-    <label class="btn">Choose from library<input id="vcLib" type="file" accept="video/*" hidden=""></label>
+    <button class="btn solid" id="vcLiveGo" type="button">Record with the clock</button>
+    <label class="btn">Add the clock to a video I already have<input id="vcLib" type="file" accept="video/*" hidden=""></label>
+    <input id="vcCam" type="file" accept="video/*" capture="environment" hidden="">
    </div>
    <ol class="vc-steps">
     <li>Prop your phone so your whole body and the equipment stay in frame.</li>
-    <li>Start the gym clock's 10-second countdown in view, or count down out loud, so GO is easy to find.</li>
-    <li>Load the video here, mark GO, and save.</li>
+    <li>Pick your clock, tap Record, and use the 10 seconds to get set. You'll hear 3, 2, 1, GO.</li>
+    <li>Tap Stop when you're done, watch it back, then save it.</li>
    </ol>
    <p class="vc-warn" id="vcUnsupported" hidden="">This browser can't record video from the page. Try Chrome or Safari on an up-to-date phone.</p>
+  </div>
+
+  <div id="vcLive" hidden="">
+   <canvas id="vcLCv"></canvas>
+   <div class="lv-top"><button class="lv-ic" id="vcLBack" type="button" aria-label="Close">&#10005;</button><span class="lv-chip" id="vcLChip">For Time</span><button class="lv-ic" id="vcLFlip" type="button" aria-label="Flip camera">&#8634;</button></div>
+   <div class="lv-tap" id="vcLTap"></div>
+   <div class="lv-set" id="vcLSet">
+    <div class="lv-modes" id="vcLModes"></div>
+    <div class="lv-fields" id="vcLFields"></div>
+    <p class="lv-msg" id="vcLMsg">Starting the camera…</p>
+   </div>
+   <div class="lv-rounds" id="vcLRounds" hidden=""><button type="button" id="vcLMinus">−1</button><span>Tap the screen to count a round</span></div>
+   <div class="lv-bot"><button class="lv-rec" id="vcLRec" type="button" disabled="" aria-label="Record"><i></i></button></div>
   </div>
 
   <div id="vcEdit" class="vc-in" style="padding:0" hidden="">
@@ -1202,7 +1238,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 
   /* ---------- video clock (record-then-stamp) ---------- */
   const VC = { file:null, url:'', go:null, dur:0, vw:0, vh:0, date:'', segs:null, total:0, mode:'run', cancel:false, rec:null, out:null, outExt:'mp4', logo:null };
-  const vcShow = which => ['vcPick','vcEdit','vcWork','vcDone'].forEach(id => { $(id).hidden = id !== which; });
+  const vcShow = which => ['vcPick','vcLive','vcEdit','vcWork','vcDone'].forEach(id => { $(id).hidden = id !== which; });
   const logoImg = new Image(); logoImg.src = 'data:image/png;base64,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'; logoImg.onload = () => { VC.logo = logoImg; };
   const vcSupported = () => !!(window.MediaRecorder && HTMLCanvasElement.prototype.captureStream);
   function pickMime(){
@@ -1325,7 +1361,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   $('vcNew').onclick = () => { $('vcVid').pause(); vcShow('vcPick'); };
   $('vcAgain').onclick = () => { vcShow('vcPick'); };
   $('vcOpen').onclick = () => { $('vc').hidden = false; document.body.style.overflow='hidden'; $('vcUnsupported').hidden = vcSupported(); if(!VC.file) vcShow('vcPick'); else { vcModes(); goText(); } };
-  $('vcClose').onclick = () => { if(!$('vcWork').hidden){ VC.cancel = true; if(VC.rec && VC.rec.state!=='inactive') VC.rec.stop(); } $('vcVid').pause(); $('vc').hidden = true; document.body.style.overflow=''; };
+  $('vcClose').onclick = () => { if(LV.rec){ try{ LV.rec.onstop = null; LV.rec.stop(); }catch(e){} LV.rec = null; LV.t0 = null; lock(false); } lvStopCam(); if(!$('vcWork').hidden){ VC.cancel = true; if(VC.rec && VC.rec.state!=='inactive') VC.rec.stop(); } $('vcVid').pause(); $('vc').hidden = true; document.body.style.overflow=''; };
   $('vcCancel').onclick = () => { VC.cancel = true; if(VC.rec && VC.rec.state!=='inactive') VC.rec.stop(); };
 
   $('vcRender').onclick = () => {
@@ -1396,12 +1432,129 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       $('vcGoAt').textContent = 'Something went wrong while stamping. Try again, or try a shorter clip.';
     }
   }
+  /* ---------- live record, WODProof style: full-screen camera, clock on screen, 10-second countdown on Record, tap to count rounds (Reef, Nov 16) ---------- */
+  const LV = { stream:null, facing:'environment', vid:null, raf:0, rec:null, chunks:[], t0:null, W:0, H:0, actx:null, beeps:{}, mime:'', ext:'mp4', mode:'fortime', rounds:0, lastSeg:-1,
+    f:{ cap:0, amrap:12, every:60, emr:10, work:20, rest:10, ir:8 } };
+  const LVM = [['fortime','For Time'],['amrap','AMRAP'],['emom','EMOM'],['tabata','Tabata'],['intervals','Intervals']];
+  function lvSegs(){
+    const f = LV.f, M = LV.mode; let segs = null;
+    if(M === 'fortime') segs = f.cap > 0 ? [{ secs: f.cap*60, label:'For time · cap '+f.cap+':00', kind:'work', up:true }] : null;
+    else if(M === 'amrap') segs = [{ secs: Math.max(1,f.amrap)*60, label:'AMRAP '+f.amrap, kind:'work', up:false }];
+    else if(M === 'emom'){ segs = []; for(let r=1;r<=Math.max(1,f.emr);r++) segs.push({ secs: Math.max(5,f.every), label: (f.every===60?'EMOM':'Every '+fmt(f.every)), kind:'work', up:false, unit:'Round', round:r, of:f.emr }); }
+    else if(M === 'tabata' || M === 'intervals'){ const w = M==='tabata'?20:Math.max(5,f.work), rs = M==='tabata'?10:Math.max(0,f.rest), n = M==='tabata'?8:Math.max(1,f.ir); segs = [];
+      for(let r=1;r<=n;r++){ segs.push({ secs:w, label:'Work', kind:'work', up:false, unit:'Round', round:r, of:n }); if(rs) segs.push({ secs:rs, label:'Rest', kind:'rest', up:false, unit:'Round', round:r, of:n }); } }
+    else if(M.startsWith('t:')){ const e = D.days[day][M.slice(2)]; segs = buildSegments(e.timer).slice(1); }
+    VC.segs = segs; VC.total = segs ? segs.reduce((a,x)=>a+x.secs,0) : 0; VC.prog = M.startsWith('t:') ? D.programs[M.slice(2)].short : '';
+  }
+  function lvFields(){
+    const f = LV.f, M = LV.mode, box = $('vcLFields');
+    const inp = (k, lab) => '<label>'+lab+'<input inputmode="numeric" data-lf="'+k+'" value="'+f[k]+'"></label>';
+    box.innerHTML = M==='fortime' ? inp('cap','Time cap (min, 0 = none)') : M==='amrap' ? inp('amrap','Minutes') : M==='emom' ? inp('every','Every (sec)')+inp('emr','Rounds')
+      : M==='intervals' ? inp('work','Work (sec)')+inp('rest','Rest (sec)')+inp('ir','Rounds') : M==='tabata' ? '<label>20 on / 10 off · 8 rounds</label>' : '<label>Today\'s timer from your program</label>';
+    box.querySelectorAll('[data-lf]').forEach(i => i.oninput = () => { f[i.dataset.lf] = Math.max(0, parseInt(i.value,10) || 0); lvSegs(); });
+    $('vcLModes').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.lm === M));
+    const lab = (LVM.find(x => x[0]===M) || [0, (D.programs[M.slice(2)]||{}).short || 'Timer'])[1]; $('vcLChip').textContent = lab;
+    lvSegs();
+  }
+  function lvModeBtns(){
+    const opts = LVM.slice(); try{ ORDER.forEach(k => { const p = D.programs[k], e = (D.days[day]||{})[k]; if(p && e && e.timer && !(p.type==='class' && !isCoach())) opts.push(['t:'+k, 'Today · '+p.short]); }); }catch(e){}
+    $('vcLModes').innerHTML = opts.map(o => '<button type="button" data-lm="'+esc(o[0])+'">'+esc(o[1])+'</button>').join('');
+    $('vcLModes').querySelectorAll('button').forEach(b => b.onclick = () => { if(LV.rec) return; LV.mode = b.dataset.lm; lvFields(); });
+    lvFields();
+  }
+  function lvStopCam(){ cancelAnimationFrame(LV.raf); LV.raf = 0; if(LV.stream) LV.stream.getTracks().forEach(t => t.stop()); LV.stream = null; if(LV.vid){ LV.vid.srcObject = null; LV.vid = null; } }
+  function lvBeep(f, ms){ const a = LV.actx; if(!a) return; try{ const o = a.createOscillator(), g = a.createGain(); o.frequency.value = f; o.connect(g); g.connect(a.destination); g.gain.setValueAtTime(0.4, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + ms/1000); o.start(); o.stop(a.currentTime + ms/1000); }catch(e){} }
+  function lvSound(t){
+    const B = LV.beeps;
+    if(t < 0){ const s = Math.ceil(-t); if(s <= 3 && !B['c'+s]){ B['c'+s] = 1; lvBeep(660, 180); } return; }
+    if(!B.go){ B.go = 1; lvBeep(990, 650); }
+    if(!VC.segs) return;
+    let acc = 0, idx = -1, left = 0;
+    for(let i=0;i<VC.segs.length;i++){ if(t < acc + VC.segs[i].secs){ idx = i; left = acc + VC.segs[i].secs - t; break; } acc += VC.segs[i].secs; }
+    if(idx < 0){ if(!B.end){ B.end = 1; lvBeep(990, 1200); } return; }
+    if(idx !== LV.lastSeg){ if(LV.lastSeg >= 0) lvBeep(990, 500); LV.lastSeg = idx; }
+    const s = Math.ceil(left); if(s <= 3 && !B[idx+'-'+s]){ B[idx+'-'+s] = 1; lvBeep(660, 160); }
+  }
+  function lvRoundsBox(c, W, H){
+    if(!LV.rec || LV.rounds <= 0) return; const u = Math.min(W,H)/100, pad = 3*u;
+    c.save(); c.font = '700 '+(7*u)+'px "JetBrains Mono", ui-monospace, monospace'; const txt = String(LV.rounds), tw = c.measureText(txt).width;
+    c.font = '600 '+(2.8*u)+'px "Barlow", Arial, sans-serif'; const lw = c.measureText('ROUNDS').width;
+    const bw = Math.max(tw, lw) + 4*u, bh = 7*u + 2.8*u + 4*u, bx = W - pad - bw, by = H - pad - bh;
+    roundRect(c, bx, by, bw, bh, 1.6*u); c.fillStyle = 'rgba(22,24,26,.78)'; c.fill(); c.fillStyle = '#FF5A64'; c.fillRect(bx, by, 0.9*u, bh);
+    c.textAlign = 'right'; c.textBaseline = 'top'; c.fillStyle = '#F4F2EE'; c.font = '700 '+(7*u)+'px "JetBrains Mono", ui-monospace, monospace'; c.fillText(txt, bx+bw-2*u, by+1.4*u);
+    c.font = '600 '+(2.8*u)+'px "Barlow", Arial, sans-serif'; c.fillStyle = '#8F8B84'; c.fillText('ROUNDS', bx+bw-2*u, by+1.4*u+7*u); c.restore();
+  }
+  function lvLoop(){
+    const v = LV.vid, cv = $('vcLCv'); if(!v) return;
+    if(v.videoWidth){
+      if(!LV.rec){ const sc = Math.min(1, 1280/Math.max(v.videoWidth, v.videoHeight)); const W = Math.round(v.videoWidth*sc/2)*2, H = Math.round(v.videoHeight*sc/2)*2;
+        if(W !== LV.W || H !== LV.H){ LV.W = W; LV.H = H; cv.width = W; cv.height = H; } }
+      const c = cv.getContext('2d'), W = cv.width, H = cv.height, mirror = LV.facing === 'user';
+      if(mirror){ c.save(); c.translate(W, 0); c.scale(-1, 1); }
+      c.drawImage(v, 0, 0, W, H); if(mirror) c.restore();
+      const t = LV.t0 === null ? -10 : (performance.now() - LV.t0)/1000 - 10;
+      if(LV.t0 !== null) lvSound(t);
+      drawOverlay(c, W, H, t); lvRoundsBox(c, W, H);
+    }
+    LV.raf = requestAnimationFrame(lvLoop);
+  }
+  async function lvStart(){
+    lvStopCam(); $('vcLRec').disabled = true; $('vcLMsg').textContent = 'Starting the camera…';
+    let st = null;
+    try{ st = await navigator.mediaDevices.getUserMedia({ video:{ facingMode: LV.facing, width:{ ideal:1280 }, height:{ ideal:720 } }, audio:true }); }
+    catch(e){ try{ st = await navigator.mediaDevices.getUserMedia({ video:{ facingMode: LV.facing }, audio:false }); }catch(e2){ st = null; } }
+    if(!st){ $('vcLMsg').textContent = 'The camera didn\'t open. Allow camera access for this site in your phone settings, then try again.'; return; }
+    LV.stream = st; const v = document.createElement('video'); v.playsInline = true; v.setAttribute('playsinline',''); v.muted = true; v.srcObject = st; LV.vid = v;
+    try{ await v.play(); }catch(e){}
+    $('vcLMsg').textContent = 'Pick your timer, prop your phone, then hit the red button. You get 10 seconds to get set.'; $('vcLRec').disabled = false;
+    lvLoop();
+  }
+  function lvUi(rec){ $('vcLRec').classList.toggle('on', rec); $('vcLSet').hidden = rec; $('vcLRounds').hidden = !rec; $('vcLFlip').style.visibility = rec ? 'hidden' : ''; $('vcLBack').style.visibility = rec ? 'hidden' : ''; }
+  $('vcLiveGo').onclick = () => {
+    if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || !vcSupported()){ $('vcUnsupported').hidden = false; return; }
+    const d = new Date(); VC.date = MON[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear(); VC.go = 0;
+    lvModeBtns(); lvUi(false); vcShow('vcLive'); lvStart();
+  };
+  $('vcLFlip').onclick = () => { if(LV.rec) return; LV.facing = LV.facing === 'user' ? 'environment' : 'user'; lvStart(); };
+  $('vcLBack').onclick = () => { if(LV.rec) return; lvStopCam(); vcShow('vcPick'); };
+  $('vcLTap').onclick = () => { if(LV.rec && LV.t0 !== null && performance.now() - LV.t0 > 10000){ LV.rounds++; lvBeep(880, 80); } };
+  $('vcLMinus').onclick = () => { if(LV.rounds > 0) LV.rounds--; };
+  $('vcLRec').onclick = () => {
+    if(!LV.rec){
+      try{ LV.actx = LV.actx || new (window.AudioContext||window.webkitAudioContext)(); if(LV.actx.state === 'suspended') LV.actx.resume(); }catch(e){ LV.actx = null; }
+      lvSegs();
+      const cs = $('vcLCv').captureStream(30);
+      if(LV.stream) LV.stream.getAudioTracks().forEach(t => cs.addTrack(t));
+      const [mime, ext] = pickMime(); LV.mime = mime; LV.ext = ext; LV.chunks = [];
+      let rec; try{ rec = new MediaRecorder(cs, mime ? { mimeType:mime, videoBitsPerSecond: 5_000_000 } : { videoBitsPerSecond: 5_000_000 }); }catch(e){ $('vcLMsg').textContent = 'Recording isn\'t supported in this browser. Try Safari or Chrome.'; return; }
+      rec.ondataavailable = e => { if(e.data && e.data.size) LV.chunks.push(e.data); };
+      rec.onstop = () => {
+        VC.out = new Blob(LV.chunks, { type: LV.mime || ('video/'+LV.ext) }); VC.outExt = LV.ext; LV.rec = null; LV.t0 = null; LV.beeps = {}; LV.lastSeg = -1; lock(false); lvStopCam(); lvUi(false);
+        const ov = $('vcOut'); if(ov.src) URL.revokeObjectURL(ov.src); ov.src = URL.createObjectURL(VC.out);
+        $('vcDoneMsg').textContent = 'Done'+(LV.rounds ? ' · '+LV.rounds+' rounds counted' : '')+'. Watch it back, then tap Save video. ('+(VC.out.size/1048576).toFixed(1)+' MB)';
+        vcShow('vcDone');
+      };
+      LV.rec = rec; LV.beeps = {}; LV.lastSeg = -1; LV.rounds = 0; rec.start(1000); LV.t0 = performance.now(); lock(true); lvUi(true);
+    } else { try{ LV.rec.stop(); }catch(e){} }
+  };
+
   let downloadsNS;
   (window.claude && window.claude.use ? window.claude.use('downloads') : Promise.resolve(null)).then(ns => { downloadsNS = ns; }).catch(() => { downloadsNS = null; });
   $('vcSave').onclick = async () => {
     if(!VC.out) return;
     const name = 'bodybox-clock-'+VC.date.replace(/[ ,]+/g,'-').toLowerCase()+'.'+VC.outExt;
-    if(!downloadsNS){ $('vcDoneMsg').textContent = 'Saving isn\'t available in this view. Open the app in Chrome or Safari, or in the Claude app, to save the video.'; return; }
+    try{ const f0 = new File([VC.out], name, { type: VC.out.type || ('video/'+VC.outExt) });
+      if(navigator.canShare && navigator.canShare({ files:[f0] })){ await navigator.share({ files:[f0] }); $('vcDoneMsg').textContent = 'Pick Save Video to put it in your Photos.'; return; } }
+    catch(e){ if(e && e.name === 'AbortError') return; }
+    if(!downloadsNS){ // regular browser / home-screen app (Nov 16 fix: saving used to fail here)
+      try{
+        const file = new File([VC.out], name, { type: VC.out.type || ('video/'+VC.outExt) });
+        if(navigator.canShare && navigator.canShare({ files:[file] })){ await navigator.share({ files:[file] }); $('vcDoneMsg').textContent = 'Pick Save Video to put it in your Photos.'; return; }
+        const a = document.createElement('a'); a.href = URL.createObjectURL(VC.out); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+        $('vcDoneMsg').textContent = 'Saved as '+name+' to your downloads.';
+      }catch(e){ if(!(e && e.name === 'AbortError')) $('vcDoneMsg').textContent = 'That didn\'t save. Press and hold the video above and pick Save, or try again.'; }
+      return;
+    }
     try{
       await downloadsNS.save({ filename:name, data: VC.out });
       $('vcDoneMsg').textContent = 'Saved as '+name+'.';
@@ -3304,6 +3457,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   }
   function itemCard(it, place){
     const r = (A.indr||{})[it.id];
+    if(it._src === 'mine' && it.id && !viewAs && !isCoachKey()){ A.seen = A.seen || {}; if(!A.seen[it.id]){ A.seen[it.id] = Date.now(); setTimeout(saveA, 0); } } // Nov 16: coach can see when notes were opened
     const kind = place === 'replace' ? 'Your version' : place === 'own' ? 'Your day' : 'Your extra';
     let h = '<section class="part ind'+(it._src==='coach'||it._src==='prog'?' staff':'')+'"><span class="tag">'+esc(kind)+' · '+esc(it.tag||'')+'</span><span class="audb">'+esc(audBadge(it))+'</span>';
     if(it.title) h += '<h3 class="it-t">'+esc(it.title)+'</h3>';
@@ -3558,14 +3712,25 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function itemList(items, ownerId){
     if(!items.length) return '<p class="how">Nothing here yet.</p>';
     return '<ul class="ilist">' + items.map(it => '<li><span class="k">'+niceDate(it.date)+' · '+esc(it.prog==='own'?'Own day':((D.programs[it.prog]||{}).short||it.prog))+' · '+esc(placeTxt(it))+(it.at && it.at > nowMs() ? ' · shows '+esc(whenTxt(it.at)) : '')+'</span>'+
-      '<span class="w">'+esc(it.title || it.tag || 'Workout')+'</span><span class="b">'+esc(audBadge(it))+'</span>'+
+      '<span class="w">'+esc(it.title || it.tag || 'Workout')+'</span><span class="b">'+esc(audBadge(it))+'</span>'+(ownerId && it.id ? '<span class="seenm" data-seen="'+esc(ownerId+'|'+it.id)+'"></span>' : '')+
       (canEditLB ? '<span class="row"><button class="linkbtn" type="button" data-iedit="'+esc((ownerId||it._src)+'|'+it.id)+'">Edit</button><button class="linkbtn" type="button" data-idel="'+esc((ownerId||it._src)+'|'+it.id)+'">Remove</button></span>' : '') + '</li>').join('') + '</ul>';
   }
   function placeTxt(it){ const p = it.pos || { t:'end' }; const day = ((MEM[it.prog]||{}).days||{})[it.date]; const tag = day && day.parts[p.i] ? day.parts[p.i].tag : 'part '+((p.i||0)+1);
     return it.prog === 'own' ? 'custom day' : p.t === 'after' ? 'after '+tag : p.t === 'replace' ? 'replaces '+tag : 'end of the day'; }
   function whenTxt(ms){ const d = new Date(ms); return niceDate(iso(d)) + ' at ' + d.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }); }
   let iArmed = null;
+  async function fillSeen(v){
+    const els = [...v.querySelectorAll('[data-seen]')]; if(!els.length || !window.claude) return;
+    let pk = null; try{ pk = await window.claude.use('seen'); }catch(e){} if(!pk) return;
+    const byAth = {}; els.forEach(el => { const [a] = el.dataset.seen.split('|'); (byAth[a] = byAth[a] || []).push(el); });
+    for(const [a, list] of Object.entries(byAth)){
+      let m = null; try{ m = await pk.of(a); }catch(e){} if(!m) continue;
+      list.forEach(el => { const id = el.dataset.seen.split('|')[1], at = m[id];
+        el.innerHTML = at ? '<span style="color:#6FBF73;font-size:12px">Seen '+esc(whenTxt(at))+'</span>' : '<span style="color:#8F8B84;font-size:12px">Not opened yet</span>'; });
+    }
+  }
   function wireItemList(v){
+    fillSeen(v);
     v.querySelectorAll('[data-compose]').forEach(b => b.onclick = () => openComposer({ who: b.dataset.compose ? [b.dataset.compose] : [] }));
     v.querySelectorAll('[data-iedit]').forEach(b => b.onclick = () => { const [own, id] = b.dataset.iedit.split('|'); const it = srcList(own).find(x => x.id === id); if(it) openComposer(Object.assign({ _own: own }, it)); });
     v.querySelectorAll('[data-idel]').forEach(b => b.onclick = async () => { const key = b.dataset.idel; if(iArmed !== key){ iArmed = key; b.textContent = 'Tap again to remove'; return; }
@@ -4368,12 +4533,16 @@ function shims(u, coach){
     const d = new DOMParser().parseFromString(html, 'text/html'); const el = d.getElementById('lbdata');
     if(!el) throw { code: 'invalid' };
     const lb = JSON.parse(el.textContent);
-    await setDoc(doc(fs, 'content', 'lb'), { json: JSON.stringify(lb), rev: lb.rev || 0, updated: lb.updated || '', by: u.email, at: serverTimestamp() });
+    const txt = JSON.stringify(lb), CH = 900000, n = Math.ceil(txt.length / CH); // Nov 16: split, one doc can't hold it all
+    for(let i = 1; i < n; i++) await setDoc(doc(fs, 'content', 'lb_'+i), { json: txt.slice(i*CH, (i+1)*CH), at: serverTimestamp() });
+    await setDoc(doc(fs, 'content', 'lb'), { json: txt.slice(0, CH), parts: n - 1, rev: lb.rev || 0, updated: lb.updated || '', by: u.email, at: serverTimestamp() });
     setTimeout(() => location.reload(), 300);
   } };
   const downloads = { save: async ({ filename, data }) => { const blob = data instanceof Blob ? data : new Blob([data]); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); } };
   const assets = { upload: async blob => ({ url: await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); }) }) };
-  const map = { db: dbShim(u), user, artifact, downloads, assets };
+  const seen = { of: async meId => { if(!coach) return null; const q = await getDocs(query(collection(fs,'members'), where('meId','==',meId))); let out = null;
+    for(const m of q.docs){ const s = await getDoc(doc(fs,'data','users',m.id,'bodybox')); if(s.exists()){ try{ const A = (JSON.parse(s.data().json)||{}).A || {}; out = Object.assign(out || {}, A.seen || {}); }catch(e){} } } return out || {}; } };
+  const map = { db: dbShim(u), user, artifact, downloads, assets, seen };
   window.claude = { use: async n => map[n] || null };
 }
 
