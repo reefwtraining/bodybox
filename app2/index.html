@@ -563,6 +563,8 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .soc b{font-weight:700}.soc-ig b{color:#E1306C}.soc-yt b{color:#FF0000}.soc-tt b{color:#25F4EE}
 .socf{display:grid;gap:8px}.socf[hidden]{display:none}
 .lbf{display:flex;gap:8px;margin:8px 0 12px;flex-wrap:wrap}
+.lastt{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:6px 0 10px;padding:8px 12px;border-radius:10px;background:rgba(244,242,238,.06);border:1px dashed var(--line)}
+.lastt span{font:700 11px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.lastt b{font:700 16px var(--mono);color:var(--chalk)}
 .fbk{border:1px solid #C8102E;border-radius:14px;padding:14px;margin:0 0 14px;display:grid;gap:12px;background:rgba(200,16,46,.07)}
 .fbk-h{display:flex;align-items:center;gap:8px}.fbk-h b{font-size:15px}
 .fbk-dot{width:9px;height:9px;border-radius:50%;background:#FF5A64;box-shadow:0 0 0 4px rgba(255,90,100,.2)}
@@ -3250,7 +3252,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const cmap = coachByTag(cn, entry.parts||[]);
       h += cnotesHtml(cmap.rest);
       const nkDay = memProg+'|'+(showMoved ? mv.from : memDay);
-      const partHtml = pt => '<section class="part"><span class="tag">'+esc(pt.tag)+'</span><ul class="rx">'+pt.lines.map(l => lineHtml(l, pt.lift)).join('')+'</ul>'+liftNote(pt)+
+      const partHtml = pt => '<section class="part"><span class="tag">'+esc(pt.tag)+'</span>'+lastTimeHtml(pt, showMoved ? mv.from : memDay)+'<ul class="rx">'+pt.lines.map(l => lineHtml(l, pt.lift)).join('')+'</ul>'+liftNote(pt)+
         (pt.scale?'<p class="scale"><b>Scale it:</b> '+esc(pt.scale.replace(/^Scaled:\s*/,''))+'</p>':'')+
         notesTabs(nkDay+'|'+(pt.tag||''), athNotes(pt.note, pt.lines.concat(pt.scale||[])) + swNoteFor(window.__bbCardNotes, (showMoved ? mv.from : memDay), memProg, pt, 'a'), (cmap.map[String(pt.tag||'')]||'') + swNoteFor(window.__bbCoachCardNotes, (showMoved ? mv.from : memDay), memProg, pt, 'c'))+ (boardEvFor(pt, showMoved ? mv.from : memDay) && meId && athById(meId) ? logBar(boardEvFor(pt, showMoved ? mv.from : memDay)) + (pt.lift && LIFTS[pt.lift] ? partLogBar(pt, entry, memDay) : '') : partLogBar(pt, entry, memDay)) +'</section>';
       const wv = partsWithItems(entry, showMoved ? mv.from : memDay, memProg, partHtml);
@@ -3262,6 +3264,23 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     return h;
   }
   // every non-board piece gets a log button: lifts log the weight you used, workouts log your result
+  /* Nov 17: "Last time" on repeat workouts only (Reef: not on lifts; lift days follow the program, build or test as written) */
+  const partSig = pt => (pt.lines||[]).map(l => String(l).toLowerCase().replace(/\s+/g,' ').trim()).filter(Boolean).join('|');
+  function lastTimeHtml(pt, date){
+    if(!pt || pt.lift || !date || !(pt.lines||[]).length || /warm|cool|mobil|stretch|primer|prep|accessory|activation/i.test(pt.tag||'')) return '';
+    const days = (MEM[memProg] && MEM[memProg].days) || {}; const sig = partSig(pt); if(sig.length < 20) return '';
+    const prev = Object.keys(days).filter(d => d < date).sort().reverse();
+    for(const d of prev){
+      const e = days[d]; const hit = (e && e.parts || []).find(x => !x.lift && partSig(x) === sig); if(!hit) continue;
+      let txt = '';
+      const ev = boardEvFor(hit, d);
+      if(ev && meId){ const r = A.subs.filter(x => x.e === ev.id).slice(-1)[0] || LB.results.find(x => x.e === ev.id && x.a === meId); if(r && (r.v != null || r.capped)) txt = lbScore(ev, r) + (r.d ? ' · '+r.d : ''); }
+      if(!txt){ const r = (A.personal||[]).filter(x => x && x.src === partSrc(hit, d)).slice(-1)[0]; if(r && r.s) txt = r.s; }
+      if(!txt) continue;
+      return '<div class="lastt"><span>Last time · '+esc(niceDate(d).replace(/, \d{4}$/,''))+'</span><b>'+esc(txt)+'</b></div>';
+    }
+    return '';
+  }
   function partSrc(pt, date){ return 'part|'+date+'|'+String(pt.tag||'')+'|'+String((pt.lines||[])[0]||'').slice(0,40); }
   function repsGuess(lines){ let r = 0; (lines||[]).forEach(l => { const m = String(l).match(/(\d+)\s*[x×]\s*(\d+)/i); if(m) r = +m[2]; }); return r >= 1 && r <= 10 ? r : 1; }
   const SETCTX = {};
