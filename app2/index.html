@@ -5449,16 +5449,22 @@ async function openPay(){
   const order = { late:0, due:1, none:2, ok:3, free:4 };
   rows.sort((a,b) => order[payState(BILL[a.id]).k] - order[payState(BILL[b.id]).k] || (a.name||'').localeCompare(b.name||''));
   const n = k => rows.filter(r => payState(BILL[r.id]).k === k).length;
-  const total = rows.reduce((t,r) => t + (+(BILL[r.id]||{}).rate || 0), 0);
   const draw = () => {
-    box.querySelector('.mcard').innerHTML = '<h3>Payments</h3>'+
-      '<div class="dstats"><div><b style="color:#6FBF73">'+n('ok')+'</b><span>Paid up'+(n('free') ? ' · '+n('free')+' no charge' : '')+'</span></div><div><b style="color:#E8B44C">'+n('due')+'</b><span>Due now (till the 5th)</span></div><div><b style="color:#FF5A64">'+n('late')+'</b><span>Past the 5th</span></div><div><b>$'+total+'</b><span>Monthly total</span></div></div>'+
-      '<p style="color:#8F8B84;margin:0">Due the 1st. Not in by 7:59 PM on the 1st, programming pauses (Members → Pause access). Paid by the 5th, turn it back on. "Paid through" is the day their next payment is due.</p>'+
-      rows.map(r => { const b = BILL[r.id] || {}, s = payState(b);
-        return '<div class="prow"><div class="ptop"><div><b>'+esc(r.name||r.email)+'</b><small>'+esc((r.progs||[]).map(progName).join(', ') || 'No programs on')+'</small><small class="pst '+s.k+'">'+esc(s.t)+'</small></div><button type="button" data-paid="'+r.id+'">Paid 1 month</button></div>'+
-          '<div class="pctl"><label>$ a month<input type="number" inputmode="numeric" min="0" step="1" data-rate="'+r.id+'" value="'+esc(b.rate||'')+'"></label><label>Paid through<input type="date" data-pt="'+r.id+'" value="'+esc(b.paidThrough||'')+'"></label></div>'+
+    const K = r => payState(BILL[r.id]).k, owe = rows.filter(r => ['due','late'].includes(K(r))), unset = rows.filter(r => K(r) === 'none'), good = rows.filter(r => ['ok','free'].includes(K(r)));
+    const owed = owe.reduce((t,r) => t + (+(BILL[r.id]||{}).rate || 0), 0);
+    const nx = addMonth(firstOfMonth(todayStr())), nextUp = rows.filter(r => K(r) === 'ok' && (BILL[r.id]||{}).paidThrough === nx);
+    const prow = r => { const b = BILL[r.id] || {}, s = payState(b);
+        return '<div class="prow"><div class="ptop"><div><b>'+esc(r.name||r.email)+'</b><small>'+esc((r.progs||[]).map(progName).join(', ') || 'No programs on')+'</small><small class="pst '+s.k+'">'+esc(s.t)+(b.rate && b.rate !== '0' ? ' · $'+esc(b.rate)+'/mo' : '')+'</small></div>'+(s.k === 'free' ? '' : '<button type="button" data-paid="'+r.id+'">Paid 1 month</button>')+'</div>'+
+          '<div class="pctl"><label>$ a month (0 = no charge)<input type="number" inputmode="numeric" min="0" step="1" data-rate="'+r.id+'" value="'+esc(b.rate||'')+'"></label><label>Paid through<input type="date" data-pt="'+r.id+'" value="'+esc(b.paidThrough||'')+'"></label></div>'+
           '<input class="pnote" data-note="'+r.id+'" maxlength="140" placeholder="Note (discount, paid by Venmo…)" value="'+esc(b.note||'')+'">'+
-          '<div class="mbtns"><button class="ghost" type="button" data-price="'+r.id+'">Send prices</button><button class="ghost" type="button" data-remind="'+r.id+'">Send reminder</button></div></div>'; }).join('')+
+          '<div class="mbtns"><button class="ghost" type="button" data-price="'+r.id+'">Send prices</button>'+(s.k === 'free' ? '' : '<button class="ghost" type="button" data-remind="'+r.id+'">Send reminder</button>')+'</div></div>'; };
+    box.querySelector('.mcard').innerHTML = '<h3>Payments</h3>'+
+      '<div class="dstats"><div><b style="color:#E8B44C">'+n('due')+'</b><span>Due now (till the 5th)</span></div><div><b style="color:#FF5A64">'+n('late')+'</b><span>Past the 5th</span></div><div><b>$'+owed+'</b><span>Owed now</span></div><div><b>'+nextUp.length+'</b><span>Due '+esc(fmtD(nx))+'</span></div></div>'+
+      '<p style="color:#8F8B84;margin:0">Due the 1st. Not in by 7:59 PM on the 1st, programming pauses (Members → Pause access). Paid by the 5th, turn it back on.</p>'+
+      '<h4>Needs to pay</h4>'+(owe.length ? owe.map(prow).join('') : '<p style="color:#6FBF73;margin:0">Nobody owes right now.</p>')+
+      (unset.length ? '<h4>Not set up yet</h4><p style="color:#8F8B84;margin:0">Add their rate and paid-through date (or $0 if they don\'t pay).</p>'+unset.map(prow).join('') : '')+
+      (nextUp.length ? '<h4>Due '+esc(fmtD(nx))+'</h4><p style="color:#8F8B84;margin:0">'+esc(nextUp.map(r => r.name || r.email).join(', '))+'</p>' : '')+
+      '<details class="pdet"><summary>Paid up and no charge ('+good.length+')</summary>'+good.map(prow).join('')+'</details>'+
       '<details class="pdet"><summary>Price sheet (what Send prices sends)</summary><textarea id="pText" maxlength="600" rows="9">'+esc(prices)+'</textarea><small id="pLeft"></small><button type="button" id="pSave">Save price sheet</button></details>'+
       hubRow('pay')+'<div class="mrow"><button class="ghost" id="mClose">Close</button></div>';
     box.querySelector('#mClose').onclick = () => box.remove(); wireHub(box);
