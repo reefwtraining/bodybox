@@ -545,6 +545,12 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .soc b{font-weight:700}.soc-ig b{color:#E1306C}.soc-yt b{color:#FF0000}.soc-tt b{color:#25F4EE}
 .socf{display:grid;gap:8px}.socf[hidden]{display:none}
 .ab-view[hidden]{display:none}
+.profx{margin:-6px 0 16px;display:grid;gap:10px}
+.profx .socbox{border:0;padding:0;margin:0;gap:8px}
+.profx .socbox>.label{display:none}
+.profx .abbox .ab-f:not([hidden])~*,.profx .socbox .socf:not([hidden])~*{display:none}
+.profx .socbox .row{margin:0}
+.profx .socbox:not(.abbox) .socs+div:empty{display:none}
 .ab-bio{margin:0;color:var(--chalk);line-height:1.5}
 .ab-bits,.ab-gyms,.ab-pick,.ab-quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ab-bits span{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
@@ -2558,6 +2564,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       (a.tag?'<p class="tagl">'+esc(a.tag)+'</p>':'')+
       '<div class="badges">'+(a.div?'<span class="badge gold">'+esc(a.div)+'</span>':'')+(a.sex?'<span class="badge">'+(a.sex==='F'?'Women':'Men')+'</span>':'')+(a.coach?'<span class="badge">Coach</span>':'')+
       '<span class="badge">Rebuilt Training</span>'+(a.since?'<span class="badge">Since '+esc(niceDate(a.since).replace(/^\w+ \d+, /,''))+'</span>':'')+'</div></div></div>';
+    h += '<div class="profx">'+(mine ? aboutHtml() + socialsHtml(true) : socialsHtml(false))+'</div>'; // Nov 17: about me + socials sit with the profile pic
     h += '<div class="stats">'+
       '<div class="stat"><b>'+(st.main?'#'+st.main.rank:'–')+'</b><span>'+(st.main?esc(st.main.div)+' rank':'Rank')+'</span></div>'+
       '<div class="stat"><b>'+(st.main?st.main.pts:'–')+'</b><span>Points</span></div>'+
@@ -2730,7 +2737,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const me = meId && athById(meId) ? meId : '';
     let pre = '';
     if(me){
-      pre = profileHtml(me, true) + aboutHtml() + socialsHtml(true) + '<div class="row" style="margin:8px 0 6px;gap:14px;align-items:center"><button class="linkbtn" type="button" data-unme="1">Sign out</button><a class="linkbtn" href="https://reefwtraining.github.io/bodybox/" target="_blank" rel="noopener">BODYBOX website ↗</a></div>' + meIndHtml() + personalHtml();
+      pre = profileHtml(me, true) + '<div class="row" style="margin:8px 0 6px;gap:14px;align-items:center"><button class="linkbtn" type="button" data-unme="1">Sign out</button><a class="linkbtn" href="https://reefwtraining.github.io/bodybox/" target="_blank" rel="noopener">BODYBOX website ↗</a></div>' + meIndHtml() + personalHtml();
     } else {
       pre = '<div class="prof">'+avatarHtml(null)+'<div style="min-width:0"><span class="label">My profile</span><h1>Sign in</h1><p class="tagl">See your rank, points and scores</p></div></div>'+
         '<form class="connect" id="loginForm" autocomplete="on"><span class="label">Athlete sign in</span><h2>Welcome back</h2>'+
@@ -2762,7 +2769,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     });
   }
   function renderProfilePage(v, id){
-    let h = '<button class="back" type="button" id="profBack">← Leaderboard</button>' + profileHtml(id, id === meId) + (id === meId ? '' : socialsHtml(false));
+    let h = '<button class="back" type="button" id="profBack">← Leaderboard</button>' + profileHtml(id, id === meId);
     h += dirtyBar();
     v.innerHTML = h;
     $('profBack').onclick = () => { profId = null; profEdit = false; render(); };
