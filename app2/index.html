@@ -553,6 +553,8 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .set-top{display:flex;justify-content:space-between;align-items:center;position:sticky;top:-12px;background:var(--bg);padding:8px 0;z-index:2}
 .set-top h2{font-family:var(--display);font-size:32px;text-transform:uppercase;margin:0;font-weight:400}
 .set-flash{margin:0;color:#6FBF73;font-weight:600}
+.set-photo{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.set-photo .avatar{width:84px;height:84px;font-size:28px}
 .set-links{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
 #bbSet .ab-view,#bbSet .socbox:not(.abbox)>.socs{display:none}
 .profx .socbox{border:0;padding:0;margin:0;gap:8px}
@@ -2548,6 +2550,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   const athById = id => LB.athletes.find(a => a.id === id);
   const initials = n => (n||'?').split(/\s+/).filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join('');
   function avatarHtml(a, cls){
+    if(a && meId && a.id === meId && A.photo) return '<img class="avatar '+(cls||'')+'" src="'+esc(A.photo)+'" alt="">'; // Nov 17: athlete's own photo
     if(a && a.photo) return '<img class="avatar '+(cls||'')+'" src="'+esc(a.photo)+'" alt="">';
     return '<span class="avatar '+(cls||'')+'" aria-hidden="true">'+esc(initials(a ? a.name : A.name))+'</span>';
   }
@@ -2753,6 +2756,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     el = document.createElement('div'); el.id = 'bbSet';
     el.innerHTML = '<div class="set-in"><div class="set-top"><h2>Settings</h2><button class="btn solid" type="button" id="setClose">Done</button></div>'+
       (flash ? '<p class="set-flash">'+esc(flash)+'</p>' : '')+
+      '<section class="socbox"><span class="label">Profile photo</span><div class="set-photo">'+avatarHtml(athById(meId) || { id: meId, name: A.name })+
+        '<div class="set-links"><label class="btn solid" style="cursor:pointer">Choose photo<input type="file" accept="image/*" id="setPhoto" hidden></label>'+(A.photo ? '<button class="linkbtn" type="button" id="setPhotoDel">Remove</button>' : '')+'</div></div><p class="how" id="setPhotoMsg" style="margin:0"></p></section>'+
       aboutHtml() + socialsHtml(true) +
       '<section class="socbox"><span class="label">Account</span><div class="set-links">'+
         '<a class="linkbtn" href="https://reefwtraining.github.io/bodybox/" target="_blank" rel="noopener">BODYBOX website ↗</a>'+
@@ -2765,6 +2770,18 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     el.querySelectorAll('#abCancel,#socCancel').forEach(b => b.hidden = true);
     const close = () => { el.remove(); document.body.style.overflow = ''; render(); };
     el.querySelector('#setClose').onclick = close;
+    const pf = el.querySelector('#setPhoto');
+    if(pf) pf.onchange = async e => {
+      const f = e.target.files[0]; e.target.value = ''; if(!f) return; el.querySelector('#setPhotoMsg').textContent = 'Saving your photo…';
+      try{
+        const blob = await shrinkImage(f, 360);
+        const url = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); });
+        A.photo = url; saveA();
+        try{ const b = window.claude && await window.claude.use('socials'); if(b && b.savePhoto) await b.savePhoto(url); }catch(x){}
+        openSettings('Photo saved.');
+      }catch(x){ el.querySelector('#setPhotoMsg').textContent = 'That photo didn\'t work. Try a different one.'; }
+    };
+    const pd = el.querySelector('#setPhotoDel'); if(pd) pd.onclick = async () => { delete A.photo; saveA(); try{ const b = window.claude && await window.claude.use('socials'); if(b && b.savePhoto) await b.savePhoto(''); }catch(x){} openSettings('Photo removed.'); };
     const sp = el.querySelector('#setProf'); if(sp) sp.onclick = () => { profEdit = true; close(); window.scrollTo(0,0); };
     el.querySelector('#setOut').onclick = () => { if(window.__bbSignOut){ window.__bbSignOut(); } else { meId = ''; store.del('bb-me'); close(); } };
     el.scrollTop = top;
@@ -4750,6 +4767,7 @@ function shims(u, coach){
   const seen = { of: async meId => { if(!coach) return null; const q = await getDocs(query(collection(fs,'members'), where('meId','==',meId))); let out = null;
     for(const m of q.docs){ const s = await getDoc(doc(fs,'data','users',m.id,'bodybox')); if(s.exists()){ try{ const A = (JSON.parse(s.data().json)||{}).A || {}; out = Object.assign(out || {}, A.seen || {}); }catch(e){} } } return out || {}; } };
   const socials = { save: async o => { await updateDoc(doc(fs,'members',u.uid), { socials: o }); },
+    savePhoto: async url => { await updateDoc(doc(fs,'members',u.uid), { photo: url || '' }); },
     saveAbout: async o => { const p = Object.assign({}, o); if(p.bday) p.bday = '2000' + p.bday.slice(4); await updateDoc(doc(fs,'members',u.uid), { about: p }); },
     of: async meId => { const q = await getDocs(query(collection(fs,'members'), where('meId','==',meId))); for(const m of q.docs){ const d = m.data(); if(d.socials || d.about) return { socials: d.socials || null, about: d.about || null }; } return null; } };
   const map = { db: dbShim(u), user, artifact, downloads, assets, seen, socials };
