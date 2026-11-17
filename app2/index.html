@@ -5430,6 +5430,7 @@ async function billMap(){ const M = {}; try{ const s = await getDocs(collection(
 function payState(b){
   const pt = b && b.paidThrough, td = todayStr();
   if(b && String(b.rate) === '0') return { k:'free', t:'No charge (full discount)' };
+  if(b && b.plan === 'sessions') return { k:'free', t:'Paid with Coach Reef sessions' };
   if(!pt) return { k:'none', t:'Payment not set' };
   if(pt > td) return { k:'ok', t:'Paid through '+fmtD(pt) };
   const late = dayDiff(td, pt);

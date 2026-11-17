@@ -129,6 +129,7 @@ const dayDiff = (a, b) => Math.round((new Date(a+'T12:00:00') - new Date(b+'T12:
 function payState(b){
   const pt = b && b.paidThrough, td = today();
   if(b && String(b.rate) === '0') return { k:'free', t:'No charge' };
+  if(b && b.plan === 'sessions') return { k:'free', t:'Paid with Coach Reef sessions' };
   if(!pt) return { k:'none', t:'Not set up' };
   if(pt > td) return { k:'ok', t:'Paid through '+fmtD(pt) };
   const late = dayDiff(td, pt);
@@ -236,7 +237,7 @@ function renderMembers(){
       : '<td colspan="5" class="muted" style="font-size:13px">Coach. No payments. '+(IS_COACH ? '' : 'Coach Reef handles coaches.')+'</td>')+'</tr>'; }).join('');
   $('#view').innerHTML = '<h2>Members &amp; payments</h2><p class="note">Due the 1st. Not in by 7:59 PM on the 1st, pause their access. Paid by the 5th, turn it back on. $0 = no charge. Changes save as you go and show in the app right away.</p>'+
     '<div class="stats"><button class="stat" data-show="owe"><b style="color:var(--red2)">'+owe.length+'</b><span>Need to pay now</span></button><div class="stat"><b>$'+owed+'</b><span>Owed now</span></div><button class="stat" data-show="paid"><b>'+nextUp.length+'</b><span>Due '+esc(fmtD(nx))+'</span></button><button class="stat" data-show="wait"><b style="color:var(--gold)">'+c('wait')+'</b><span>Waiting for approval</span></button><button class="stat" data-show="unset"><b>'+c('unset')+'</b><span>Payment not set up</span></button><div class="stat"><b>$'+monthly+'</b><span>Monthly (everyone on)</span></div></div>'+
-    '<div class="bar"><div class="chips">'+chip('owe','Need to pay')+chip('unset','Not set up')+chip('wait','Waiting')+chip('paused','Paused')+chip('paid','Paid up')+chip('free','No charge')+chip('coaches','Coaches')+chip('all','Everyone')+'</div>'+
+    '<div class="bar"><div class="chips">'+chip('owe','Need to pay')+chip('unset','Not set up')+chip('wait','Waiting')+chip('paused','Paused')+chip('paid','Paid up')+chip('free','No charge / sessions')+chip('coaches','Coaches')+chip('all','Everyone')+'</div>'+
     '<input class="search" type="search" placeholder="Search name, email or note" value="'+esc(F.q)+'" aria-label="Search"><button class="btn ghost sm" id="csv" type="button">Download spreadsheet</button></div>'+
     (SEL.size ? '<div class="bulk"><b>'+SEL.size+' selected</b><button class="btn sm" data-bulk="paid">Mark paid 1 month</button><button class="btn ghost sm" data-bulk="remind">Send payment reminder</button><button class="btn ghost sm" data-bulk="price">Send price sheet</button><button class="btn ghost sm" data-bulk="clear">Clear</button></div>' : '')+
     '<div class="tbl-wrap"><table><thead><tr><th><input type="checkbox" id="selAll" aria-label="Select all"></th>'+th('name','Member')+th('status','Access')+'<th>Programs</th><th>Payment</th>'+th('rate','$ / mo')+th('pt','Paid through')+'<th>Note</th><th>Actions</th></tr></thead><tbody>'+
