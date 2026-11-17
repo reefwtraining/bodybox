@@ -1797,7 +1797,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   // Release rule (Reef, Nov 14): athletes see the next day's workout only from 8 PM Eastern the night before. Coaches see everything.
   function etNow(){ const f = new Intl.DateTimeFormat('en-CA', { timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', hour12:false }).formatToParts(new Date()); const g = t => (f.find(x => x.type === t)||{}).value; return { date: g('year')+'-'+g('month')+'-'+g('day'), hour: +g('hour') % 24 }; }
   function dayReleased(ds){
-    try{ if(isCoachKey() || canEditLB || window.__bbBadge) return true; }catch(e){}
+    try{ if(isCoachKey() || canEditLB || (window.__bbBadge && !window.__bbAdmin)) return true; }catch(e){} // Nov 17: the Admin badge doesn't open the week early
     const n = etNow(); if(ds <= n.date) return true;
     const t = new Date(n.date+'T12:00:00'); t.setDate(t.getDate()+1);
     const tom = t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
