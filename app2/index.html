@@ -532,6 +532,12 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .lv-rec i{width:58px;height:58px;border-radius:50%;background:#E5222F;transition:all .2s}
 .lv-rec.on i{width:30px;height:30px;border-radius:6px}
 .lv-rec:disabled{opacity:.4}
+.yt{border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px}
+.yt-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.yt-logo{display:inline-grid;place-items:center;width:30px;height:21px;border-radius:6px;background:#FF0000;color:#fff;font-size:11px}
+.yt-ch{color:var(--muted);font-size:13px}
+.yt input{font:inherit;background:var(--panel);color:var(--chalk);border:1px solid var(--line);border-radius:6px;padding:10px 12px;width:100%;box-sizing:border-box}
+.yt[hidden]{display:none!important}
 .lv-set[hidden],.lv-rounds[hidden],#vcLive[hidden]{display:none!important}
 .vc-status{font-family:var(--mono);color:var(--chalk)!important}
 .vc-done video{max-height:60vh;border-radius:8px}
@@ -850,6 +856,14 @@ Rest 2:00"></textarea></label>
    <video id="vcOut" playsinline="" controls=""></video>
    <p id="vcDoneMsg"></p>
    <div class="row"><button class="btn solid" id="vcSave" type="button">Save video</button><button class="btn" id="vcAgain" type="button">Start over</button></div>
+   <div class="yt" id="ytBox" hidden="">
+    <div class="yt-h"><span class="yt-logo">&#9654;</span><b>Post to YouTube</b><span class="yt-ch" id="ytCh"></span></div>
+    <label class="vc-field"><span class="label">Title</span><input id="ytTitle" maxlength="100"></label>
+    <label class="vc-field"><span class="label">Who can see it</span><select id="ytPriv"><option value="unlisted">Unlisted (only people with the link)</option><option value="public">Public</option><option value="private">Private (only you)</option></select></label>
+    <div class="vc-prog" id="ytProg" hidden=""><i id="ytBar"></i></div>
+    <p id="ytMsg"></p>
+    <div class="row"><button class="btn solid" id="ytGo" type="button">Post to my YouTube</button><button class="linkbtn" id="ytUnlink" type="button" hidden="">Unlink YouTube</button></div>
+   </div>
   </div>
  </div>
 </section>
@@ -1375,7 +1389,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     stamp(rv, actx);
   };
   async function stamp(rv, actx){
-    VC.cancel = false; VC.out = null;
+    VC.cancel = false; VC.out = null; YT.title = 'BODYBOX · '+(VC.prog || 'Workout')+' · '+VC.date; $('ytTitle').value = '';
     vcShow('vcWork'); $('vcBar').style.width='0%'; $('vcStatus').textContent = 'Getting your video ready…';
     lock(true);
     try{ await document.fonts.load('700 40px "JetBrains Mono"'); await document.fonts.load('400 40px "Anton"'); }catch(e){}
@@ -1424,7 +1438,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       VC.out = new Blob(chunks, { type: mime || ('video/'+ext) });
       const ov = $('vcOut'); if(ov.src) URL.revokeObjectURL(ov.src); ov.src = URL.createObjectURL(VC.out);
       $('vcDoneMsg').textContent = 'Done. Watch it back, then tap Save video. ('+(VC.out.size/1048576).toFixed(1)+' MB)';
-      vcShow('vcDone');
+      vcShow('vcDone'); ytPaint();
     }catch(err){
       console.error('stamp failed', err && (err.stack||err.message||err));
       lock(false); try{ actx && actx.close(); }catch(e){}
@@ -1529,15 +1543,63 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       let rec; try{ rec = new MediaRecorder(cs, mime ? { mimeType:mime, videoBitsPerSecond: 5_000_000 } : { videoBitsPerSecond: 5_000_000 }); }catch(e){ $('vcLMsg').textContent = 'Recording isn\'t supported in this browser. Try Safari or Chrome.'; return; }
       rec.ondataavailable = e => { if(e.data && e.data.size) LV.chunks.push(e.data); };
       rec.onstop = () => {
-        VC.out = new Blob(LV.chunks, { type: LV.mime || ('video/'+LV.ext) }); VC.outExt = LV.ext; LV.rec = null; LV.t0 = null; LV.beeps = {}; LV.lastSeg = -1; lock(false); lvStopCam(); lvUi(false);
+        VC.out = new Blob(LV.chunks, { type: LV.mime || ('video/'+LV.ext) }); VC.outExt = LV.ext; if(LV.rounds) YT.title += ' · '+LV.rounds+' rounds'; LV.rec = null; LV.t0 = null; LV.beeps = {}; LV.lastSeg = -1; lock(false); lvStopCam(); lvUi(false);
         const ov = $('vcOut'); if(ov.src) URL.revokeObjectURL(ov.src); ov.src = URL.createObjectURL(VC.out);
         $('vcDoneMsg').textContent = 'Done'+(LV.rounds ? ' · '+LV.rounds+' rounds counted' : '')+'. Watch it back, then tap Save video. ('+(VC.out.size/1048576).toFixed(1)+' MB)';
-        vcShow('vcDone');
+        vcShow('vcDone'); ytPaint();
       };
-      LV.rec = rec; LV.beeps = {}; LV.lastSeg = -1; LV.rounds = 0; rec.start(1000); LV.t0 = performance.now(); lock(true); lvUi(true);
+      YT.title = 'BODYBOX · '+$('vcLChip').textContent+' · '+VC.date; $('ytTitle').value = ''; LV.rec = rec; LV.beeps = {}; LV.lastSeg = -1; LV.rounds = 0; rec.start(1000); LV.t0 = performance.now(); lock(true); lvUi(true);
     } else { try{ LV.rec.stop(); }catch(e){} }
   };
 
+
+  /* ---------- post to the athlete's own YouTube (Nov 16). Hidden until YT_CLIENT is set (Google Cloud OAuth web client for reefwtraining.github.io) ---------- */
+  const YT_CLIENT = '';
+  const YT = { tok:null, exp:0, tc:null, busy:false, title:'' };
+  const ytLinked = () => { try{ return localStorage.getItem('bb-yt') || ''; }catch(e){ return ''; } };
+  function ytLoad(){ return new Promise((res, rej) => { if(window.google && google.accounts && google.accounts.oauth2) return res(); const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = () => res(); sc.onerror = () => rej(new Error('gsi')); document.head.appendChild(sc); }); }
+  function ytToken(){
+    return new Promise(async (res, rej) => {
+      if(YT.tok && Date.now() < YT.exp - 60000) return res(YT.tok);
+      try{ await ytLoad(); }catch(e){ return rej(new Error('Google sign-in didn\'t load. Check your connection.')); }
+      YT.tc = google.accounts.oauth2.initTokenClient({ client_id: YT_CLIENT, scope: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly',
+        callback: r => { if(r && r.access_token){ YT.tok = r.access_token; YT.exp = Date.now() + (r.expires_in||3600)*1000; res(YT.tok); } else rej(new Error('YouTube wasn\'t linked.')); },
+        error_callback: e => rej(new Error(e && e.type === 'popup_closed' ? 'Sign-in was closed before it finished.' : 'YouTube wasn\'t linked.')) });
+      YT.tc.requestAccessToken({ prompt: ytLinked() ? '' : 'consent' });
+    });
+  }
+  function ytPaint(){
+    const box = $('ytBox'); if(!box) return; box.hidden = !YT_CLIENT || !VC.out;
+    if(box.hidden) return; const ch = ytLinked();
+    $('ytCh').textContent = ch ? 'Linked: '+ch : 'Sign in once with your own Google account';
+    $('ytUnlink').hidden = !ch; $('ytGo').textContent = ch ? 'Post to my YouTube' : 'Link my YouTube and post';
+    if(!$('ytTitle').value) $('ytTitle').value = YT.title || ('BODYBOX · '+VC.date);
+  }
+  $('ytUnlink').onclick = () => { try{ if(YT.tok && window.google) google.accounts.oauth2.revoke(YT.tok, () => {}); localStorage.removeItem('bb-yt'); }catch(e){} YT.tok = null; ytPaint(); $('ytMsg').textContent = 'YouTube unlinked.'; };
+  $('ytGo').onclick = async () => {
+    if(YT.busy || !VC.out) return; const msg = $('ytMsg'), bar = $('ytBar');
+    let tok; try{ tok = await ytToken(); }catch(e){ msg.textContent = e.message; return; }
+    YT.busy = true; $('ytGo').disabled = true; lock(true);
+    try{
+      if(!ytLinked()){ try{ const r = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', { headers:{ Authorization:'Bearer '+tok } }); const j = await r.json(); const t = j.items && j.items[0] && j.items[0].snippet.title; if(!j.items || !j.items.length) throw new Error('nochan'); localStorage.setItem('bb-yt', t || 'your channel'); }catch(e){ if(e.message === 'nochan') throw new Error('This Google account has no YouTube channel yet. Open the YouTube app, create your channel, then try again.'); } ytPaint(); }
+      const title = ($('ytTitle').value || 'BODYBOX').slice(0,100), type = VC.out.type || ('video/'+VC.outExt);
+      const meta = { snippet:{ title, description: 'Recorded with the BODYBOX app. Team BodyBox · KEEP DOING GREAT THINGS', tags:['BODYBOX','Team BodyBox'], categoryId:'17' }, status:{ privacyStatus: $('ytPriv').value, selfDeclaredMadeForKids:false } };
+      msg.textContent = 'Starting the upload…';
+      const init = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', { method:'POST', headers:{ Authorization:'Bearer '+tok, 'Content-Type':'application/json; charset=UTF-8', 'X-Upload-Content-Type': type, 'X-Upload-Content-Length': String(VC.out.size) }, body: JSON.stringify(meta) });
+      if(!init.ok){ const t = await init.text(); throw new Error(/quota/i.test(t) ? 'YouTube\'s daily upload limit for the app was hit. Try again tomorrow.' : /youtubeSignupRequired|channel/i.test(t) ? 'This Google account has no YouTube channel yet. Create one in the YouTube app first.' : 'YouTube said no ('+init.status+'). Try again.'); }
+      const loc = init.headers.get('Location'); if(!loc) throw new Error('YouTube didn\'t start the upload. Try again.');
+      $('ytProg').hidden = false; bar.style.width = '0%';
+      const vid = await new Promise((res, rej) => { const x = new XMLHttpRequest(); x.open('PUT', loc); x.setRequestHeader('Content-Type', type);
+        x.upload.onprogress = e => { if(e.lengthComputable){ const p = e.loaded/e.total*100; bar.style.width = p.toFixed(1)+'%'; msg.textContent = 'Uploading… '+Math.round(p)+'% · keep the app open'; } };
+        x.onload = () => { if(x.status >= 200 && x.status < 300){ try{ res(JSON.parse(x.responseText).id); }catch(e){ rej(new Error('Upload finished but YouTube didn\'t send the link back.')); } } else rej(new Error('Upload failed ('+x.status+'). Try again.')); };
+        x.onerror = () => rej(new Error('The connection dropped. Try again on Wi-Fi.')); x.send(VC.out); });
+      const url = 'https://youtu.be/'+vid;
+      msg.innerHTML = 'Posted. <a href="'+url+'" target="_blank" rel="noopener">'+url+'</a> · YouTube can take a few minutes to finish processing it.';
+      try{ navigator.clipboard && navigator.clipboard.writeText(url); }catch(e){}
+      A.ytPosts = A.ytPosts || []; A.ytPosts.push({ id: vid, url, title, date: iso(new Date()), t: Date.now() }); saveA();
+    }catch(e){ msg.textContent = e.message || 'Something went wrong. Try again.'; }
+    finally{ YT.busy = false; $('ytGo').disabled = false; lock(false); }
+  };
   let downloadsNS;
   (window.claude && window.claude.use ? window.claude.use('downloads') : Promise.resolve(null)).then(ns => { downloadsNS = ns; }).catch(() => { downloadsNS = null; });
   $('vcSave').onclick = async () => {
