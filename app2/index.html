@@ -2013,8 +2013,11 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     let h = '<div class="psec"><span class="label">This week</span><h2>Weekly recap</h2></div>';
     h += '<div class="recap"><div><b>'+ws.days+'</b><span>Days trained</span></div><div><b>'+ws.mins+'</b><span>Timer minutes</span></div><div><b>'+(ws.vol>=10000?Math.round(ws.vol/1000)+'k':ws.vol)+'</b><span>'+A.unit+' lifted</span></div><div><b>'+st+'</b><span>Week streak</span></div></div>';
     if(ws.prs) h += '<p class="how"><b style="color:var(--gold)">'+ws.prs+' new PR'+(ws.prs>1?'s':'')+'</b> this week.</p>';
-    h += '<div class="psec"><span class="label">Milestones</span><h2>Badges</h2></div><div class="bdgs">'+BADGES.map(([k,i,l,f]) => { let on=false; try{ on=f(); }catch(e){} return '<div class="bdg'+(on?' on':'')+'"><i aria-hidden="true">'+i+'</i>'+esc(l)+(on?'':'<br><span style="font-size:10px">locked</span>')+'</div>'; }).join('')+'</div>';
+    if(!recapHtml.noBadges) h += badgesHtml();
     return h;
+  }
+  function badgesHtml(){
+    return '<div class="psec"><span class="label">Milestones</span><h2>Badges</h2></div><div class="bdgs">'+BADGES.map(([k,i,l,f]) => { let on=false; try{ on=f(); }catch(e){} return '<div class="bdg'+(on?' on':'')+'"><i aria-hidden="true">'+i+'</i>'+esc(l)+(on?'':'<br><span style="font-size:10px">locked</span>')+'</div>'; }).join('')+'</div>';
   }
 
   /* ---------- last time + rest timer ---------- */
@@ -2901,10 +2904,10 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const T = [['over','Overview'],['lifts','Lifts'],['scores','Scores'],['log','Log']];
     let h = top + profileHtml(me, true, 'head') + weekCardHtml(me) +
       '<div class="metabs" role="tablist">'+T.map(([k,n]) => '<button type="button" role="tab" data-metab="'+k+'" class="'+(meTab===k?'on':'')+'" aria-selected="'+(meTab===k)+'">'+n+'</button>').join('')+'</div>';
-    if(meTab === 'over') h += keyLiftsHtml(true) + recentScoresHtml(me, 3) + goalsHtml();
+    if(meTab === 'over') h += keyLiftsHtml(true) + recentScoresHtml(me, 3) + badgesHtml() + goalsHtml();
     else if(meTab === 'lifts') h += liftsTabHtml();
     else if(meTab === 'scores') h += profileHtml(me, true, 'body');
-    else h += logbookHtml() + personalHtml() + meIndHtml() + phaseHtml() + recapHtml() + lifeHtml();
+    else { recapHtml.noBadges = true; h += logbookHtml() + personalHtml() + meIndHtml() + phaseHtml() + recapHtml() + lifeHtml(); recapHtml.noBadges = false; }
     h += '<div class="mech">'+challengesHtml()+'</div>'; // Nov 17: challenges sit at the bottom of the Me page
     v.innerHTML = h;
     v.querySelectorAll('[data-metab]').forEach(b => b.onclick = () => { meTab = b.dataset.metab; render(); const t = v.querySelector('.metabs'); if(t && t.getBoundingClientRect().top < 0) t.scrollIntoView(); });
