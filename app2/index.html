@@ -562,6 +562,14 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .soc{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:7px 12px;color:var(--chalk);text-decoration:none;font-size:14px}
 .soc b{font-weight:700}.soc-ig b{color:#E1306C}.soc-yt b{color:#FF0000}.soc-tt b{color:#25F4EE}
 .socf{display:grid;gap:8px}.socf[hidden]{display:none}
+.lbf{display:flex;gap:8px;margin:8px 0 12px;flex-wrap:wrap}
+.fbk{border:1px solid #C8102E;border-radius:14px;padding:14px;margin:0 0 14px;display:grid;gap:12px;background:rgba(200,16,46,.07)}
+.fbk-h{display:flex;align-items:center;gap:8px}.fbk-h b{font-size:15px}
+.fbk-dot{width:9px;height:9px;border-radius:50%;background:#FF5A64;box-shadow:0 0 0 4px rgba(255,90,100,.2)}
+.fbk-i{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:10px}.fbk-i:first-of-type{border-top:0;padding-top:0}
+.fbk-w{font:700 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.fbk-i p{margin:0;font-size:15px;line-height:1.5;color:var(--chalk)}.fbk-i audio{width:100%}
+.lbf select{flex:1;min-width:130px;font:600 14px var(--body);background:var(--panel);color:var(--chalk);border:1px solid var(--line);border-radius:999px;padding:8px 12px}
 .ab-view[hidden]{display:none}
 .profx{margin:-6px 0 16px;display:grid;gap:10px}
 .prof.mine{position:relative;padding-right:44px}
@@ -1143,12 +1151,24 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       '<div class="row"><span class="mail" id="mail">'+esc(D.signup.email)+'</span><button class="btn" type="button" id="copyMail">Copy email</button></div></div>';
   }
 
+  /* ---------- coach feedback on videos, shown to the athlete (Nov 17) ---------- */
+  function fbRead(){ try{ return JSON.parse(localStorage.getItem('bb-fbread') || '[]'); }catch(e){ return []; } }
+  function feedbackHtml(){
+    const F = (window.__bbFeedback || []).slice().sort((a,b) => (b.at||0) - (a.at||0)); if(!F.length) return '';
+    const rd = fbRead(), un = F.filter(f => !rd.includes(f.id));
+    if(!un.length) return '';
+    return '<section class="fbk"><div class="fbk-h"><span class="fbk-dot"></span><b>Coach Reef reviewed your video'+(un.length>1?'s':'')+'</b></div>'+un.map(f =>
+      '<div class="fbk-i"><span class="fbk-w">'+esc(f.what||'Your video')+(f.date?' · '+esc(niceDate(f.date).replace(/, \d{4}$/,'')):'')+'</span>'+
+      (f.text ? '<p>'+esc(f.text)+'</p>' : '')+(f.audio ? '<audio controls preload="none" src="'+esc(f.audio)+'"></audio>' : '')+
+      '<div class="row" style="gap:12px">'+(f.vid ? '<a class="linkbtn" href="'+esc(f.vid)+'" target="_blank" rel="noopener">Watch the video ↗</a>' : '')+'<button class="btn" type="button" data-fbok="'+esc(f.id)+'" style="padding:6px 12px">Got it</button></div></div>').join('')+'</section>';
+  }
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-fbok]'); if(!b) return; const r = fbRead(); r.push(b.dataset.fbok); try{ localStorage.setItem('bb-fbread', JSON.stringify(r.slice(-200))); }catch(x){} render(); });
   function renderWorkouts(){
     const p = D.programs[prog]; const entry = (D.days[day]||{})[prog];
     const v = document.getElementById('view');
     const un = meId && IK.mine ? unreadCount() : 0;
     const realMem = memProgs().length && !(memSlots.size && [...memSlots].every(x => x === 'sample'));
-    let h = (un ? '<div class="msgban"><span><b>'+un+' new message'+(un>1?'s':'')+'</b> from your coach</span><button class="btn solid" type="button" data-goinbox="1" style="padding:7px 12px">Read</button></div>' : '') + (isCoachKey() ? '<div class="row" style="margin:0 0 10px"><button class="linkbtn" type="button" data-hub="1">Coach hub →</button></div>' : '') + newsHtml() + memberHtml2(); const memOnly = h; h += '<p class="label ex-h">'+(memProgs().length?'Example days from every program':'Free preview · one example day from each program')+'</p><div class="progs" id="progs2" role="group" aria-label="Pick a program" style="margin-bottom:10px"></div><div class="head"><span class="sched">'+esc(p.sched)+'</span><h1>'+esc(p.name)+'</h1>';
+    let h = (un ? '<div class="msgban"><span><b>'+un+' new message'+(un>1?'s':'')+'</b> from your coach</span><button class="btn solid" type="button" data-goinbox="1" style="padding:7px 12px">Read</button></div>' : '') + (isCoachKey() ? '<div class="row" style="margin:0 0 10px"><button class="linkbtn" type="button" data-hub="1">Coach hub →</button></div>' : '') + feedbackHtml() + newsHtml() + memberHtml2(); const memOnly = h; h += '<p class="label ex-h">'+(memProgs().length?'Example days from every program':'Free preview · one example day from each program')+'</p><div class="progs" id="progs2" role="group" aria-label="Pick a program" style="margin-bottom:10px"></div><div class="head"><span class="sched">'+esc(p.sched)+'</span><h1>'+esc(p.name)+'</h1>';
     if(p.type==='full'){
       h += '</div><p class="about">'+esc(p.about)+'</p>';
       if(entry){
@@ -2367,7 +2387,19 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   let LB = JSON.parse(document.getElementById('lbdata').textContent);
   const LB_SAVED = JSON.stringify(LB);
   let lbSex = ['all','M','F'].includes(store.get('bb-lbsex')) ? store.get('bb-lbsex') : 'all';
-  const sexPills = () => '<div class="sexf" role="group" aria-label="Men or women">'+[['all','All'],['M','Men'],['F','Women']].map(x => '<button type="button" data-lbsex="'+x[0]+'" aria-pressed="'+(lbSex===x[0])+'">'+x[1]+'</button>').join('')+'</div>';
+  // Nov 17: Board filters by age group and gym (from athletes' About me, copied onto the Board each night)
+  let lbAge = store.get('bb-lbage') || 'all', lbGym = store.get('bb-lbgym') || 'all';
+  const AGES = [['all','All ages'],['u35','Under 35'],['35','35+'],['40','40+'],['45','45+'],['50','50+'],['55','55+']];
+  const ageOk = id => { if(lbAge === 'all') return true; const g = (LB.athletes.find(a => a.id === id) || {}).ageG; if(g == null) return false; return lbAge === 'u35' ? g < 35 : g >= +lbAge; };
+  const gymOk = id => lbGym === 'all' || ((LB.athletes.find(a => a.id === id) || {}).gyms || []).includes(lbGym);
+  const sexPills = () => {
+    const gyms = [...new Set(LB.athletes.flatMap(a => a.gyms || []))].sort();
+    const hasAge = LB.athletes.some(a => a.ageG != null);
+    return '<div class="sexf" role="group" aria-label="Men or women">'+[['all','All'],['M','Men'],['F','Women']].map(x => '<button type="button" data-lbsex="'+x[0]+'" aria-pressed="'+(lbSex===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+
+      ((hasAge || gyms.length) ? '<div class="lbf">'+(hasAge ? '<select data-lbage aria-label="Age group">'+AGES.map(x => '<option value="'+x[0]+'"'+(lbAge===x[0]?' selected':'')+'>'+x[1]+'</option>').join('')+'</select>' : '')+
+        (gyms.length ? '<select data-lbgym aria-label="Gym"><option value="all">All gyms</option>'+gyms.map(g => '<option value="'+esc(g)+'"'+(lbGym===g?' selected':'')+'>'+esc(g)+'</option>').join('')+'</select>' : '')+'</div>' : '');
+  };
+  document.addEventListener('change', e => { const t = e.target; if(t.matches && t.matches('[data-lbage]')){ lbAge = t.value; store.set('bb-lbage', lbAge); render(); } else if(t.matches && t.matches('[data-lbgym]')){ lbGym = t.value; store.set('bb-lbgym', lbGym); render(); } });
   let lbDiv = store.get('bb-lbdiv') || 'All', lbOpenAth = null, lbOpenEv = null, lbDirty = false, lbArmed = null;
   let canEditLB = false, artNS = null, lbMsg = '', lbMsgAdd = '';
   try{ const dr = JSON.parse(sessionStorage.getItem('bb-lb-draft') || 'null'); if(dr && dr.base === LB.rev){ LB = dr.lb; lbDirty = true; } }catch(e){}
@@ -2396,7 +2428,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const extra = A.subs.filter(x => x.a === meId && evById(x.e) && !LB.results.some(r => r.e === x.e && r.a === x.a)).map(x => Object.assign({ pending:true }, x));
     return extra.length ? LB.results.concat(extra) : LB.results;
   }
-  const inSex = (id, sex) => !sex || sex === 'all' || ((LB.athletes.find(a => a.id === id) || {}).sex === sex);
+  const inSex = (id, sex) => (!sex || sex === 'all' || ((LB.athletes.find(a => a.id === id) || {}).sex === sex)) && ageOk(id) && gymOk(id);
   function placings(ev, div, sex){
     const rs = allResults().filter(r => r.e === ev.id && r.d === div && inSex(r.a, sex)).sort(lbCmp(ev));
     let place = 0; return rs.map((r,i) => { if(i===0 || !lbSame(ev, rs[i-1], r)) place = i+1; return { r, place }; });
@@ -2930,7 +2962,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function renderMeTabs(me, top){
     const v = $('view');
     const T = [['over','Overview'],['lifts','Lifts'],['scores','Scores'],['log','Log']];
-    let h = top + profileHtml(me, true, 'head') + weekCardHtml(me) +
+    let h = top + profileHtml(me, true, 'head') + feedbackHtml() + weekCardHtml(me) +
       '<div class="metabs" role="tablist">'+T.map(([k,n]) => '<button type="button" role="tab" data-metab="'+k+'" class="'+(meTab===k?'on':'')+'" aria-selected="'+(meTab===k)+'">'+n+'</button>').join('')+'</div>';
     if(meTab === 'over') h += keyLiftsHtml(true) + recentScoresHtml(me, 3) + badgesHtml() + goalsHtml();
     else if(meTab === 'lifts') h += liftsTabHtml();
@@ -4707,6 +4739,17 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 #bbGate .gspin{width:34px;height:34px;border:3px solid #2A2A2A;border-top-color:#C8102E;border-radius:50%;margin:0 auto;animation:bbspin 1s linear infinite}
 @keyframes bbspin{to{transform:rotate(360deg)}}
 .cbadge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;border-radius:999px;font:800 11px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;background:#C8102E;color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.12) inset}.cbadge.head{background:linear-gradient(135deg,#F2C14E,#C9931F);color:#1B1B1B}.cbadge svg{flex:none}.top .hdrbadge{margin:2px 0 8px}
+#bbDashBtn{position:fixed;right:110px;bottom:84px;z-index:9000;background:#F4F2EE;color:#111;border:0;border-radius:999px;padding:9px 14px;font:700 13px var(--body);box-shadow:0 4px 16px rgba(0,0,0,.5);cursor:pointer}
+#bbMembers .dstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+#bbMembers .dstats div{background:#111;border:1px solid #2A2A2A;border-radius:10px;padding:10px;display:grid;gap:2px}
+#bbMembers .dstats b{font:700 22px var(--mono,monospace);color:#F4F2EE}#bbMembers .dstats span{font-size:11px;color:#8F8B84;line-height:1.25}
+#bbMembers h4{margin:6px 0 0;font:700 12px var(--body);letter-spacing:.12em;text-transform:uppercase;color:#8F8B84}
+#bbMembers .drow{border:1px solid #2A2A2A;border-radius:12px;padding:12px;display:grid;gap:6px;background:#151515}
+#bbMembers .drow.warn{border-color:#C8102E}
+#bbMembers .drow small{display:block;color:#8F8B84;font-size:13px;line-height:1.4}
+#bbMembers .dtop{display:flex;gap:10px;align-items:center}
+#bbMembers .dav{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#2A2A2A;display:grid;place-items:center;font:700 13px var(--body);color:#F4F2EE;flex:0 0 38px}
+#bbMembers .dflags{display:flex;flex-wrap:wrap;gap:6px}#bbMembers .dflags span{background:rgba(200,16,46,.15);color:#FF8A8A;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600}
 #bbCoachBtn{position:fixed;right:12px;bottom:84px;z-index:9000;background:#C8102E;color:#fff;border:0;border-radius:999px;padding:9px 14px;font:600 13px var(--body);box-shadow:0 4px 16px rgba(0,0,0,.5);cursor:pointer}
 #bbPush{position:fixed;left:12px;right:12px;bottom:84px;z-index:9500;max-width:520px;margin:0 auto;background:#1B1B1B;border:1px solid #C8102E;border-radius:16px;padding:14px 14px 12px;color:#F4F2EE;font-family:var(--body);box-shadow:0 8px 30px rgba(0,0,0,.6)}
 #bbPush b{display:block;font-size:16px;margin-bottom:4px}#bbPush p{margin:0 0 10px;color:#C9C5BE;font-size:14px;line-height:1.4}
@@ -4746,6 +4789,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 #bbMembers .mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid #2A2A2A;padding-top:10px}
 #bbMembers .mrow small{display:block;color:#8F8B84;font-size:13px}
 #bbMembers button{background:#C8102E;border:0;border-radius:999px;color:#fff;font:600 14px var(--body);padding:8px 14px;cursor:pointer}
+#bbMembers .fbform{display:grid;gap:8px;padding:10px 0 4px}
+#bbMembers .fbform textarea{width:100%;box-sizing:border-box;background:#111;color:#F4F2EE;border:1px solid #2A2A2A;border-radius:8px;padding:10px;font:15px var(--body)}
 #addCode{display:none!important}
 #bbGate .gplans{display:grid;gap:8px}
 #bbGate .gplan{display:flex;align-items:center;gap:10px;background:#1B1B1B;border:1px solid #2A2A2A;border-radius:12px;padding:12px;cursor:pointer;text-transform:none;letter-spacing:0;font:15px var(--body);color:#F4F2EE}
@@ -5090,17 +5135,108 @@ async function openVideos(members){
     (A.personal||[]).forEach(x => { if(x && x.vid) out.push({ key: m.id+'|'+x.id, who: m.name || m.email, date: x.date, what: x.title||'Own workout', s: x.s||'', vid: x.vid, note: x.note||'' }); });
     Object.entries(A.indr||{}).forEach(([k,x]) => { if(x && x.vid) out.push({ key: m.id+'|i'+k, who: m.name || m.email, date: x.date, what: x.title||'Extra work', s: x.s||'', vid: x.vid, note: x.note||'' }); });
     Object.entries(A.evVids||{}).forEach(([k,v]) => { if(v) out.push({ key: m.id+'|e'+k, who: m.name || m.email, date: '', what: en(k), s: '', vid: v, note: (A.evNotes||{})[k]||'' }); });
+    (A.ytPosts||[]).forEach(x => { if(x && x.url) out.push({ key: m.id+'|y'+x.id, who: m.name || m.email, date: x.date, what: x.title || 'Video', s: 'Posted to YouTube', vid: x.url, note: '' }); });
+    out.forEach(o => { if(o.key.startsWith(m.id+'|')){ o.uid = m.id; o.fb = ((m.feedback||[]).find(f => f.key === o.key) || null); } });
   }catch(e){} }));
   out.sort((a,b) => (seen[a.key]?1:0) - (seen[b.key]?1:0) || (a.date < b.date ? 1 : -1));
   const todo = out.filter(x => !seen[x.key]).length;
   const row = x => '<div class="mrow"><div><b>'+esc(x.who)+' · '+esc(x.what)+'</b><small>'+esc([x.date, x.s].filter(Boolean).join(' · '))+'</small>'+(x.note?'<small>'+esc(x.note)+'</small>':'')+(seen[x.key]?'<small style="color:#6FBF73">Reviewed</small>':'')+'</div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><a href="'+esc(x.vid)+'" target="_blank" rel="noopener" style="background:#C8102E;color:#fff;border-radius:999px;padding:8px 12px;font:600 13px var(--body);text-decoration:none">Watch</a>'+
-    '<button class="ghost" data-rv="'+esc(x.key)+'">'+(seen[x.key]?'Undo':'Reviewed')+'</button></div></div>';
+    '<button class="ghost" data-rv="'+esc(x.key)+'">'+(seen[x.key]?'Undo':'Reviewed')+'</button><button data-fb="'+esc(x.key)+'">'+(x.fb?'Feedback sent ✓':'Give feedback')+'</button></div></div>'+
+    '<div class="fbform" data-fbf="'+esc(x.key)+'" hidden><textarea rows="3" maxlength="800" placeholder="What did you see? Cues, what to fix, what was great">'+esc(x.fb ? x.fb.text || '' : '')+'</textarea>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="ghost" data-fbrec="'+esc(x.key)+'">Record voice note</button><span class="fbst" style="color:#8F8B84;font-size:13px"></span></div>'+
+    '<div style="display:flex;gap:8px"><button data-fbsend="'+esc(x.key)+'">Send to athlete</button><button class="ghost" data-fbx="'+esc(x.key)+'">Cancel</button></div></div>';
   box.innerHTML = '<div class="mcard"><h3>Videos to review</h3><p style="color:#8F8B84;margin:0">'+(out.length ? todo+' new · '+(out.length-todo)+' reviewed' : 'No videos yet. Athletes add a YouTube link when they log a lift or a score, or later from their Logbook.')+'</p>'+
     out.map(row).join('')+'<div class="mrow"><button class="ghost" id="vBack">Back to members</button><button class="ghost" id="vClose">Close</button></div></div>';
   box.querySelector('#vBack').onclick = () => openMembers(); box.querySelector('#vClose').onclick = () => box.remove();
   box.querySelectorAll('[data-rv]').forEach(b => b.onclick = async () => { const k = b.dataset.rv; if(seen[k]) delete seen[k]; else seen[k] = Date.now(); b.disabled = true;
     try{ await setDoc(rref, { json: JSON.stringify(seen), at: serverTimestamp() }); }catch(e){} openVideos(members); });
+  // Nov 17: coach feedback (text and/or a voice note) goes to the athlete's app
+  const FBA = {};
+  const form = k => box.querySelector('[data-fbf="'+CSS.escape(k)+'"]');
+  box.querySelectorAll('[data-fb]').forEach(b => b.onclick = () => { const f = form(b.dataset.fb); f.hidden = !f.hidden; });
+  box.querySelectorAll('[data-fbx]').forEach(b => b.onclick = () => { form(b.dataset.fbx).hidden = true; });
+  box.querySelectorAll('[data-fbrec]').forEach(b => b.onclick = async () => {
+    const k = b.dataset.fbrec, st = form(k).querySelector('.fbst');
+    if(FBA[k] && FBA[k].rec && FBA[k].rec.state === 'recording'){ FBA[k].rec.stop(); return; }
+    try{
+      const ms = await navigator.mediaDevices.getUserMedia({ audio:true });
+      const mt = ['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+      const rec = new MediaRecorder(ms, mt ? { mimeType: mt, audioBitsPerSecond: 32000 } : {}); const ch = [];
+      FBA[k] = { rec }; rec.ondataavailable = e => { if(e.data.size) ch.push(e.data); };
+      rec.onstop = async () => { ms.getTracks().forEach(t => t.stop()); clearTimeout(FBA[k].to); const blob = new Blob(ch, { type: mt || 'audio/webm' });
+        FBA[k].url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
+        b.textContent = 'Record again'; st.innerHTML = 'Voice note ready ('+Math.round(blob.size/1024)+' KB) <audio controls src="'+FBA[k].url+'" style="height:32px;vertical-align:middle"></audio>'; };
+      rec.start(); b.textContent = 'Stop recording'; st.textContent = 'Recording… (up to 60 sec)'; FBA[k].to = setTimeout(() => { if(rec.state === 'recording') rec.stop(); }, 60000);
+    }catch(e){ st.textContent = 'Microphone not available here.'; }
+  });
+  box.querySelectorAll('[data-fbsend]').forEach(b => b.onclick = async () => {
+    const k = b.dataset.fbsend, x = out.find(o => o.key === k), f = form(k), text = f.querySelector('textarea').value.trim(), audio = FBA[k] && FBA[k].url || '';
+    if(!text && !audio){ f.querySelector('.fbst').textContent = 'Type a note or record a voice note first.'; return; }
+    b.disabled = true; b.textContent = 'Sending…';
+    try{
+      const ref = doc(fs, 'members', x.uid), cur = ((await getDoc(ref)).data() || {}).feedback || [];
+      const item = { id: 'f' + Date.now().toString(36), key: k, what: x.what, date: x.date || '', vid: x.vid, text, audio, at: Date.now() };
+      const list = cur.filter(c => c.key !== k).concat([item]).slice(-25);
+      await updateDoc(ref, { feedback: list });
+      if(!seen[k]){ seen[k] = Date.now(); try{ await setDoc(rref, { json: JSON.stringify(seen), at: serverTimestamp() }); }catch(e){} }
+      const mm = members.find(mm => mm.id === x.uid); if(mm) mm.feedback = list; openVideos(members);
+    }catch(e){ b.disabled = false; b.textContent = 'Send to athlete'; f.querySelector('.fbst').textContent = 'Didn\'t send: '+((e && (e.code || e.message)) || e); }
+  });
+}
+/* ---- coach: team dashboard (Nov 17) — who needs you today ---- */
+async function openDash(){
+  let box = document.getElementById('bbMembers'); if(box) box.remove();
+  box = document.createElement('div'); box.id = 'bbMembers'; box.innerHTML = '<div class="mcard dash"><h3>Team dashboard</h3><p style="color:#8F8B84;margin:0">Loading the team…</p></div>'; document.body.appendChild(box);
+  box.onclick = e => { if(e.target === box) box.remove(); };
+  const pad = n => String(n).padStart(2,'0'), isoD = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const today = new Date(), td = isoD(today), mon = new Date(today); mon.setDate(mon.getDate() - ((mon.getDay()+6)%7)); const wk = isoD(mon);
+  const daysAgo = ds => ds ? Math.round((new Date(td+'T12:00:00') - new Date(ds+'T12:00:00')) / 864e5) : 999;
+  const short = ds => { if(!ds) return ''; const [y,m,d] = ds.split('-').map(Number); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]+' '+d; };
+  const e1 = (w, r) => (+w||0) * (1 + Math.min(+r||1, 12) / 30);
+  let rows = []; try{ const q = await getDocs(collection(fs, 'members')); q.forEach(d => rows.push(Object.assign({ id: d.id }, d.data()))); }catch(e){ box.querySelector('.mcard').innerHTML = '<h3>Team dashboard</h3><p>Couldn\'t load the team.</p>'; return; }
+  rows = rows.filter(r => r.approved && !COACHES.includes((r.email||'').toLowerCase()));
+  const out = [];
+  await Promise.all(rows.map(async r => { try{
+    const sn = await getDoc(doc(fs, 'data', 'users', r.id, 'bodybox')); const A = sn.exists() ? ((JSON.parse(sn.data().json) || {}).A || {}) : {};
+    const real = (A.log||[]).filter(e => e && e.date && !String(e.src||'').startsWith('est') && !String(e.id||'').startsWith('est') && !String(e.src||'').startsWith('coach'));
+    const dates = new Set(); real.forEach(e => dates.add(e.date)); (A.done||[]).forEach(x => x.date && dates.add(x.date)); Object.values(A.indr||{}).forEach(x => x && x.date && dates.add(x.date));
+    (A.subs||[]).forEach(x => { const m = /(\d{4}-\d{2}-\d{2})/.exec(x.e||''); if(m) dates.add(m[1]); });
+    const ds = [...dates].filter(d => d <= td).sort(), last = ds[ds.length-1] || '';
+    const week = ds.filter(d => d >= wk).length;
+    let prs = []; const byLift = {};
+    real.slice().sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.t||0)-(b.t||0)).forEach(e => { const v = e1(e.w, e.reps), pb = byLift[e.lift]; if(pb != null && v > pb + 0.5 && e.date >= wk) prs.push(e.lift); byLift[e.lift] = Math.max(pb||0, v); });
+    prs = [...new Set(prs)];
+    const rk = Object.keys(A.ready||{}).sort().pop(), R = rk ? A.ready[rk] : null;
+    const bad = R ? ['sleep','sore','energy'].filter(k => R[k] === 2).map(k => ({ sleep:'poor sleep', sore:'very sore', energy:'low energy' })[k]) : [];
+    const wkk = Object.keys(A.weekly||{}).sort().pop(), W = wkk ? A.weekly[wkk] : null;
+    const pain = W && Array.isArray(W.pain) ? W.pain.map(p => typeof p === 'string' ? p : ((p.a||p.part||p.name||'') + (p.l!=null ? ' '+p.l+'/10' : p.n!=null ? ' '+p.n+'/10' : ''))).filter(Boolean) : [];
+    const seenAt = Object.values(A.seen||{}).reduce((m,t) => Math.max(m, +t||0), 0);
+    const ago = daysAgo(last);
+    const flags = [];
+    if(ago >= 3) flags.push(ago >= 999 ? 'Never logged' : 'No log in '+ago+' days');
+    if(pain.length) flags.push('Pain: '+pain.join(', '));
+    if(bad.length && daysAgo(rk) <= 2) flags.push(bad.join(', '));
+    const hasPersonal = (r.progs||[]).includes('personal');
+    if(hasPersonal && seenAt && (Date.now() - seenAt) > 3*864e5) flags.push('Hasn\'t opened personal notes in '+Math.round((Date.now()-seenAt)/864e5)+' days');
+    out.push({ r, last, ago, week, prs, flags, pain, R, rk, W, wkk, seenAt, hasPersonal, photo: r.photo || A.photo || '' });
+  }catch(e){} }));
+  out.sort((a,b) => (b.flags.length > 0) - (a.flags.length > 0) || a.ago - b.ago || (a.r.name||'').localeCompare(b.r.name||''));
+  const need = out.filter(x => x.flags.length), active = out.filter(x => x.ago <= 1).length, prsN = out.reduce((n,x) => n + x.prs.length, 0);
+  const LN = k => { try{ if(typeof LIFTS !== 'undefined' && LIFTS[k]) return LIFTS[k]; }catch(e){} return String(k||'').replace(/^m_/,'').replace(/_/g,' '); };
+  const av = x => x.photo ? '<img src="'+esc(x.photo)+'" alt="" class="dav">' : '<span class="dav">'+esc((x.r.name||'?').split(/\s+/).map(w => w[0]).join('').slice(0,2).toUpperCase())+'</span>';
+  const card = x => '<div class="drow'+(x.flags.length?' warn':'')+'"><div class="dtop">'+av(x)+'<div style="min-width:0;flex:1"><b>'+esc(x.r.name||x.r.email)+'</b>'+
+      '<small>'+(x.last ? 'Last log '+(x.ago===0?'today':x.ago===1?'yesterday':short(x.last)) : 'No logs yet')+' · '+x.week+' day'+(x.week===1?'':'s')+' this week'+(x.prs.length?' · <span style="color:#6FBF73">'+x.prs.length+' PR'+(x.prs.length>1?'s':'')+'</span>':'')+'</small></div></div>'+
+    (x.flags.length ? '<div class="dflags">'+x.flags.map(f => '<span>'+esc(f)+'</span>').join('')+'</div>' : '')+
+    (x.prs.length ? '<small style="color:#6FBF73">PRs: '+esc(x.prs.map(LN).join(', '))+'</small>' : '')+
+    (x.W ? '<small>Check-in '+esc(short(x.wkk))+': week felt '+esc(x.W.feel!=null?x.W.feel+'/10':'–')+(x.W.sleep?' · sleep '+esc(x.W.sleep):'')+(x.W.nopain?' · no pain':'')+'</small>' : '')+
+    (x.hasPersonal ? '<small>Personal notes: '+(x.seenAt ? 'last opened '+esc(short(isoD(new Date(x.seenAt)))) : 'not opened yet')+'</small>' : '')+'</div>';
+  box.querySelector('.mcard').innerHTML = '<h3>Team dashboard</h3>'+
+    '<div class="dstats"><div><b>'+out.length+'</b><span>Athletes</span></div><div><b>'+active+'</b><span>Logged today or yesterday</span></div><div><b style="color:#FF5A64">'+need.length+'</b><span>Need a look</span></div><div><b style="color:#6FBF73">'+prsN+'</b><span>PRs this week</span></div></div>'+
+    (need.length ? '<h4>Needs a look</h4>'+need.map(card).join('') : '<p style="color:#6FBF73;margin:0">Everyone is logging and nobody flagged pain. Good week.</p>')+
+    '<h4>Everyone else</h4>'+out.filter(x => !x.flags.length).map(card).join('')+
+    '<div class="mrow"><button class="ghost" id="dMem">Members</button><button class="ghost" id="dVid">Videos to review</button><button class="ghost" id="dClose">Close</button></div>';
+  box.querySelector('#dClose').onclick = () => box.remove(); box.querySelector('#dMem').onclick = () => openMembers(); box.querySelector('#dVid').onclick = () => openVideos(rows);
 }
 /* ---- coach: approve members ---- */
 async function openMembers(){
@@ -5206,6 +5342,7 @@ async function start(u, coach){
   }
   try{
     let ks = [];
+    try{ onSnapshot(doc(fs, 'members', u.uid), sn => { const d = sn.data() || {}; window.__bbFeedback = Array.isArray(d.feedback) ? d.feedback : []; if(window.__bbRerender) window.__bbRerender(); }, () => {}); }catch(e){}
     const m = await getDoc(doc(fs, 'members', u.uid)); const md = (m.exists() && m.data()) || {}; window.__bbMyName = md.name || u.displayName || '';
     // Coach-added lifts (e.g. maxes copied from SugarWOD) go into this person's log once
     if(Array.isArray(md.seedLog) && md.seedLog.length){ try{
@@ -5239,7 +5376,8 @@ async function start(u, coach){
   const sc = document.createElement('script'); sc.textContent = src; document.body.appendChild(sc);
   G.hidden = true;
   try{ const bb = badgeEl(window.__bbBadge), bar = document.querySelector('.top .bar'); if(bb && bar){ const w = document.createElement('div'); w.className = 'hdrbadge'; w.appendChild(bb); bar.after(w); } }catch(e){}
-  if(coach){ const b = document.createElement('button'); b.id = 'bbCoachBtn'; b.type = 'button'; b.textContent = 'Members'; b.onclick = openMembers; document.body.appendChild(b); }
+  if(coach){ const b = document.createElement('button'); b.id = 'bbCoachBtn'; b.type = 'button'; b.textContent = 'Members'; b.onclick = openMembers; document.body.appendChild(b);
+    const t = document.createElement('button'); t.id = 'bbDashBtn'; t.type = 'button'; t.textContent = 'Team'; t.onclick = openDash; document.body.appendChild(t); }
   window.__bbSignOut = () => signOut(auth);
   try{ initSocial(u, coach); }catch(e){}
   try{ initChat(u, coach); }catch(e){}
