@@ -466,6 +466,9 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
 .logbook .w{font-weight:600;min-width:0;overflow-wrap:anywhere}
 .logbook .s{font-family:var(--mono);color:var(--chalk);text-align:right;white-space:nowrap}
 .logbook .full{grid-column:1/-1}
+.chopen li>span{grid-column:1/-1;min-width:0}
+.chopen .s{text-align:left;white-space:normal;overflow-wrap:anywhere;font-size:13px;color:var(--gold)}
+.chopen .unote{overflow-wrap:anywhere;white-space:normal}
 .sexf{display:flex;gap:6px;margin:-4px 0 12px}
 .sexf button{background:none;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer}
 .sexf button[aria-pressed="true"]{border-color:var(--chalk);color:var(--chalk)}
@@ -3473,7 +3476,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(!mine.length) h += '<p class="how" style="margin:0">Call someone out on a workout or a lift. You both do it, and once you both log, the app shows who won. You have 7 days.</p>';
     h += '<div class="row"><button class="btn solid" type="button" data-chnew="">Challenge someone</button></div></div>';
     const live = (S.all||[]).filter(c => ['open','accepted'].includes(chState(c)) && !c.parts.includes(me));
-    if(live.length) h += '<div class="psec"><span class="label">Coach view</span><h2>Open challenges</h2></div><ul class="logbook" style="margin-bottom:18px">'+live.map(c => '<li><span class="k">'+esc(chState(c) === 'open' ? 'Waiting to accept' : 'On')+' · '+left(c)+'</span><span class="s">'+esc(c.what.label)+'</span><span class="w">'+esc(c.from.name)+' vs '+esc(c.to.name)+'</span>'+(c.msg?'<span class="unote full">"'+esc(c.msg)+'"</span>':'')+'</li>').join('')+'</ul>';
+    if(live.length) h += '<div class="psec"><span class="label">Coach view</span><h2>Open challenges</h2></div><ul class="logbook chopen" style="margin-bottom:18px">'+live.map(c => '<li><span class="k">'+esc(chState(c) === 'open' ? 'Waiting to accept' : 'On')+' · '+left(c)+'</span><span class="s">'+esc(c.what.label)+'</span><span class="w">'+esc(c.from.name)+' vs '+esc(c.to.name)+'</span>'+(c.msg?'<span class="unote full">"'+esc(c.msg)+'"</span>':'')+'</li>').join('')+'</ul>';
     return h;
   }
   function chSheet(inner){
