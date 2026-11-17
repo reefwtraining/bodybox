@@ -546,6 +546,15 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .socf{display:grid;gap:8px}.socf[hidden]{display:none}
 .ab-view[hidden]{display:none}
 .profx{margin:-6px 0 16px;display:grid;gap:10px}
+.prof.mine{position:relative;padding-right:44px}
+.setbtn{position:absolute;top:0;right:0;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--chalk);display:grid;place-items:center;cursor:pointer;padding:0}
+#bbSet{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(28px + env(safe-area-inset-bottom,0px))}
+#bbSet .set-in{max-width:620px;margin:0 auto;display:grid;gap:14px}
+.set-top{display:flex;justify-content:space-between;align-items:center;position:sticky;top:-12px;background:var(--bg);padding:8px 0;z-index:2}
+.set-top h2{font-family:var(--display);font-size:32px;text-transform:uppercase;margin:0;font-weight:400}
+.set-flash{margin:0;color:#6FBF73;font-weight:600}
+.set-links{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+#bbSet .ab-view,#bbSet .socbox:not(.abbox)>.socs{display:none}
 .profx .socbox{border:0;padding:0;margin:0;gap:8px}
 .profx .socbox>.label{display:none}
 .profx .abbox .ab-f:not([hidden])~*,.profx .socbox .socf:not([hidden])~*{display:none}
@@ -2560,11 +2569,11 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function profileHtml(id, mine){
     const a = athById(id) || { id, name: A.name || 'Athlete' };
     const st = athById(id) ? athStats(id) : { boards:[], done:0, wins:0, podiums:0, results:[], main:null };
-    let h = '<div class="prof">'+avatarHtml(a)+'<div style="min-width:0"><span class="label">'+(mine?'My profile':'Athlete')+'</span><h1>'+esc(a.name)+'</h1>'+
+    let h = '<div class="prof'+(mine?' mine':'')+'">'+(mine ? '<button class="setbtn" type="button" id="setOpen" aria-label="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>' : '')+avatarHtml(a)+'<div style="min-width:0"><span class="label">'+(mine?'My profile':'Athlete')+'</span><h1>'+esc(a.name)+'</h1>'+
       (a.tag?'<p class="tagl">'+esc(a.tag)+'</p>':'')+
       '<div class="badges">'+(a.div?'<span class="badge gold">'+esc(a.div)+'</span>':'')+(a.sex?'<span class="badge">'+(a.sex==='F'?'Women':'Men')+'</span>':'')+(a.coach?'<span class="badge">Coach</span>':'')+
       '<span class="badge">Rebuilt Training</span>'+(a.since?'<span class="badge">Since '+esc(niceDate(a.since).replace(/^\w+ \d+, /,''))+'</span>':'')+'</div></div></div>';
-    h += '<div class="profx">'+(mine ? aboutHtml() + socialsHtml(true) : socialsHtml(false))+'</div>'; // Nov 17: about me + socials sit with the profile pic
+    h += '<div class="profx">'+(mine ? meViewHtml() : socialsHtml(false))+'</div>'; // Nov 17: about me + socials sit with the profile pic; editing lives in Settings
     h += '<div class="stats">'+
       '<div class="stat"><b>'+(st.main?'#'+st.main.rank:'–')+'</b><span>'+(st.main?esc(st.main.div)+' rank':'Rank')+'</span></div>'+
       '<div class="stat"><b>'+(st.main?st.main.pts:'–')+'</b><span>Points</span></div>'+
@@ -2584,7 +2593,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     h += st.results.length ? '<ul class="reslist">'+st.results.map(x => '<li><span class="w">'+esc(x.ev.name)+'</span><span class="d">'+niceDate(x.ev.date)+' · '+esc(x.div)+'</span><span class="r"><b>'+esc(lbScore(x.ev, x.r))+'</b>'+ordinal(x.place)+' of '+x.of+'</span></li>').join('')+'</ul>'
       : '<p class="how">'+(mine?'Your scores show up here once coaches add them to the board.':'No scores on the board yet.')+'</p>';
     if(canEditLB && athById(id)){
-      if(!profEdit) h += '<div class="row" style="margin-top:12px"><button class="btn" type="button" id="pEditBtn">Edit profile (coach)</button></div>';
+      if(!profEdit && !mine) h += '<div class="row" style="margin-top:12px"><button class="btn" type="button" id="pEditBtn">Edit profile (coach)</button></div>';
       else h += '<div class="coach pedit"><span class="label">Coach tools</span><h3>Edit profile</h3>'+
         '<input id="pName" value="'+esc(a.name)+'" maxlength="40" placeholder="Name">'+
         '<input id="pTag" value="'+esc(a.tag||'')+'" maxlength="60" placeholder="Short line, e.g. RX athlete · 5am class">'+
@@ -2671,7 +2680,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const o = {}; box.querySelectorAll('[data-soc]').forEach(i => { const h = socHandle(i.value); if(h) o[i.dataset.soc] = h; });
       A.socials = o; saveA();
       try{ const b = window.claude && await window.claude.use('socials'); if(b) await b.save(o); }catch(e){}
-      render();
+      if(document.getElementById('bbSet')) openSettings('Socials saved.'); else render();
     };
   }
   async function fillSocialsOf(v, id){
@@ -2730,14 +2739,41 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       Object.keys(o).forEach(k => { if(!o[k] || (Array.isArray(o[k]) && !o[k].length)) delete o[k]; });
       A.about = o; saveA();
       try{ const b = window.claude && await window.claude.use('socials'); if(b && b.saveAbout) await b.saveAbout(o); }catch(e){}
-      render();
+      if(document.getElementById('bbSet')) openSettings('About me saved.'); else render();
     };
+  }
+  /* ---------- Settings (gear, top right of the Me page): all the editing lives here (Nov 17) ---------- */
+  function meViewHtml(){
+    const ab = aboutView(A.about || {}), sl = socLinks(A.socials || {});
+    if(!ab && !sl) return '<p class="how" style="margin:0">Tap the gear to add your bio, gyms and socials.</p>';
+    return ab + (sl ? '<div class="socs">'+sl+'</div>' : '');
+  }
+  function openSettings(flash){
+    let el = document.getElementById('bbSet'); const top = el ? el.scrollTop : 0; if(el) el.remove();
+    el = document.createElement('div'); el.id = 'bbSet';
+    el.innerHTML = '<div class="set-in"><div class="set-top"><h2>Settings</h2><button class="btn solid" type="button" id="setClose">Done</button></div>'+
+      (flash ? '<p class="set-flash">'+esc(flash)+'</p>' : '')+
+      aboutHtml() + socialsHtml(true) +
+      '<section class="socbox"><span class="label">Account</span><div class="set-links">'+
+        '<a class="linkbtn" href="https://reefwtraining.github.io/bodybox/" target="_blank" rel="noopener">BODYBOX website ↗</a>'+
+        '<a class="linkbtn" href="https://reefwtraining.github.io/bodybox/privacy.html" target="_blank" rel="noopener">Privacy policy ↗</a>'+
+        '<button class="linkbtn" type="button" id="setOut">Sign out</button></div></section>'+
+      (canEditLB ? '<section class="socbox"><span class="label">Coach</span><div class="set-links"><button class="linkbtn" type="button" id="setProf">Edit my name, photo and division</button></div></section>' : '')+'</div>';
+    document.body.appendChild(el); document.body.style.overflow = 'hidden';
+    wireAbout(el); wireSocials(el);
+    ['#abEdit','#socEdit'].forEach(q => { const b = el.querySelector(q); if(b) b.click(); });
+    el.querySelectorAll('#abCancel,#socCancel').forEach(b => b.hidden = true);
+    const close = () => { el.remove(); document.body.style.overflow = ''; render(); };
+    el.querySelector('#setClose').onclick = close;
+    const sp = el.querySelector('#setProf'); if(sp) sp.onclick = () => { profEdit = true; close(); window.scrollTo(0,0); };
+    el.querySelector('#setOut').onclick = () => { if(window.__bbSignOut){ window.__bbSignOut(); } else { meId = ''; store.del('bb-me'); close(); } };
+    el.scrollTop = top;
   }
   function renderMe(){
     const me = meId && athById(meId) ? meId : '';
     let pre = '';
     if(me){
-      pre = profileHtml(me, true) + '<div class="row" style="margin:8px 0 6px;gap:14px;align-items:center"><button class="linkbtn" type="button" data-unme="1">Sign out</button><a class="linkbtn" href="https://reefwtraining.github.io/bodybox/" target="_blank" rel="noopener">BODYBOX website ↗</a></div>' + meIndHtml() + personalHtml();
+      pre = profileHtml(me, true) + meIndHtml() + personalHtml();
     } else {
       pre = '<div class="prof">'+avatarHtml(null)+'<div style="min-width:0"><span class="label">My profile</span><h1>Sign in</h1><p class="tagl">See your rank, points and scores</p></div></div>'+
         '<form class="connect" id="loginForm" autocomplete="on"><span class="label">Athlete sign in</span><h2>Welcome back</h2>'+
@@ -2751,7 +2787,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     renderNumbers(pre, v => {
       v.querySelectorAll('[data-hub]').forEach(b => b.onclick = () => { coachAth = null; setTab('coach'); });
       if(me){ wireMeInd(); const pa = $('pwAdd'); if(pa) pa.onclick = openPersonal; }
-      if(me){ wireProfile(v, me); wireAbout(v); wireSocials(v); }
+      if(me){ wireProfile(v, me); const so = v.querySelector('#setOpen'); if(so) so.onclick = () => openSettings(); }
       else {
         v.querySelectorAll('[data-plans]').forEach(b => b.onclick = () => setTab('plans'));
         const f = $('loginForm');
