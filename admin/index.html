@@ -211,7 +211,7 @@ function live(){
   onSnapshot(collection(fs, 'billing'), s => { D.bill = {}; s.docs.forEach(d => D.bill[d.id] = d.data()); if(TAB !== 'calendar') redraw(); }, e => console.warn(e));
   onSnapshot(collection(fs, 'posts'), s => { D.posts = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'events') redraw(); }, () => {});
   onSnapshot(collectionGroup(fs, 'going'), s => { const G = {}; s.docs.forEach(d => { const k = d.ref.parent.parent.id; (G[k] = G[k] || []).push(Object.assign({ uid: d.id }, d.data())); }); D.going = G; if(TAB === 'events') redraw(); }, () => {});
-  onSnapshot(collection(fs, 'invites'), s => { D.inv = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'invite' || TAB === 'members') redraw(); }, () => {});
+  onSnapshot(collection(fs, 'invites'), s => { D.inv = s.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(i => i.email && Array.isArray(i.progs)); if(TAB === 'invite' || TAB === 'members') redraw(); }, () => {});
   onSnapshot(collection(fs, 'challenges'), s => { D.ch = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'challenges') redraw(); }, () => {});
 }
 function go(t){ TAB = t; document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t))); render(); }
@@ -225,7 +225,7 @@ const b64d = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
 async function readContent(name){ const s = await getDoc(doc(fs, 'content', name)); if(!s.exists()) return null; const d = s.data(); if(!d.parts) return d.json;
   const ps = await Promise.all(Array.from({ length: d.parts }, (_, i) => getDoc(doc(fs, 'content', name + '_' + (i+1))))); return (d.json||'') + ps.map(x => x.exists() ? (x.data().json || '') : '').join(''); }
 async function loadProgramming(){
-  CAL.loading = true; CAL.err = ''; renderCal();
+  CAL.loading = true; CAL.err = '';
   try{
     const LB = JSON.parse(await readContent('lb') || '{}'), enc = LB.enc || {}, M = {};
     await Promise.all(TRACKS.map(async ([k, , code, slot]) => { const sl = (enc.slots||{})[slot]; if(!sl) return;
@@ -235,7 +235,7 @@ async function loadProgramming(){
         Object.assign(M, obj); }catch(e){} }));
     CAL.mem = M;
   }catch(e){ CAL.err = 'Couldn\'t load the programming. Check your internet and reload.'; }
-  CAL.loading = false; renderCal();
+  CAL.loading = false; if(TAB === 'calendar') renderCal();
 }
 async function loadNotes(dates){
   await Promise.all(dates.filter(d => !(d in CAL.notes)).map(async d => { const o = { a: null, c: null }; CAL.notes[d] = o;
@@ -247,7 +247,7 @@ const lineTxt = l => l.replace(/^!/, '');
 function entryOf(track, ds){ const p = CAL.mem && CAL.mem[track]; return p && p.days ? p.days[ds] : null; }
 function renderCal(){
   if(!CAL.mon) CAL.mon = mondayOf(today());
-  if(!CAL.mem && !CAL.loading && !CAL.err){ loadProgramming(); return; }
+  if(!CAL.mem && !CAL.loading && !CAL.err) loadProgramming();
   const days = Array.from({ length: 7 }, (_, i) => addDays(CAL.mon, i)), td = today(), DN = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const tn = (TRACKS.find(t => t[0] === CAL.track) || [])[1];
   const wkLabel = fmtD(days[0]) + ' – ' + fmtD(days[6]);
