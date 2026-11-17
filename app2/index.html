@@ -69,11 +69,20 @@ main{padding-block:18px 40px}
 .part{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:8px;min-width:0}
 .part .tag{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue)}
 .part .rx{font-family:var(--mono);font-size:14px;line-height:1.75;margin:0;padding:0;list-style:none}
+/* Nov 17: clean, easy-to-read workout cards */
+.part .rx{font-family:var(--body);font-size:16px;line-height:1.5;color:var(--chalk)}
+.part .rx li{padding:4px 0}
+.part .rx li.lbold{padding:2px 0 6px}.part .rx li.lbold b{font-size:17px;font-weight:700;letter-spacing:.01em}
+.part .rx li.lnote{font-size:14px;color:var(--muted);line-height:1.45;padding:2px 0 8px}
+.part .rx li.lrest{color:var(--muted);font-size:14px}
+.part .rx li.lscore{display:grid;gap:2px;margin:14px 0 2px;padding:10px 12px;border-left:3px solid #C8102E;background:rgba(200,16,46,.08);border-radius:0 8px 8px 0;font-size:15px}
+.lscore-n{font:700 11px var(--body);letter-spacing:.12em;text-transform:uppercase;color:#FF5A64}
+.part .rx .wt{font-family:var(--mono)}
 .part .rx li.lsec{display:flex;align-items:baseline;gap:10px;margin:18px 0 6px;padding-top:12px;border-top:1px solid var(--line);font-family:var(--body)}
 .part .rx li.lsec:first-child{margin-top:4px;border-top:0;padding-top:0}
 .lsec-n{font:700 15px var(--body);color:#FF5A64;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
 .lsec-t{font-size:13px;color:var(--muted)}
-.part .rx li.lpp{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline;margin:6px 0}
+.part .rx li.lpp{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline;margin:2px 0}
 .lpp-n{font:700 11px var(--body);color:var(--bg);background:var(--chalk);border-radius:4px;padding:1px 6px;letter-spacing:.05em}
 .part .rx b{font-weight:700;color:var(--chalk)}
 .part .rx .sub{color:var(--muted)}
@@ -1009,7 +1018,11 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       return '<li class="lsec"><span class="lsec-n">'+esc(sec[1].trim())+'</span>'+(rest ? '<span class="lsec-t">'+rest+'</span>' : '')+'</li>'; }
     const pp = /^\s*(P\d)\s*:\s*/.exec(l);
     if(pp && !bold) return '<li class="lpp"><span class="lpp-n">'+pp[1]+'</span><span>'+t.replace(/^\s*P\d\s*:\s*/,'')+'</span>'+(noSwap ? '' : swapPills(l))+'</li>';
-    return '<li>' + (bold ? '<b>'+t+'</b>' : t) + (noSwap ? '' : swapPills(l)) + '</li>';
+    const raw = l.trim();
+    if(!bold && /^score\s*[:\-–]/i.test(raw)) return '<li class="lscore"><span class="lscore-n">Score</span><span>'+t.replace(/^\s*score\s*[:\-–]\s*/i,'')+'</span></li>';
+    if(!bold && /^(rest\b|then rest\b)/i.test(raw)) return '<li class="lrest">'+t+'</li>';
+    if(!bold && raw.length > 70 && !/^\d/.test(raw) && !/[@%]/.test(raw)) return '<li class="lnote">'+t+(noSwap ? '' : swapPills(l))+'</li>';
+    return '<li'+(bold?' class="lbold"':'')+'>' + (bold ? '<b>'+t+'</b>' : t) + (noSwap ? '' : swapPills(l)) + '</li>';
   }
   /* movement demo videos: Team BodyBox / @reeftraining only.
      Order matters: specific names come before the general ones. y:null = known movement, no good video yet. */
