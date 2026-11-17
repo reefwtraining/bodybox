@@ -69,6 +69,12 @@ main{padding-block:18px 40px}
 .part{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:8px;min-width:0}
 .part .tag{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue)}
 .part .rx{font-family:var(--mono);font-size:14px;line-height:1.75;margin:0;padding:0;list-style:none}
+.part .rx li.lsec{display:flex;align-items:baseline;gap:10px;margin:18px 0 6px;padding-top:12px;border-top:1px solid var(--line);font-family:var(--body)}
+.part .rx li.lsec:first-child{margin-top:4px;border-top:0;padding-top:0}
+.lsec-n{font:700 15px var(--body);color:#FF5A64;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.lsec-t{font-size:13px;color:var(--muted)}
+.part .rx li.lpp{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline;margin:6px 0}
+.lpp-n{font:700 11px var(--body);color:var(--bg);background:var(--chalk);border-radius:4px;padding:1px 6px;letter-spacing:.05em}
 .part .rx b{font-weight:700;color:var(--chalk)}
 .part .rx .sub{color:var(--muted)}
 .part .note{margin:0;color:var(--muted);font-size:15px;border-top:1px dashed var(--line);padding-top:8px}
@@ -997,6 +1003,12 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         return m + '<span class="wt">' + ws.join(' / ') + ' ' + A.unit + '</span>';
       });
     }
+    // Nov 17: give team/section workouts room to breathe (S1 ·, Station 2:, P1:, P2:)
+    const sec = !bold && /^\s*((?:S|Station|Section|Block|Part)\s?\d+[A-Z]?)\s*[·:\-–]?\s*(.*)$/i.exec(l);
+    if(sec && /^(S\d|Station|Section|Block|Part)/i.test(sec[1].trim())){ const rest = esc(sec[2]||'').replace(/^\((.*)\)$/,'$1');
+      return '<li class="lsec"><span class="lsec-n">'+esc(sec[1].trim())+'</span>'+(rest ? '<span class="lsec-t">'+rest+'</span>' : '')+'</li>'; }
+    const pp = /^\s*(P\d)\s*:\s*/.exec(l);
+    if(pp && !bold) return '<li class="lpp"><span class="lpp-n">'+pp[1]+'</span><span>'+t.replace(/^\s*P\d\s*:\s*/,'')+'</span>'+(noSwap ? '' : swapPills(l))+'</li>';
     return '<li>' + (bold ? '<b>'+t+'</b>' : t) + (noSwap ? '' : swapPills(l)) + '</li>';
   }
   /* movement demo videos: Team BodyBox / @reeftraining only.
