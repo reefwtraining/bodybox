@@ -544,6 +544,19 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .soc{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:7px 12px;color:var(--chalk);text-decoration:none;font-size:14px}
 .soc b{font-weight:700}.soc-ig b{color:#E1306C}.soc-yt b{color:#FF0000}.soc-tt b{color:#25F4EE}
 .socf{display:grid;gap:8px}.socf[hidden]{display:none}
+.ab-view[hidden]{display:none}
+.ab-bio{margin:0;color:var(--chalk);line-height:1.5}
+.ab-bits,.ab-gyms,.ab-pick,.ab-quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ab-bits span{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.ab-gyms .label{width:100%}
+.ab-gym{display:inline-flex;align-items:center;gap:6px;font-size:13px;border:1px solid var(--line);border-radius:999px;padding:5px 11px;color:var(--chalk)}
+.ab-gym.on{border-color:#C8102E}
+.ab-gym button{border:0;background:none;color:var(--muted);cursor:pointer;padding:0;font-size:12px}
+.ab-quick button{border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 10px;font-size:12px;cursor:pointer}
+.ab-quick button[hidden]{display:none}
+.ab-sex{display:flex;gap:8px}.ab-sex button{flex:1;border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:8px;padding:10px;font-weight:700;cursor:pointer}
+.ab-sex button.on{background:#C8102E;border-color:#C8102E;color:#fff}
+.abbox textarea,.abbox input{font:inherit;background:var(--panel);color:var(--chalk);border:1px solid var(--line);border-radius:6px;padding:10px 12px;width:100%;box-sizing:border-box}
 .lv-set[hidden],.lv-rounds[hidden],#vcLive[hidden]{display:none!important}
 .vc-status{font-family:var(--mono);color:var(--chalk)!important}
 .vc-done video{max-height:60vh;border-radius:8px}
@@ -2656,13 +2669,68 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   }
   async function fillSocialsOf(v, id){
     const el = v.querySelector('[data-socof]'); if(!el || !id) return;
-    try{ const b = window.claude && await window.claude.use('socials'); const o = b ? await b.of(id) : null; if(o){ const h = socLinks(o); if(h) el.innerHTML = '<span class="label">Socials</span>'+h; } }catch(e){}
+    try{ const b = window.claude && await window.claude.use('socials'); const r = b ? await b.of(id) : null; if(r){ let h = ''; const ab = r.about ? aboutView(r.about) : ''; if(ab) h += ab; const sl = socLinks(r.socials || {}); if(sl) h += '<span class="label">Socials</span><div class="socs">'+sl+'</div>'; if(h){ el.className = 'socbox'; el.innerHTML = h; } } }catch(e){}
+  }
+  /* ---------- profile details on the Me page: birthday, gyms (max 3), bio, male/female (Nov 17) ---------- */
+  const GYMS = ['Rebuilt Training','Garage / Home gym','Equinox','Chelsea Piers Fitness','Life Time','Crunch Fitness','Planet Fitness','LA Fitness','Blink Fitness','Retro Fitness','New York Sports Club','Gold\'s Gym','Anytime Fitness','The Edge Fitness Clubs','Club Metro USA','YMCA','Dogpound','Brick New York','Tone House','Barry\'s','Solace New York','Gotham Gym','Hotel / travel gym'];
+  const ABOUT_MAX_GYMS = 3, BIO_MAX = 220;
+  function bdayTxt(b){ if(!b) return ''; const [y,m,d] = b.split('-').map(Number); return MON[m-1]+' '+d; }
+  function aboutView(o){
+    o = o || {}; let h = '';
+    if(o.bio) h += '<p class="ab-bio">'+esc(o.bio)+'</p>';
+    const bits = []; if(o.sex) bits.push(o.sex === 'F' ? 'Female' : 'Male'); if(o.bday) bits.push('Birthday '+bdayTxt(o.bday));
+    if(bits.length) h += '<div class="ab-bits">'+bits.map(x => '<span>'+esc(x)+'</span>').join('')+'</div>';
+    if(o.gyms && o.gyms.length) h += '<div class="ab-gyms"><span class="label">Trains at</span>'+o.gyms.map(g => '<span class="ab-gym">'+esc(g)+'</span>').join('')+'</div>';
+    return h;
+  }
+  function aboutHtml(){
+    const o = A.about || {};
+    const has = o.bio || o.bday || o.sex || (o.gyms && o.gyms.length);
+    return '<section class="socbox abbox"><span class="label">About me</span><div class="ab-view">'+(has ? aboutView(o) : '<span style="color:var(--muted);font-size:14px">Add your birthday, where you train and a short bio.</span>')+'</div>'+
+      '<div class="socf ab-f" hidden="">'+
+        '<label class="field"><span class="label">Birthday</span><input type="date" id="abBday" value="'+esc(o.bday||'')+'"></label>'+
+        '<div class="field"><span class="label">I compete as</span><div class="ab-sex"><button type="button" data-sex="F" class="'+(o.sex==='F'?'on':'')+'">Female</button><button type="button" data-sex="M" class="'+(o.sex==='M'?'on':'')+'">Male</button></div></div>'+
+        '<div class="field"><span class="label">Where I train (pick up to 3)</span><div class="ab-pick" id="abPick"></div>'+
+          '<div class="row" style="gap:8px;flex-wrap:nowrap"><input id="abGymIn" list="abGymList" placeholder="Search or type a gym" autocomplete="off" style="flex:1;min-width:0"><button class="btn" type="button" id="abGymAdd">Add</button></div>'+
+          '<datalist id="abGymList">'+GYMS.map(g => '<option value="'+esc(g)+'">').join('')+'</datalist>'+
+          '<div class="ab-quick">'+GYMS.slice(0,8).map(g => '<button type="button" data-gq="'+esc(g)+'">+ '+esc(g)+'</button>').join('')+'</div></div>'+
+        '<label class="field"><span class="label">Short bio</span><textarea id="abBio" maxlength="'+BIO_MAX+'" rows="3" placeholder="Who you are, what you train for, your goals">'+esc(o.bio||'')+'</textarea><small id="abCount" style="color:var(--muted)"></small></label>'+
+        '<div class="row"><button class="btn solid" type="button" id="abSave">Save</button><button class="linkbtn" type="button" id="abCancel">Cancel</button></div>'+
+      '</div><div class="row"><button class="linkbtn" type="button" id="abEdit">'+(has ? 'Edit about me' : 'Add about me')+'</button></div></section>';
+  }
+  function wireAbout(v){
+    const ed = v.querySelector('#abEdit'); if(!ed) return; const box = v.querySelector('.abbox');
+    const st = { sex: (A.about||{}).sex || '', gyms: ((A.about||{}).gyms || []).slice() };
+    const paint = () => {
+      $('abPick').innerHTML = st.gyms.length ? st.gyms.map((g,i) => '<span class="ab-gym on">'+esc(g)+' <button type="button" data-gx="'+i+'" aria-label="Remove">&#10005;</button></span>').join('') : '<span style="color:var(--muted);font-size:13px">No gyms yet</span>';
+      $('abPick').querySelectorAll('[data-gx]').forEach(b => b.onclick = () => { st.gyms.splice(+b.dataset.gx, 1); paint(); });
+      const full = st.gyms.length >= ABOUT_MAX_GYMS; $('abGymIn').disabled = full; $('abGymAdd').disabled = full; $('abGymIn').placeholder = full ? 'Max 3 gyms' : 'Search or type a gym';
+      box.querySelectorAll('[data-gq]').forEach(b => { b.hidden = st.gyms.includes(b.dataset.gq); b.disabled = full; });
+      box.querySelectorAll('[data-sex]').forEach(b => b.classList.toggle('on', b.dataset.sex === st.sex));
+      $('abCount').textContent = ($('abBio').value.length)+' / '+BIO_MAX;
+    };
+    const addGym = g => { g = String(g||'').trim().slice(0,50); if(!g || st.gyms.length >= ABOUT_MAX_GYMS) return; const hit = GYMS.find(x => x.toLowerCase() === g.toLowerCase()); g = hit || g; if(!st.gyms.some(x => x.toLowerCase() === g.toLowerCase())) st.gyms.push(g); $('abGymIn').value = ''; paint(); };
+    ed.onclick = () => { box.querySelector('.ab-f').hidden = false; box.querySelector('.ab-view').hidden = true; ed.parentNode.hidden = true; paint(); };
+    box.querySelectorAll('[data-sex]').forEach(b => b.onclick = () => { st.sex = b.dataset.sex; paint(); });
+    box.querySelectorAll('[data-gq]').forEach(b => b.onclick = () => addGym(b.dataset.gq));
+    $('abGymAdd').onclick = () => addGym($('abGymIn').value);
+    $('abGymIn').onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); addGym($('abGymIn').value); } };
+    $('abGymIn').onchange = () => { if(GYMS.includes($('abGymIn').value)) addGym($('abGymIn').value); };
+    $('abBio').oninput = paint;
+    v.querySelector('#abCancel').onclick = () => render();
+    v.querySelector('#abSave').onclick = async () => {
+      const o = { bday: $('abBday').value || '', sex: st.sex, gyms: st.gyms.slice(0, ABOUT_MAX_GYMS), bio: $('abBio').value.trim().slice(0, BIO_MAX) };
+      Object.keys(o).forEach(k => { if(!o[k] || (Array.isArray(o[k]) && !o[k].length)) delete o[k]; });
+      A.about = o; saveA();
+      try{ const b = window.claude && await window.claude.use('socials'); if(b && b.saveAbout) await b.saveAbout(o); }catch(e){}
+      render();
+    };
   }
   function renderMe(){
     const me = meId && athById(meId) ? meId : '';
     let pre = '';
     if(me){
-      pre = profileHtml(me, true) + socialsHtml(true) + '<div class="row" style="margin:8px 0 6px;gap:14px;align-items:center"><button class="linkbtn" type="button" data-unme="1">Sign out</button><a class="linkbtn" href="https://reefwtraining.github.io/bodybox/" target="_blank" rel="noopener">BODYBOX website ↗</a></div>' + meIndHtml() + personalHtml();
+      pre = profileHtml(me, true) + aboutHtml() + socialsHtml(true) + '<div class="row" style="margin:8px 0 6px;gap:14px;align-items:center"><button class="linkbtn" type="button" data-unme="1">Sign out</button><a class="linkbtn" href="https://reefwtraining.github.io/bodybox/" target="_blank" rel="noopener">BODYBOX website ↗</a></div>' + meIndHtml() + personalHtml();
     } else {
       pre = '<div class="prof">'+avatarHtml(null)+'<div style="min-width:0"><span class="label">My profile</span><h1>Sign in</h1><p class="tagl">See your rank, points and scores</p></div></div>'+
         '<form class="connect" id="loginForm" autocomplete="on"><span class="label">Athlete sign in</span><h2>Welcome back</h2>'+
@@ -2676,7 +2744,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     renderNumbers(pre, v => {
       v.querySelectorAll('[data-hub]').forEach(b => b.onclick = () => { coachAth = null; setTab('coach'); });
       if(me){ wireMeInd(); const pa = $('pwAdd'); if(pa) pa.onclick = openPersonal; }
-      if(me){ wireProfile(v, me); wireSocials(v); }
+      if(me){ wireProfile(v, me); wireAbout(v); wireSocials(v); }
       else {
         v.querySelectorAll('[data-plans]').forEach(b => b.onclick = () => setTab('plans'));
         const f = $('loginForm');
@@ -4639,7 +4707,8 @@ function shims(u, coach){
   const seen = { of: async meId => { if(!coach) return null; const q = await getDocs(query(collection(fs,'members'), where('meId','==',meId))); let out = null;
     for(const m of q.docs){ const s = await getDoc(doc(fs,'data','users',m.id,'bodybox')); if(s.exists()){ try{ const A = (JSON.parse(s.data().json)||{}).A || {}; out = Object.assign(out || {}, A.seen || {}); }catch(e){} } } return out || {}; } };
   const socials = { save: async o => { await updateDoc(doc(fs,'members',u.uid), { socials: o }); },
-    of: async meId => { const q = await getDocs(query(collection(fs,'members'), where('meId','==',meId))); for(const m of q.docs){ const so = m.data().socials; if(so) return so; } return null; } };
+    saveAbout: async o => { const p = Object.assign({}, o); if(p.bday) p.bday = '2000' + p.bday.slice(4); await updateDoc(doc(fs,'members',u.uid), { about: p }); },
+    of: async meId => { const q = await getDocs(query(collection(fs,'members'), where('meId','==',meId))); for(const m of q.docs){ const d = m.data(); if(d.socials || d.about) return { socials: d.socials || null, about: d.about || null }; } return null; } };
   const map = { db: dbShim(u), user, artifact, downloads, assets, seen, socials };
   window.claude = { use: async n => map[n] || null };
 }
