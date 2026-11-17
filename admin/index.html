@@ -84,6 +84,40 @@ td.act{white-space:nowrap}td.act .btn{margin:0 4px 4px 0}
 h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:10px 0 0}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--chalk);color:#111;border-radius:999px;padding:10px 18px;font-weight:600;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.5)}
 .note{font-size:13px;color:var(--muted);margin:0}
+/* calendar (like the SugarWOD whiteboard calendar) */
+.calbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 12px}
+.calbar .wk{font:700 16px var(--body);min-width:190px;text-align:center}
+.tracks{display:flex;gap:6px;flex-wrap:wrap}
+.tracks button{background:none;border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-weight:600;font-size:13px;color:var(--muted)}
+.tracks button[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.cal-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(190px,1fr));min-width:1330px}
+.cday{border-right:1px solid var(--line);min-height:460px;display:flex;flex-direction:column}
+.cday:last-child{border-right:0}
+.cday .dh{position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--line);padding:8px 10px;display:flex;justify-content:space-between;align-items:baseline}
+.cday .dh b{font:700 13px var(--cond);letter-spacing:.1em;text-transform:uppercase}.cday .dh span{font:700 18px var(--mono)}
+.cday.today .dh{background:#2a1015}.cday.today .dh span{color:var(--red2)}
+.cday.past{opacity:.72}
+.wcard{margin:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:10px;cursor:pointer;display:grid;gap:8px;text-align:left;width:calc(100% - 16px);font-size:13px;line-height:1.45}
+.wcard:hover{border-color:#555}
+.wcard .wt{font-weight:700;font-size:14px;line-height:1.3}
+.wcard .pt{display:grid;gap:1px}
+.wcard .tg{font:700 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--red2)}
+.wcard .ln{color:#D9D5CD;white-space:pre-wrap;word-break:break-word}
+.wcard .ln.h{font-weight:700;color:var(--chalk)}.wcard .ln.r{color:var(--muted)}.wcard .ln.sc{color:var(--gold)}
+.wcard .more{color:var(--muted);font-size:12px}
+.cempty{color:var(--muted);font-size:13px;padding:14px 10px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:40;display:flex;justify-content:center;align-items:flex-start;padding:40px 16px;overflow:auto}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:680px;width:100%;padding:20px 22px;display:grid;gap:14px}
+.modal h2{font-size:26px}
+.modal .pt{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:12px}
+.modal .tg{font:700 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--red2);margin-bottom:4px}
+.modal .ln{white-space:pre-wrap}.modal .ln.h{font-weight:700;font-size:16px}.modal .ln.r{color:var(--muted)}.modal .ln.sc{color:var(--gold)}
+.nbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;font-size:14px}
+.nbox.co{border-color:rgba(232,180,76,.5)}
+.nbox h4{margin:0;font:700 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.nbox.co h4{color:var(--gold)}
+.tmr{font-size:13px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -92,7 +126,8 @@ h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color
   <header class="top"><div class="wrap">
     <div class="brand">BODY<span>BOX</span> ADMIN</div>
     <nav class="tabs" role="tablist">
-      <button role="tab" data-tab="members" aria-selected="true">Members &amp; payments</button>
+      <button role="tab" data-tab="calendar" aria-selected="false">Calendar</button>
+      <button role="tab" data-tab="members" aria-selected="true">Athletes &amp; payments</button>
       <button role="tab" data-tab="events" aria-selected="false">Events &amp; news</button>
       <button role="tab" data-tab="challenges" aria-selected="false">Challenges</button>
       <button role="tab" data-tab="prices" aria-selected="false">Price sheet</button>
@@ -161,7 +196,7 @@ onAuthStateChanged(auth, async u => {
   $('#gate').hidden = true; $('#appRoot').hidden = false;
   $('#outBtn').onclick = () => signOut(auth);
   document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => go(b.dataset.tab));
-  live(); go('members');
+  live(); go(IS_COACH ? 'calendar' : 'members');
 });
 
 /* ---------- live data ---------- */
@@ -170,14 +205,76 @@ let TAB = 'members', redrawT;
 const redraw = () => { clearTimeout(redrawT); redrawT = setTimeout(() => { if(!busyTyping()) render(); }, 120); };
 const busyTyping = () => { const a = document.activeElement; return a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('#view') && !a.matches('.search'); };
 function live(){
-  onSnapshot(collection(fs, 'members'), s => { D.members = s.docs.map(d => Object.assign({ id: d.id }, d.data())); redraw(); }, e => console.warn(e));
-  onSnapshot(collection(fs, 'billing'), s => { D.bill = {}; s.docs.forEach(d => D.bill[d.id] = d.data()); redraw(); }, e => console.warn(e));
+  onSnapshot(collection(fs, 'members'), s => { D.members = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB !== 'calendar') redraw(); }, e => console.warn(e));
+  onSnapshot(collection(fs, 'billing'), s => { D.bill = {}; s.docs.forEach(d => D.bill[d.id] = d.data()); if(TAB !== 'calendar') redraw(); }, e => console.warn(e));
   onSnapshot(collection(fs, 'posts'), s => { D.posts = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'events') redraw(); }, () => {});
   onSnapshot(collectionGroup(fs, 'going'), s => { const G = {}; s.docs.forEach(d => { const k = d.ref.parent.parent.id; (G[k] = G[k] || []).push(Object.assign({ uid: d.id }, d.data())); }); D.going = G; if(TAB === 'events') redraw(); }, () => {});
   onSnapshot(collection(fs, 'challenges'), s => { D.ch = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'challenges') redraw(); }, () => {});
 }
 function go(t){ TAB = t; document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t))); render(); }
-function render(){ ({ members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices })[TAB](); }
+function render(){ ({ calendar: renderCal, members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices })[TAB](); }
+
+/* ---------- calendar: the week's programming per track, like SugarWOD ---------- */
+const TRACKS = [['class','RT Movement','VXW86K','rt'],['comp','Athlete Comp','WGC534','comp'],['build','Building','RMXGZJ','build'],['cardio','Cardio','WQH7V7','cardio'],['garage','Garage Box','ZUBVXM','garage'],['shiit','S.H.I.I.T','56EG63','shiit']];
+const CAL = { track: 'class', mon: null, mem: null, loading: false, err: '', notes: {} };
+const mondayOf = ds => { const [y,m,d] = ds.split('-').map(Number), t = new Date(y, m-1, d); t.setDate(t.getDate() - ((t.getDay()+6)%7)); return ymd(t); };
+const b64d = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
+async function readContent(name){ const s = await getDoc(doc(fs, 'content', name)); if(!s.exists()) return null; const d = s.data(); if(!d.parts) return d.json;
+  const ps = await Promise.all(Array.from({ length: d.parts }, (_, i) => getDoc(doc(fs, 'content', name + '_' + (i+1))))); return (d.json||'') + ps.map(x => x.exists() ? (x.data().json || '') : '').join(''); }
+async function loadProgramming(){
+  CAL.loading = true; CAL.err = ''; renderCal();
+  try{
+    const LB = JSON.parse(await readContent('lb') || '{}'), enc = LB.enc || {}, M = {};
+    await Promise.all(TRACKS.map(async ([k, , code, slot]) => { const sl = (enc.slots||{})[slot]; if(!sl) return;
+      try{ const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(code), 'PBKDF2', false, ['deriveKey']);
+        const key = await crypto.subtle.deriveKey({ name:'PBKDF2', salt: b64d(sl.salt), iterations: enc.iter || 150000, hash:'SHA-256' }, base, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+        const obj = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name:'AES-GCM', iv: b64d(sl.iv) }, key, b64d(sl.ct))));
+        Object.assign(M, obj); }catch(e){} }));
+    CAL.mem = M;
+  }catch(e){ CAL.err = 'Couldn\'t load the programming. Check your internet and reload.'; }
+  CAL.loading = false; renderCal();
+}
+async function loadNotes(dates){
+  await Promise.all(dates.filter(d => !(d in CAL.notes)).map(async d => { const o = { a: null, c: null }; CAL.notes[d] = o;
+    try{ const s = await getDoc(doc(fs, 'cardnotes', d)); if(s.exists()) o.a = JSON.parse(s.data().json || '{}'); }catch(e){}
+    if(IS_COACH){ try{ const s = await getDoc(doc(fs, 'coachnotes', d)); if(s.exists()) o.c = JSON.parse(s.data().json || '{}'); }catch(e){} } }));
+}
+const lineCls = l => /^!/.test(l) ? 'h' : /^rest\b/i.test(l) ? 'r' : /^score\b/i.test(l) ? 'sc' : '';
+const lineTxt = l => l.replace(/^!/, '');
+function entryOf(track, ds){ const p = CAL.mem && CAL.mem[track]; return p && p.days ? p.days[ds] : null; }
+function renderCal(){
+  if(!CAL.mon) CAL.mon = mondayOf(today());
+  if(!CAL.mem && !CAL.loading && !CAL.err){ loadProgramming(); return; }
+  const days = Array.from({ length: 7 }, (_, i) => addDays(CAL.mon, i)), td = today(), DN = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const tn = (TRACKS.find(t => t[0] === CAL.track) || [])[1];
+  const wkLabel = fmtD(days[0]) + ' – ' + fmtD(days[6]);
+  const card = ds => { const e = entryOf(CAL.track, ds); if(!e) return '<div class="cempty">Nothing programmed</div>';
+    const parts = (e.parts||[]).map(p => '<div class="pt"><span class="tg">'+esc(p.tag||'')+'</span>'+(p.lines||[]).slice(0, 9).map(l => '<span class="ln '+lineCls(l)+'">'+esc(lineTxt(l))+'</span>').join('')+((p.lines||[]).length > 9 ? '<span class="more">+ '+((p.lines.length)-9)+' more lines</span>' : '')+'</div>').join('');
+    return '<button type="button" class="wcard" data-open="'+ds+'"><span class="wt">'+esc(e.title || e.focus || tn)+'</span>'+parts+'</button>'; };
+  $('#view').innerHTML = '<h2>Calendar</h2><p class="note">The week\'s programming for each track, the same as athletes see in the app. Click a day to open the full card'+(IS_COACH ? ' with athlete and coach notes.' : ' with athlete notes.')+' Programming changes go through Coach Reef.</p>'+
+    '<div class="calbar"><div class="tracks">'+TRACKS.map(t => '<button type="button" data-track="'+t[0]+'" aria-pressed="'+(CAL.track === t[0])+'">'+t[1]+'</button>').join('')+'</div>'+
+    '<div style="display:flex;gap:6px;align-items:center;margin-left:auto"><button class="btn ghost sm" data-wk="-1" aria-label="Previous week">‹ Prev</button><span class="wk">'+esc(wkLabel)+'</span><button class="btn ghost sm" data-wk="1" aria-label="Next week">Next ›</button><button class="btn ghost sm" data-wk="0">This week</button></div></div>'+
+    (CAL.loading ? '<p class="muted">Loading the programming…</p>' : CAL.err ? '<p style="color:#ff8a7a">'+esc(CAL.err)+'</p>' :
+    '<div class="cal-wrap"><div class="cal">'+days.map((ds, i) => '<div class="cday'+(ds === td ? ' today' : ds < td ? ' past' : '')+'"><div class="dh"><b>'+DN[i]+'</b><span>'+Number(ds.slice(8))+'</span></div>'+card(ds)+'</div>').join('')+'</div></div>');
+  document.querySelectorAll('[data-track]').forEach(b => b.onclick = () => { CAL.track = b.dataset.track; renderCal(); });
+  document.querySelectorAll('[data-wk]').forEach(b => b.onclick = () => { const n = +b.dataset.wk; CAL.mon = n === 0 ? mondayOf(today()) : addDays(CAL.mon, 7*n); renderCal(); });
+  document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openDay(b.dataset.open));
+}
+async function openDay(ds){
+  const e = entryOf(CAL.track, ds), tn = (TRACKS.find(t => t[0] === CAL.track) || [])[1]; if(!e) return;
+  const m = document.createElement('div'); m.className = 'modal'; m.innerHTML = '<div class="box"><p class="muted" style="margin:0">Loading…</p></div>'; document.body.appendChild(m);
+  m.onclick = ev => { if(ev.target === m) m.remove(); };
+  await loadNotes([ds]); const N = CAL.notes[ds] || {}, an = ((N.a||{})[CAL.track]) || [], cn = ((N.c||{})[CAL.track]) || [];
+  const [y,mo,d] = ds.split('-').map(Number), dl = new Date(y, mo-1, d).toLocaleDateString([], { weekday:'long', month:'long', day:'numeric' });
+  const tmr = (e.timer||[]).map(t => esc(t.name || '') + (t.type ? ' · '+esc(t.type) : '') + (t.rounds ? ' · '+t.rounds+' rounds' : '') + (t.work ? ' · :'+t.work+' on' : '') + (t.rest ? ' / :'+t.rest+' off' : '')).join('<br>');
+  m.querySelector('.box').innerHTML = '<div><span class="label">'+esc(tn)+' · '+esc(dl)+'</span><h2>'+esc(e.title || tn)+'</h2></div>'+
+    (e.parts||[]).map(p => '<div class="pt"><span class="tg">'+esc(p.tag||'')+'</span>'+(p.lines||[]).map(l => '<span class="ln '+lineCls(l)+'">'+esc(lineTxt(l))+'</span>').join('')+'</div>').join('')+
+    (tmr ? '<div class="tmr"><span class="label">Timer</span><br>'+tmr+'</div>' : '')+
+    (an.length ? '<div class="nbox"><h4>Athlete notes</h4>'+an.map(x => '<div><b>'+esc(x.t)+'</b><div style="white-space:pre-wrap">'+esc(x.a)+'</div></div>').join('')+'</div>' : '')+
+    (IS_COACH && cn.length ? '<div class="nbox co"><h4>Coach notes</h4>'+cn.map(x => '<div><b>'+esc(x.t)+'</b><div style="white-space:pre-wrap">'+esc(x.c)+'</div></div>').join('')+'</div>' : '')+
+    '<div><button class="btn ghost" type="button" id="mClose">Close</button></div>';
+  m.querySelector('#mClose').onclick = () => m.remove();
+}
 
 /* ---------- members & payments ---------- */
 const isStaff = r => (r.wants||[]).includes('staff') || (r.staffProgs||[]).length > 0 || !!r.coachBadge;
@@ -235,7 +332,7 @@ function renderMembers(){
         '<td><input class="note" maxlength="140" data-note="'+r.id+'" value="'+esc(b.note||'')+'" placeholder="Note" aria-label="Note"></td>'+
         '<td class="act">'+(s.k === 'free' ? '' : '<button class="btn sm" data-paid="'+r.id+'">Paid 1 month</button>')+'<button class="btn ghost sm" data-remind="'+r.id+'">'+(s.k === 'free' ? 'Message' : 'Reminder')+'</button><button class="btn ghost sm" data-price="'+r.id+'">Prices</button></td>'
       : '<td colspan="5" class="muted" style="font-size:13px">Coach. No payments. '+(IS_COACH ? '' : 'Coach Reef handles coaches.')+'</td>')+'</tr>'; }).join('');
-  $('#view').innerHTML = '<h2>Members &amp; payments</h2><p class="note">Due the 1st. Not in by 7:59 PM on the 1st, pause their access. Paid by the 5th, turn it back on. $0 = no charge. Changes save as you go and show in the app right away.</p>'+
+  $('#view').innerHTML = '<h2>Athletes &amp; payments</h2><p class="note">Due the 1st. Not in by 7:59 PM on the 1st, pause their access. Paid by the 5th, turn it back on. $0 = no charge. Changes save as you go and show in the app right away.</p>'+
     '<div class="stats"><button class="stat" data-show="owe"><b style="color:var(--red2)">'+owe.length+'</b><span>Need to pay now</span></button><div class="stat"><b>$'+owed+'</b><span>Owed now</span></div><button class="stat" data-show="paid"><b>'+nextUp.length+'</b><span>Due '+esc(fmtD(nx))+'</span></button><button class="stat" data-show="wait"><b style="color:var(--gold)">'+c('wait')+'</b><span>Waiting for approval</span></button><button class="stat" data-show="unset"><b>'+c('unset')+'</b><span>Payment not set up</span></button><div class="stat"><b>$'+monthly+'</b><span>Monthly (everyone on)</span></div></div>'+
     '<div class="bar"><div class="chips">'+chip('owe','Need to pay')+chip('unset','Not set up')+chip('wait','Waiting')+chip('paused','Paused')+chip('paid','Paid up')+chip('free','No charge / sessions')+chip('coaches','Coaches')+chip('all','Everyone')+'</div>'+
     '<input class="search" type="search" placeholder="Search name, email or note" value="'+esc(F.q)+'" aria-label="Search"><button class="btn ghost sm" id="csv" type="button">Download spreadsheet</button></div>'+
