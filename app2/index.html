@@ -1173,7 +1173,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const v = document.getElementById('view');
     const un = meId && IK.mine ? unreadCount() : 0;
     const realMem = memProgs().length && !(memSlots.size && [...memSlots].every(x => x === 'sample'));
-    let h = (un ? '<div class="msgban"><span><b>'+un+' new message'+(un>1?'s':'')+'</b> from your coach</span><button class="btn solid" type="button" data-goinbox="1" style="padding:7px 12px">Read</button></div>' : '') + (isCoachKey() ? '<div class="row" style="margin:0 0 10px"><button class="linkbtn" type="button" data-hub="1">Coach hub →</button></div>' : '') + feedbackHtml() + newsHtml() + memberHtml2(); const memOnly = h; h += '<p class="label ex-h">'+(memProgs().length?'Example days from every program':'Free preview · one example day from each program')+'</p><div class="progs" id="progs2" role="group" aria-label="Pick a program" style="margin-bottom:10px"></div><div class="head"><span class="sched">'+esc(p.sched)+'</span><h1>'+esc(p.name)+'</h1>';
+    let h = (un ? '<div class="msgban"><span><b>'+un+' new message'+(un>1?'s':'')+'</b> from your coach</span><button class="btn solid" type="button" data-goinbox="1" style="padding:7px 12px">Read</button></div>' : '') + (isCoachKey() ? '<div class="row" style="margin:0 0 10px"><button class="linkbtn" type="button" data-hub="1">Coach hub →</button></div>' : '') + feedbackHtml() + newsHtml() + (window.__bbPostsHtml ? window.__bbPostsHtml() : '') + memberHtml2(); const memOnly = h; h += '<p class="label ex-h">'+(memProgs().length?'Example days from every program':'Free preview · one example day from each program')+'</p><div class="progs" id="progs2" role="group" aria-label="Pick a program" style="margin-bottom:10px"></div><div class="head"><span class="sched">'+esc(p.sched)+'</span><h1>'+esc(p.name)+'</h1>';
     if(p.type==='full'){
       h += '</div><p class="about">'+esc(p.about)+'</p>';
       if(entry){
@@ -4842,6 +4842,30 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 #bbGate .gplan em{color:#FF5A64;font-style:normal;font-size:12px}
 #bbGate .gplan small{color:#8F8B84;font-size:12px}
 #bbGate .gplan i{font-style:normal;font-weight:700}
+#bbMembers .mhub{display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid #2A2A2A;padding-top:10px}
+#bbMembers .mbtns{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+#bbMembers .mtag{display:inline-block;background:#2A2A2A;color:#E8B44C;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;align-self:center}
+#bbMembers .pst{font-weight:600}#bbMembers .pst.ok{color:#6FBF73!important}#bbMembers .pst.due{color:#E8B44C!important}#bbMembers .pst.late{color:#FF5A64!important}#bbMembers .pst.none{color:#8F8B84!important}
+#bbMembers .prow{border:1px solid #2A2A2A;border-radius:12px;padding:12px;display:grid;gap:8px;background:#151515}
+#bbMembers .prow small{display:block;color:#8F8B84;font-size:13px}
+#bbMembers .ptop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+#bbMembers .pctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+#bbMembers .pform label,#bbMembers .pctl label{display:grid;gap:4px;font-size:12px;color:#8F8B84;letter-spacing:.04em}
+#bbMembers .prow input,#bbMembers .pform input,#bbMembers .pform select,#bbMembers .pdet textarea,#bbMembers .pform textarea{width:100%;box-sizing:border-box;background:#111;color:#F4F2EE;border:1px solid #2A2A2A;border-radius:8px;padding:9px 10px;font:15px var(--body);min-width:0}
+#bbMembers .pdet{border-top:1px solid #2A2A2A;padding-top:10px;display:grid;gap:8px}#bbMembers .pdet summary{cursor:pointer;color:#F4F2EE;font-weight:600}
+#bbMembers .pdet[open]{display:grid}#bbMembers .pdet small{color:#8F8B84;font-size:12px}
+#bbMembers .pform{display:grid;gap:10px;border:1px solid #2A2A2A;border-radius:12px;padding:12px;background:#151515}
+#bbMembers .seg2{display:flex;gap:6px}#bbMembers .seg2 button{background:transparent;border:1px solid #2A2A2A;color:#F4F2EE}#bbMembers .seg2 button[aria-pressed="true"]{background:#C8102E;border-color:#C8102E}
+.gnews{display:grid;gap:10px;margin:0 0 18px}
+.gnews .gn{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:4px}
+.gnews .gn b{font-size:17px}.gnews .gn p{margin:2px 0 0;line-height:1.5}.gnews .gn small{color:var(--muted);font-size:13px}
+.gnews .gn.ev{grid-template-columns:auto 1fr;gap:14px;align-items:start}
+.gnews .gdate{display:grid;justify-items:center;min-width:52px;border:1px solid var(--line);border-radius:10px;padding:6px 4px;line-height:1.1}
+.gnews .gdate span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.gnews .gdate b{font-size:24px}
+.gnews .gbody{display:grid;gap:4px;min-width:0}
+.gnews .grow2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+.gnews .gin{border:1px solid var(--line);background:none;color:inherit;border-radius:999px;padding:7px 16px;font:700 14px var(--body);cursor:pointer}
+.gnews .gin.on{background:#C8102E;border-color:#C8102E;color:#fff}
 #bbMembers .mprogs{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 6px}
 #bbMembers .mprogs button{padding:6px 10px;font-size:12px}
 #bbMembers button.ghost{background:transparent;border:1px solid #2A2A2A;color:#F4F2EE}
@@ -5113,7 +5137,7 @@ function initChat(u, coach){
     onSnapshot(query(collection(fs,'dms',me,'msgs'), orderBy('at','desc'), limit(150)), s => { T.dm[me] = s.docs.map(d => Object.assign({ id:d.id, ref:d.ref }, d.data())).reverse(); dot(); if(open) draw(); }, () => {});
   }
   function msgs(list, k){
-    if(!list || !list.length) return '<div class="ch-empty">'+(k === 'team' ? 'Say hi to the team. Everyone on BODYBOX sees this chat.' : coach ? 'No messages yet.' : 'Message Coach Reef here. Only you and your coach see this.')+'</div>';
+    if(!list || !list.length) return '<div class="ch-empty">'+(k === 'team' ? 'Say hi to the team. Everyone on BODYBOX sees this chat.' : coach ? 'No messages yet.' : 'Message your coaches here. Only you and the BODYBOX coaches see this.')+'</div>';
     return list.map(m => '<div class="ch-msg'+(m.uid === me ? ' me' : '')+'"><div class="ch-who"><span>'+esc(m.uid === me ? 'You' : (m.name||''))+'</span>'+badgeH(m.badge)+'<span>· '+(m.at ? when(m.at) : '')+'</span>'+((m.uid === me || coach) ? '<button class="ch-del" data-del="'+esc(m.id)+'" type="button">Delete</button>' : '')+'</div><div class="ch-text">'+esc(m.text||'')+'</div></div>').join('');
   }
   let draftV = null;
@@ -5135,7 +5159,7 @@ function initChat(u, coach){
           return '<button type="button" data-dm="'+esc(id)+'"><span>'+esc(nm(id))+'<small>'+(l ? esc((l.uid===me?'You: ':'')+String(l.text||'').slice(0,60)) : 'Start a conversation')+'</small></span>'+(n?'<b>'+n+'</b>':'')+'</button>'; }).join('')+'</div>' : '<div class="ch-empty">Approved athletes show up here.</div>';
       } else { const id = view.slice(3); title = ((roster.find(r => r.id === id)||{}).name) || 'Athlete'; body = msgs(T.dm[id], 'dm'); }
     } else {
-      tabs += '<button type="button" data-v="dm:'+me+'" aria-pressed="'+(view!=='team')+'">Coach Reef'+(unreadOf('dm:'+me,T.dm[me])?'<b>'+unreadOf('dm:'+me,T.dm[me])+'</b>':'')+'</button>';
+      tabs += '<button type="button" data-v="dm:'+me+'" aria-pressed="'+(view!=='team')+'">Coaches'+(unreadOf('dm:'+me,T.dm[me])?'<b>'+unreadOf('dm:'+me,T.dm[me])+'</b>':'')+'</button>';
       body = view === 'team' ? msgs(T.team,'team') : msgs(T.dm[me],'dm');
     }
     const draft = draftV === view ? ((box.querySelector('textarea')||{}).value || '') : ''; draftV = view;
@@ -5278,31 +5302,41 @@ async function openDash(){
     '<div class="dstats"><div><b>'+out.length+'</b><span>Athletes</span></div><div><b>'+active+'</b><span>Logged today or yesterday</span></div><div><b style="color:#FF5A64">'+need.length+'</b><span>Need a look</span></div><div><b style="color:#6FBF73">'+prsN+'</b><span>PRs this week</span></div></div>'+
     (need.length ? '<h4>Needs a look</h4>'+need.map(card).join('') : '<p style="color:#6FBF73;margin:0">Everyone is logging and nobody flagged pain. Good week.</p>')+
     '<h4>Everyone else</h4>'+out.filter(x => !x.flags.length).map(card).join('')+
-    '<div class="mrow"><button class="ghost" id="dMem">Members</button><button class="ghost" id="dVid">Videos to review</button><button class="ghost" id="dClose">Close</button></div>';
-  box.querySelector('#dClose').onclick = () => box.remove(); box.querySelector('#dMem').onclick = () => openMembers(); box.querySelector('#dVid').onclick = () => openVideos(rows);
+    hubRow('dash')+'<div class="mrow">'+(IS_COACH ? '<button class="ghost" id="dVid">Videos to review</button>' : '')+'<button class="ghost" id="dClose">Close</button></div>';
+  box.querySelector('#dClose').onclick = () => box.remove(); wireHub(box); if(IS_COACH) box.querySelector('#dVid').onclick = () => openVideos(rows);
 }
-/* ---- coach: approve members ---- */
+/* ---- coach + admin: approve members, turn programs on/off (Nov 17: admin = Jameson; no Personal, no coaches, no other admins) ---- */
 async function openMembers(){
+  const adm = !IS_COACH;
   let box = document.getElementById('bbMembers'); if(box) box.remove();
   box = document.createElement('div'); box.id = 'bbMembers'; box.innerHTML = '<div class="mcard"><h3>Members</h3><p style="color:#8F8B84;margin:0">Loading…</p></div>'; document.body.appendChild(box);
   box.onclick = e => { if(e.target === box) box.remove(); };
   let rows = [];
   try{ const s = await getDocs(collection(fs, 'members')); s.forEach(d => rows.push(Object.assign({ id: d.id }, d.data()))); }
-  catch(e){ box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p>Couldn\'t load members. If you just created your coach account, open the verification email Firebase sent you, then reopen the app.</p><button class="ghost" id="mClose">Close</button>'; box.querySelector('#mClose').onclick = () => box.remove(); return; }
+  catch(e){ box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p>Couldn\'t load members. Check your internet and reopen the app.</p><button class="ghost" id="mClose">Close</button>'; box.querySelector('#mClose').onclick = () => box.remove(); return; }
   rows = rows.filter(r => !COACHES.includes((r.email||'').toLowerCase()));
-  const CFG = await staffCfg(), staffOf = r => (CFG.staff || {})[(r.email||'').toLowerCase()] || null;
-  for(const r of rows){ const st = staffOf(r); if(r.approved && st && (JSON.stringify(r.coachTimers||[]) !== JSON.stringify(st.timers||[]) || (r.coachBadge||'') !== (st.badge||''))){ try{ await updateDoc(doc(fs,'members',r.id), { coachTimers: st.timers || [], coachBadge: st.badge || '' }); r.coachTimers = st.timers; r.coachBadge = st.badge; }catch(e){} } }
+  const CFG = adm ? { staff: {} } : await staffCfg(), staffOf = r => (CFG.staff || {})[(r.email||'').toLowerCase()] || null;
+  const isStaffRow = r => !!(staffOf(r) || (r.wants||[]).includes('staff') || (r.staffProgs||[]).length || r.coachBadge);
+  const BILL = await billMap();
+  if(!adm) for(const r of rows){ const st = staffOf(r); if(r.approved && st && (JSON.stringify(r.coachTimers||[]) !== JSON.stringify(st.timers||[]) || (r.coachBadge||'') !== (st.badge||''))){ try{ await updateDoc(doc(fs,'members',r.id), { coachTimers: st.timers || [], coachBadge: st.badge || '' }); r.coachTimers = st.timers; r.coachBadge = st.badge; }catch(e){} } }
   rows.sort((a,b) => (a.approved===b.approved ? (a.name||'').localeCompare(b.name||'') : a.approved ? 1 : -1));
   const pend = rows.filter(r => !r.approved).length;
-  box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p style="color:#8F8B84;margin:0">'+pend+' waiting for approval · '+(rows.length-pend)+' approved. Tap a program to turn it on or off for that person (red = on). No codes needed.</p>'+
-    rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b>'+((r.coachBadge||(staffOf(r)&&staffOf(r).badge))?' '+window.__bbBadgeHtml(esc(r.coachBadge||staffOf(r).badge)).replace('<span></span>','<span>'+esc(r.coachBadge||staffOf(r).badge)+'</span>'):'')+'<small>'+esc(r.email)+'</small>'+(staffOf(r)?'<small style="color:#E8B44C">Coach · gets '+esc((staffOf(r).timers||[]).map(t => t.name).join(' + '))+' on approval</small>':'')+((r.wants&&r.wants.length)?'<small>Picked: '+esc(PLANS.filter(p => r.wants.includes(p.id)).map(p => p.name).join(' + '))+'</small>':'<small>Hasn\'t picked programs yet</small>')+((r.codeProgs&&r.codeProgs.length)?'<small>Code opens: '+esc(r.codeProgs.map(progName).join(', '))+'</small>':'')+'</div>'+
-      (r.approved ? '<button class="ghost" data-off="'+r.id+'">Remove access</button>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>'+(r.approved ? '<div class="mprogs">'+PROGS.concat([PERSONAL]).map(p => '<button class="'+((r.progs||[]).includes(p[0])?'':'ghost')+'" data-prog="'+r.id+'|'+p[0]+'">'+p[1]+'</button>').join('')+'</div>' : '')).join('')+
-    '<div class="mrow"><div><b>Videos to review</b><small>Lifts and scores your athletes filmed and linked</small></div><button id="mVids">Open</button></div><div class="mrow" style="display:block"><b>Update content</b><small>Load a new content file from Claude (programming + leaderboard).</small>'+contentPicker()+'</div><div class="mrow"><button class="ghost" id="mClose">Close</button><button class="ghost" id="mOut">Sign out</button></div>';
-  box.querySelector('#mVids').onclick = () => openVideos(rows.filter(r => r.approved));
-  box.querySelector('#mClose').onclick = () => box.remove(); box.querySelector('#mOut').onclick = () => signOut(auth); wirePicker(box);
+  const locked = r => adm && (isStaffRow(r) || r.admin);
+  const progBtns = r => '<div class="mprogs">'+(adm ? PROGS : PROGS.concat([PERSONAL])).map(p => '<button class="'+((r.progs||[]).includes(p[0])?'':'ghost')+'" data-prog="'+r.id+'|'+p[0]+'">'+p[1]+'</button>').join('')+
+    (adm && (r.progs||[]).includes('personal') ? '<span class="mtag">Personal is on (Coach Reef sets this)</span>' : '')+'</div>';
+  const billLine = r => { const b = BILL[r.id]; if(!r.approved || isStaffRow(r)) return ''; const s = payState(b); return '<small class="pst '+s.k+'">'+esc(s.t)+(b && b.rate ? ' · $'+esc(b.rate)+'/mo' : '')+'</small>'; };
+  box.querySelector('.mcard').innerHTML = '<h3>Members</h3><p style="color:#8F8B84;margin:0">'+pend+' waiting for approval · '+(rows.length-pend)+' approved. Tap a program to turn it on or off for that person (red = on). No codes needed.'+(adm ? ' Coaches and Personal stay with Coach Reef.' : '')+'</p>'+
+    rows.map(r => '<div class="mrow"><div><b>'+esc(r.name||'(no name)')+'</b>'+((r.coachBadge||(staffOf(r)&&staffOf(r).badge))?' '+window.__bbBadgeHtml(esc(r.coachBadge||staffOf(r).badge)).replace('<span></span>','<span>'+esc(r.coachBadge||staffOf(r).badge)+'</span>'):'')+(r.admin?' <span class="mtag">Admin</span>':'')+'<small>'+esc(r.email)+'</small>'+(staffOf(r)?'<small style="color:#E8B44C">Coach · gets '+esc((staffOf(r).timers||[]).map(t => t.name).join(' + '))+' on approval</small>':'')+((r.wants&&r.wants.length)?'<small>Picked: '+esc(r.wants.includes('staff') ? 'Coach access' : PLANS.filter(p => r.wants.includes(p.id)).map(p => p.name).join(' + '))+'</small>':'<small>Hasn\'t picked programs yet</small>')+((r.codeProgs&&r.codeProgs.length)?'<small>Code opens: '+esc(r.codeProgs.map(progName).join(', '))+'</small>':'')+billLine(r)+'</div>'+
+      (locked(r) ? '<small class="mtag">'+(r.admin ? 'Admin' : 'Coach Reef handles coaches')+'</small>' : r.approved ? '<div class="mbtns">'+(!adm && !isStaffRow(r) ? '<button class="ghost" data-adm="'+r.id+'">'+(r.admin ? 'Admin ✓' : 'Make admin')+'</button>' : '')+'<button class="ghost" data-off="'+r.id+'">'+(adm ? 'Pause access' : 'Remove access')+'</button></div>' : '<button data-on="'+r.id+'">Approve</button>')+'</div>'+(r.approved && !locked(r) ? progBtns(r) : '')).join('')+
+    (adm ? '' : '<div class="mrow"><div><b>Videos to review</b><small>Lifts and scores your athletes filmed and linked</small></div><button id="mVids">Open</button></div><div class="mrow" style="display:block"><b>Update content</b><small>Load a new content file from Claude (programming + leaderboard).</small>'+contentPicker()+'</div>')+
+    hubRow('mem')+'<div class="mrow"><button class="ghost" id="mClose">Close</button><button class="ghost" id="mOut">Sign out</button></div>';
+  if(!adm){ box.querySelector('#mVids').onclick = () => openVideos(rows.filter(r => r.approved)); wirePicker(box); }
+  wireHub(box);
+  box.querySelector('#mClose').onclick = () => box.remove(); box.querySelector('#mOut').onclick = () => signOut(auth);
   box.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { b.disabled = true; const r = rows.find(x => x.id === b.dataset.on) || {}; const st = staffOf(r); let progs = (r.progs && r.progs.length) ? r.progs : progsForPlans(r.wants).filter(k => ['comp','build','cardio','garage'].includes(k)); if(!(r.progs && r.progs.length) && (CFG.personal || []).includes((r.email||'').toLowerCase())) progs = [...new Set(progs.concat(['comp','build','cardio','personal']))]; if(st) progs = [...new Set(progs.concat(st.progs || []))]; const upd = { approved: true, approvedAt: serverTimestamp(), progs }; try{ const em = (r.email||'').toLowerCase(), pre = em && await getDoc(doc(fs,'data','users','pre_'+em,'bodybox')), own = await getDoc(doc(fs,'data','users',b.dataset.on,'bodybox')); if(pre && pre.exists() && !own.exists()) await setDoc(doc(fs,'data','users',b.dataset.on,'bodybox'), pre.data()); }catch(e){} if(st){ upd.coachTimers = st.timers || []; upd.coachBadge = st.badge || ''; } try{ await updateDoc(doc(fs,'members',b.dataset.on), upd); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
   box.querySelectorAll('[data-prog]').forEach(b => b.onclick = async () => { const [id, k] = b.dataset.prog.split('|'); const r = rows.find(x => x.id === id); const cur = new Set(r.progs || []); cur.has(k) ? cur.delete(k) : cur.add(k); b.disabled = true; try{ await updateDoc(doc(fs,'members',id), { progs: [...cur] }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
-  box.querySelectorAll('[data-off]').forEach(b => b.onclick = async () => { b.disabled = true; try{ await updateDoc(doc(fs,'members',b.dataset.off), { approved: false }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
+  box.querySelectorAll('[data-off]').forEach(b => b.onclick = async () => { const r = rows.find(x => x.id === b.dataset.off) || {}; if(!confirm((adm ? 'Pause ' : 'Remove ')+(r.name||'this person')+'\'s access? They can\'t open their programs until they\'re approved again.')) return; b.disabled = true; try{ await updateDoc(doc(fs,'members',b.dataset.off), { approved: false }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
+  box.querySelectorAll('[data-adm]').forEach(b => b.onclick = async () => { const r = rows.find(x => x.id === b.dataset.adm) || {}; if(!confirm(r.admin ? 'Take admin away from '+(r.name||'this person')+'?' : 'Make '+(r.name||'this person')+' an admin? They can approve members, turn programs on and off, track payments, post events and message athletes. They can\'t change programming, the Board or the app.')) return; b.disabled = true; try{ await updateDoc(doc(fs,'members',r.id), { admin: !r.admin }); openMembers(); }catch(e){ b.textContent = 'Failed'; } });
 }
 
 /* ---- coach: load content from text (used once to move the old app's content over) ---- */
@@ -5370,6 +5404,169 @@ window.addEventListener('message', async e => {
 });
 if(location.hash === '#notes-import' && window.opener){ const ping = setInterval(() => { if(window.__bbFire){ clearInterval(ping); try{ window.opener.postMessage({ bbNotesReady: true }, 'https://app.sugarwod.com'); }catch(e){} } }, 500); }
 
+/* ---- Nov 17: admin role (Jameson). members/{uid}.admin = true, set by Coach Reef.
+   Admin: approve members, turn programs on/off (not Personal, not coaches), payments, events & news, set up challenges,
+   team dashboard + check-ins, message athletes. No programming, no Board, no app changes. ---- */
+let IS_COACH = false, IS_ADMIN = false;
+const myNameF = () => window.__bbMyName || (auth.currentUser && auth.currentUser.displayName) || 'Coach';
+function hubRow(cur){
+  const B = [['mem','Members'],['pay','Payments'],['ev','Events & news'],['ch','Challenges'],['dash','Team']];
+  return '<div class="mhub">'+B.filter(x => x[0] !== cur).map(x => '<button class="ghost" type="button" data-hub2="'+x[0]+'">'+x[1]+'</button>').join('')+'</div>';
+}
+function wireHub(box){ box.querySelectorAll('[data-hub2]').forEach(b => b.onclick = () => ({ mem: openMembers, pay: openPay, ev: openPosts, ch: openChSetup, dash: openDash })[b.dataset.hub2]()); }
+function adminPanel(title){
+  let box = document.getElementById('bbMembers'); if(box) box.remove();
+  box = document.createElement('div'); box.id = 'bbMembers'; box.innerHTML = '<div class="mcard"><h3>'+esc(title)+'</h3><p style="color:#8F8B84;margin:0">Loading…</p></div>'; document.body.appendChild(box);
+  box.onclick = e => { if(e.target === box) box.remove(); };
+  return box;
+}
+const todayStr = () => ymdLocal(new Date());
+const fmtD = ds => { if(!ds) return ''; const [y,m,d] = ds.split('-').map(Number); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]+' '+d+(y !== new Date().getFullYear() ? ', '+y : ''); };
+const addMonth = ds => { const [y,m,d] = ds.split('-').map(Number); return ymdLocal(new Date(y, m, d)); };
+const firstOfMonth = ds => ds.slice(0,8) + '01';
+const dayDiff = (a, b) => Math.round((new Date(a+'T12:00:00') - new Date(b+'T12:00:00')) / 864e5);
+async function billMap(){ const M = {}; try{ const s = await getDocs(collection(fs, 'billing')); s.forEach(d => { M[d.id] = d.data(); }); }catch(e){} return M; }
+// Paid through = the day the next payment is due. Due the 1st; paused 7:59 PM on the 1st; paid by the 5th = back on; after the 5th = off BODYBOX.
+function payState(b){
+  const pt = b && b.paidThrough, td = todayStr();
+  if(!pt) return { k:'none', t:'Payment not set' };
+  if(pt > td) return { k:'ok', t:'Paid through '+fmtD(pt) };
+  const late = dayDiff(td, pt);
+  if(late < 5) return { k:'due', t:'Due '+fmtD(pt)+(late ? ' · '+late+' day'+(late>1?'s':'')+' late' : ' · today') };
+  return { k:'late', t:'Not paid since '+fmtD(pt)+' · past the 5th' };
+}
+const PRICE_DEFAULT = 'BODYBOX prices (per month)\n- One program (Athlete Comp, Body Box Building or Cardio): $35\n- All 3 programs: $69\n- All 3 programs + personal programming from Coach Reef: $129\n- Garage Box: $25\nPayment is due on the 1st of every month. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back.\nPayments and account questions: teambodybox@gmail.com';
+async function sendDm(uid, text){ await addDoc(collection(fs, 'dms', uid, 'msgs'), { uid: auth.currentUser.uid, name: myNameF(), badge: window.__bbBadge || '', text: String(text).slice(0, 600), at: Date.now() }); }
+
+/* -- Payments -- */
+async function openPay(){
+  const box = adminPanel('Payments');
+  let rows = [];
+  try{ const s = await getDocs(collection(fs, 'members')); s.forEach(d => rows.push(Object.assign({ id: d.id }, d.data()))); }catch(e){ box.querySelector('.mcard').innerHTML = '<h3>Payments</h3><p>Couldn\'t load members.</p>'; return; }
+  rows = rows.filter(r => r.approved && !COACHES.includes((r.email||'').toLowerCase()) && !(r.wants||[]).includes('staff') && !(r.staffProgs||[]).length);
+  const BILL = await billMap(); let prices = (BILL._prices && BILL._prices.text) || PRICE_DEFAULT;
+  const order = { late:0, due:1, none:2, ok:3 };
+  rows.sort((a,b) => order[payState(BILL[a.id]).k] - order[payState(BILL[b.id]).k] || (a.name||'').localeCompare(b.name||''));
+  const n = k => rows.filter(r => payState(BILL[r.id]).k === k).length;
+  const total = rows.reduce((t,r) => t + (+(BILL[r.id]||{}).rate || 0), 0);
+  const draw = () => {
+    box.querySelector('.mcard').innerHTML = '<h3>Payments</h3>'+
+      '<div class="dstats"><div><b style="color:#6FBF73">'+n('ok')+'</b><span>Paid up</span></div><div><b style="color:#E8B44C">'+n('due')+'</b><span>Due now (till the 5th)</span></div><div><b style="color:#FF5A64">'+n('late')+'</b><span>Past the 5th</span></div><div><b>$'+total+'</b><span>Monthly total</span></div></div>'+
+      '<p style="color:#8F8B84;margin:0">Due the 1st. Not in by 7:59 PM on the 1st, programming pauses (Members → Pause access). Paid by the 5th, turn it back on. "Paid through" is the day their next payment is due.</p>'+
+      rows.map(r => { const b = BILL[r.id] || {}, s = payState(b);
+        return '<div class="prow"><div class="ptop"><div><b>'+esc(r.name||r.email)+'</b><small>'+esc((r.progs||[]).map(progName).join(', ') || 'No programs on')+'</small><small class="pst '+s.k+'">'+esc(s.t)+'</small></div><button type="button" data-paid="'+r.id+'">Paid 1 month</button></div>'+
+          '<div class="pctl"><label>$ a month<input type="number" inputmode="numeric" min="0" step="1" data-rate="'+r.id+'" value="'+esc(b.rate||'')+'"></label><label>Paid through<input type="date" data-pt="'+r.id+'" value="'+esc(b.paidThrough||'')+'"></label></div>'+
+          '<input class="pnote" data-note="'+r.id+'" maxlength="140" placeholder="Note (discount, paid by Venmo…)" value="'+esc(b.note||'')+'">'+
+          '<div class="mbtns"><button class="ghost" type="button" data-price="'+r.id+'">Send prices</button><button class="ghost" type="button" data-remind="'+r.id+'">Send reminder</button></div></div>'; }).join('')+
+      '<details class="pdet"><summary>Price sheet (what Send prices sends)</summary><textarea id="pText" maxlength="600" rows="9">'+esc(prices)+'</textarea><small id="pLeft"></small><button type="button" id="pSave">Save price sheet</button></details>'+
+      hubRow('pay')+'<div class="mrow"><button class="ghost" id="mClose">Close</button></div>';
+    box.querySelector('#mClose').onclick = () => box.remove(); wireHub(box);
+    const pt = box.querySelector('#pText'), left = () => box.querySelector('#pLeft').textContent = (600 - pt.value.length)+' characters left'; pt.oninput = left; left();
+    box.querySelector('#pSave').onclick = async e => { e.target.disabled = true; try{ await setDoc(doc(fs,'billing','_prices'), { text: pt.value.slice(0,600), by: myNameF(), at: serverTimestamp() }); prices = pt.value; e.target.textContent = 'Saved'; }catch(x){ e.target.textContent = 'Couldn\'t save'; } setTimeout(() => { e.target.disabled = false; e.target.textContent = 'Save price sheet'; }, 1500); };
+    const save = async (id, patch) => { BILL[id] = Object.assign({}, BILL[id], patch); try{ await setDoc(doc(fs,'billing',id), Object.assign({}, patch, { name: (rows.find(r => r.id === id)||{}).name || '', by: myNameF(), at: serverTimestamp() }), { merge: true }); return true; }catch(e){ alert('Couldn\'t save. Check your internet and try again.'); return false; } };
+    box.querySelectorAll('[data-rate]').forEach(i => i.onchange = () => save(i.dataset.rate, { rate: i.value ? String(Math.max(0, Math.round(+i.value))) : '' }).then(draw));
+    box.querySelectorAll('[data-pt]').forEach(i => i.onchange = () => save(i.dataset.pt, { paidThrough: i.value || '' }).then(draw));
+    box.querySelectorAll('[data-note]').forEach(i => i.onchange = () => save(i.dataset.note, { note: i.value.trim().slice(0,140) }));
+    box.querySelectorAll('[data-paid]').forEach(b => b.onclick = async () => { const id = b.dataset.paid, r = rows.find(x => x.id === id), cur = (BILL[id]||{}).paidThrough || firstOfMonth(todayStr()), nx = addMonth(cur);
+      if(!confirm('Mark '+(r.name||'them')+' paid? Paid through goes to '+fmtD(nx)+'.')) return; b.disabled = true;
+      if(await save(id, { paidThrough: nx, lastPaid: todayStr() })){ if(!r.approved || !(r.progs||[]).length) alert('Saved. Their programs are off. Turn them back on in Members.'); } draw(); });
+    box.querySelectorAll('[data-price]').forEach(b => b.onclick = async () => { const r = rows.find(x => x.id === b.dataset.price); if(!confirm('Send the price sheet to '+(r.name||'them')+' in the app chat?')) return; b.disabled = true; try{ await sendDm(r.id, prices); b.textContent = 'Sent'; }catch(e){ b.textContent = 'Couldn\'t send'; b.disabled = false; } });
+    box.querySelectorAll('[data-remind]').forEach(b => b.onclick = async () => { const r = rows.find(x => x.id === b.dataset.remind), s = payState(BILL[r.id]), first = (r.name||'').split(' ')[0];
+      const t = 'Hey '+first+', quick reminder: your BODYBOX payment '+(s.k === 'ok' ? 'is due '+fmtD(BILL[r.id].paidThrough) : 'is due')+'. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back. Questions: teambodybox@gmail.com';
+      const msg = prompt('Reminder to '+(r.name||'them')+' (edit if you want):', t); if(!msg) return; b.disabled = true; try{ await sendDm(r.id, msg); b.textContent = 'Sent'; }catch(e){ b.textContent = 'Couldn\'t send'; b.disabled = false; } });
+  };
+  draw();
+}
+
+/* -- Events & news (posts). Athletes see them at the top of their day. -- */
+async function openPosts(edit){
+  const box = adminPanel('Events & news');
+  let P = []; try{ const s = await getDocs(collection(fs, 'posts')); s.forEach(d => P.push(Object.assign({ id: d.id }, d.data()))); }catch(e){}
+  const td = todayStr(), live = p => (p.type === 'event' ? p.date : (p.until || p.date)) >= td;
+  P.sort((a,b) => (a.date||'') < (b.date||'') ? -1 : 1);
+  const e0 = edit ? P.find(p => p.id === edit) || {} : {}; let type = e0.type || 'event';
+  const going = window.__bbGoing || {};
+  const row = p => '<div class="drow"><div class="dtop"><div style="flex:1;min-width:0"><b>'+esc(p.title)+'</b><small>'+(p.type === 'event' ? 'Event · '+esc(fmtD(p.date))+(p.time ? ' · '+esc(p.time) : '')+(p.place ? ' · '+esc(p.place) : '') : 'Announcement · showing till '+esc(fmtD(p.until||p.date)))+'</small>'+
+    (p.type === 'event' ? '<small>'+((going[p.id]||[]).length ? (going[p.id]||[]).length+' in: '+esc((going[p.id]||[]).map(g => g.name).join(', ')) : 'Nobody in yet')+'</small>' : '')+'</div></div>'+
+    '<div class="mbtns"><button class="ghost" type="button" data-pedit="'+p.id+'">Edit</button><button class="ghost" type="button" data-pdel="'+p.id+'">Delete</button></div></div>';
+  const cur = P.filter(live), old = P.filter(p => !live(p)).reverse().slice(0, 6);
+  box.querySelector('.mcard').innerHTML = '<h3>Events & news</h3><p style="color:#8F8B84;margin:0">Athletes see these at the top of their day. Events show until the day is over and athletes can tap I\'m in.</p>'+
+    '<form id="pForm" class="pform"><div class="seg2"><button type="button" data-pt2="event">Event</button><button type="button" data-pt2="note">Announcement</button></div>'+
+    '<label>Title<input id="pTitle" maxlength="70" required value="'+esc(e0.title||'')+'" placeholder="Holiday schedule, In-house comp, Team lift…"></label>'+
+    '<div class="pctl"><label id="pDateL">Date<input id="pDate" type="date" required value="'+esc(e0.date||td)+'"></label><label id="pTimeL">Time<input id="pTime" maxlength="30" value="'+esc(e0.time||'')+'" placeholder="9:00 AM"></label><label id="pUntilL">Show till<input id="pUntil" type="date" value="'+esc(e0.until||addDays(td,7))+'"></label></div>'+
+    '<label id="pPlaceL">Where<input id="pPlace" maxlength="60" value="'+esc(e0.place||'')+'" placeholder="Rebuilt Training"></label>'+
+    '<label>Details<textarea id="pBody" maxlength="800" rows="4" placeholder="What to know, what to bring, how to sign up">'+esc(e0.body||'')+'</textarea></label>'+
+    '<p class="gerr" id="pErr" style="color:#ff8a7a;margin:0"></p><div class="mbtns"><button type="submit">'+(edit ? 'Save changes' : 'Post it')+'</button>'+(edit ? '<button class="ghost" type="button" id="pCancel">Cancel</button>' : '')+'</div></form>'+
+    '<h4>Up now</h4>'+(cur.length ? cur.map(row).join('') : '<p style="color:#8F8B84;margin:0">Nothing posted.</p>')+
+    (old.length ? '<h4>Past</h4>'+old.map(row).join('') : '')+
+    hubRow('ev')+'<div class="mrow"><button class="ghost" id="mClose">Close</button></div>';
+  const syncT = () => { box.querySelectorAll('[data-pt2]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pt2 === type))); const ev = type === 'event'; box.querySelector('#pTimeL').hidden = !ev; box.querySelector('#pPlaceL').hidden = !ev; box.querySelector('#pUntilL').hidden = ev; box.querySelector('#pDateL').firstChild.textContent = ev ? 'Date' : 'Starts'; };
+  box.querySelectorAll('[data-pt2]').forEach(b => b.onclick = () => { type = b.dataset.pt2; syncT(); }); syncT();
+  box.querySelector('#mClose').onclick = () => box.remove(); wireHub(box);
+  const cc = box.querySelector('#pCancel'); if(cc) cc.onclick = () => openPosts();
+  box.querySelector('#pForm').onsubmit = async e => { e.preventDefault(); const v = id => box.querySelector(id).value.trim();
+    const d = { type, title: v('#pTitle').slice(0,70), date: v('#pDate'), time: type === 'event' ? v('#pTime').slice(0,30) : '', place: type === 'event' ? v('#pPlace').slice(0,60) : '', until: type === 'note' ? (v('#pUntil') || v('#pDate')) : '', body: v('#pBody').slice(0,800), byName: myNameF(), by: auth.currentUser.uid, at: Date.now() };
+    if(!d.title || !d.date){ box.querySelector('#pErr').textContent = 'Add a title and a date.'; return; }
+    if(d.type === 'note' && d.until < d.date){ box.querySelector('#pErr').textContent = 'Show till has to be on or after the start.'; return; }
+    const b = e.target.querySelector('[type=submit]'); b.disabled = true;
+    try{ if(edit) await setDoc(doc(fs,'posts',edit), d); else await addDoc(collection(fs,'posts'), d); openPosts(); }catch(x){ b.disabled = false; box.querySelector('#pErr').textContent = 'Couldn\'t save. Check your internet and try again.'; } };
+  box.querySelectorAll('[data-pedit]').forEach(b => b.onclick = () => openPosts(b.dataset.pedit));
+  box.querySelectorAll('[data-pdel]').forEach(b => b.onclick = async () => { const p = P.find(x => x.id === b.dataset.pdel); if(!confirm('Delete "'+(p.title||'')+'"? Athletes stop seeing it.')) return; b.disabled = true; try{ await deleteDoc(doc(fs,'posts',p.id)); openPosts(); }catch(e){ b.textContent = 'Failed'; } });
+}
+const addDays = (ds, n) => { const [y,m,d] = ds.split('-').map(Number); return ymdLocal(new Date(y, m-1, d+n)); };
+function initPosts(u){
+  window.__bbPosts = []; window.__bbGoing = {};
+  const re = () => { if(window.__bbRerender) window.__bbRerender(); };
+  onSnapshot(collection(fs, 'posts'), s => { window.__bbPosts = s.docs.map(d => Object.assign({ id: d.id }, d.data())); re(); }, () => {});
+  onSnapshot(collectionGroup(fs, 'going'), s => { const G = {}; s.docs.forEach(d => { const k = d.ref.parent.parent.id; (G[k] = G[k] || []).push(Object.assign({ uid: d.id }, d.data())); }); window.__bbGoing = G; re(); }, () => {});
+  window.__bbPostsHtml = () => {
+    const td = todayStr(), P = window.__bbPosts || [], G = window.__bbGoing || {}, me = u.uid;
+    const notes = P.filter(p => p.type === 'note' && p.date <= td && (p.until || p.date) >= td).sort((a,b) => a.date < b.date ? 1 : -1);
+    const evs = P.filter(p => p.type === 'event' && p.date >= td).sort((a,b) => a.date < b.date ? -1 : 1).slice(0, 3);
+    if(!notes.length && !evs.length) return '';
+    const body = t => esc(t||'').replace(/\n/g, '<br>');
+    let h = '<section class="gnews" aria-label="Gym news"><span class="label">Gym news</span>';
+    notes.forEach(p => { h += '<div class="gn"><b>'+esc(p.title)+'</b>'+(p.body ? '<p>'+body(p.body)+'</p>' : '')+'<small>'+esc(p.byName||'')+'</small></div>'; });
+    evs.forEach(p => { const g = G[p.id] || [], on = g.some(x => x.uid === me), [y,m,d] = p.date.split('-').map(Number), dt = new Date(y, m-1, d);
+      h += '<div class="gn ev"><div class="gdate"><span>'+dt.toLocaleDateString([], { month:'short' })+'</span><b>'+d+'</b><span>'+dt.toLocaleDateString([], { weekday:'short' })+'</span></div><div class="gbody"><b>'+esc(p.title)+'</b>'+
+        ((p.time || p.place) ? '<small>'+esc([p.time, p.place].filter(Boolean).join(' · '))+'</small>' : '')+(p.body ? '<p>'+body(p.body)+'</p>' : '')+
+        '<div class="grow2"><button type="button" class="gin'+(on?' on':'')+'" data-going="'+esc(p.id)+'" aria-pressed="'+on+'">'+(on ? 'I\'m in ✓' : 'I\'m in')+'</button><small>'+(g.length ? g.length+' going'+(g.length <= 4 ? ': '+esc(g.map(x => String(x.name||'').split(' ')[0]).join(', ')) : '') : 'Be the first')+'</small></div></div></div>'; });
+    return h + '</section>';
+  };
+  document.addEventListener('click', async e => { const b = e.target.closest && e.target.closest('[data-going]'); if(!b) return; e.preventDefault();
+    const id = b.dataset.going, ref = doc(fs, 'posts', id, 'going', u.uid), on = ((window.__bbGoing||{})[id]||[]).some(x => x.uid === u.uid); b.disabled = true;
+    try{ if(on) await deleteDoc(ref); else await setDoc(ref, { name: myNameF().slice(0,60), at: Date.now() }); }catch(x){ alert('Couldn\'t save. Check your internet and try again.'); }
+    b.disabled = false; });
+}
+
+/* -- Set up a head-to-head challenge between two athletes -- */
+async function openChSetup(){
+  const box = adminPanel('Challenges');
+  let C = []; try{ const s = await getDocs(collection(fs, 'challenges')); s.forEach(d => C.push(Object.assign({ id: d.id }, d.data()))); }catch(e){}
+  let ppl = []; try{ const s = await getDocs(collection(fs, 'members')); s.forEach(d => { const r = d.data(); if(r.approved && !COACHES.includes((r.email||'').toLowerCase())) ppl.push({ uid: d.id, name: r.name || r.email }); }); }catch(e){}
+  ppl.sort((a,b) => a.name.localeCompare(b.name));
+  const now = Date.now(), act = C.filter(c => (c.status === 'open' || c.status === 'accepted') && (c.due||0) > now).sort((a,b) => (a.due||0) - (b.due||0));
+  const done = C.filter(c => c.status === 'done').sort((a,b) => (b.doneAt||0) - (a.doneAt||0)).slice(0, 5);
+  const opt = sel => ppl.map(p => '<option value="'+esc(p.uid)+'"'+(p.uid === sel ? ' selected' : '')+'>'+esc(p.name)+'</option>').join('');
+  const SC = { time:'Fastest time wins', more:'Most reps wins', load:'Heaviest wins', text:'Just compare' };
+  const row = c => '<div class="drow"><b>'+esc(c.from.name)+' vs '+esc(c.to.name)+'</b><small>'+esc(c.what && c.what.label)+' · '+esc(SC[(c.what||{}).score]||'')+(c.status === 'done' ? ' · Done' : ' · ends '+esc(new Date(c.due).toLocaleDateString([], { weekday:'short', month:'short', day:'numeric' })))+'</small>'+
+    '<small>'+(Object.keys(c.scores||{}).length ? Object.keys(c.scores).length+' of 2 scores in' : 'No scores yet')+(c.setBy ? ' · set up by '+esc(c.setBy.name) : '')+'</small>'+(c.status !== 'done' ? '<div class="mbtns"><button class="ghost" type="button" data-cdel="'+c.id+'">Remove</button></div>' : '')+'</div>';
+  box.querySelector('.mcard').innerHTML = '<h3>Challenges</h3><p style="color:#8F8B84;margin:0">Set up a head-to-head between two athletes. It shows up for both of them right away, ready to log. Coach Reef picks the workout.</p>'+
+    '<form id="cForm" class="pform"><div class="pctl"><label>Athlete 1<select id="cA">'+opt(ppl[0]&&ppl[0].uid)+'</select></label><label>Athlete 2<select id="cB">'+opt(ppl[1]&&ppl[1].uid)+'</select></label></div>'+
+    '<label>Workout or lift<input id="cName" maxlength="60" required placeholder="Total double-unders, 2k row…"></label>'+
+    '<div class="pctl"><label>Scored by<select id="cScore">'+Object.keys(SC).map(k => '<option value="'+k+'">'+SC[k]+'</option>').join('')+'</select></label><label>Days to finish<input id="cDays" type="number" min="1" max="30" value="7"></label></div>'+
+    '<label>Message (optional)<input id="cMsg" maxlength="80"></label><p id="cErr" style="color:#ff8a7a;margin:0"></p><div class="mbtns"><button type="submit">Start challenge</button></div></form>'+
+    '<h4>Going on</h4>'+(act.length ? act.map(row).join('') : '<p style="color:#8F8B84;margin:0">No challenges going on.</p>')+(done.length ? '<h4>Finished</h4>'+done.map(row).join('') : '')+
+    hubRow('ch')+'<div class="mrow"><button class="ghost" id="mClose">Close</button></div>';
+  box.querySelector('#mClose').onclick = () => box.remove(); wireHub(box);
+  box.querySelector('#cForm').onsubmit = async e => { e.preventDefault(); const $q = id => box.querySelector(id), A = ppl.find(p => p.uid === $q('#cA').value), B = ppl.find(p => p.uid === $q('#cB').value), nm = $q('#cName').value.trim();
+    if(!A || !B || A.uid === B.uid){ $q('#cErr').textContent = 'Pick two different athletes.'; return; } if(!nm){ $q('#cErr').textContent = 'Name the workout or lift.'; return; }
+    const days = Math.min(30, Math.max(1, parseInt($q('#cDays').value, 10) || 7)), t = Date.now(), btn = e.target.querySelector('[type=submit]'); btn.disabled = true;
+    try{ await setDoc(doc(collection(fs, 'challenges')), { from: { uid: A.uid, name: A.name }, to: { uid: B.uid, name: B.name }, parts: [A.uid, B.uid], what: { kind: 'other', label: nm.slice(0,60), score: $q('#cScore').value }, msg: $q('#cMsg').value.trim().slice(0,80), status: 'accepted', scores: {}, created: t, due: t + days * 864e5, at: t, setBy: { uid: auth.currentUser.uid, name: myNameF() } }); openChSetup(); }
+    catch(x){ btn.disabled = false; $q('#cErr').textContent = 'Couldn\'t start it. Check your internet and try again.'; } };
+  box.querySelectorAll('[data-cdel]').forEach(b => b.onclick = async () => { if(!confirm('Remove this challenge for both athletes?')) return; b.disabled = true; try{ await deleteDoc(doc(fs, 'challenges', b.dataset.cdel)); openChSetup(); }catch(e){ b.textContent = 'Failed'; } });
+}
+
 async function start(u, coach){
   if(started) return; started = true;
   card('<div class="gspin"></div><p>Loading your programs…</p>');
@@ -5396,6 +5593,7 @@ async function start(u, coach){
       if(n) localStorage.setItem('bb-athlete', JSON.stringify(a));
     }catch(e){} }
     window.__bbCoachTimers = Array.isArray(md.coachTimers) ? md.coachTimers : []; window.__bbBadge = md.coachBadge || '';
+    IS_COACH = !!coach; IS_ADMIN = !coach && !!md.admin && !!md.approved; window.__bbAdmin = IS_ADMIN;
     if(coach){ const st = ((await staffCfg()).staff || {})[(u.email||'').toLowerCase()]; if(st){ window.__bbCoachTimers = st.timers || []; window.__bbBadge = st.badge || ''; } }
     if(coach) ks = PROGS.map(p => p[0]);
     else { ks = md.progs || [];
@@ -5419,11 +5617,12 @@ async function start(u, coach){
   const sc = document.createElement('script'); sc.textContent = src; document.body.appendChild(sc);
   G.hidden = true;
   try{ const bb = badgeEl(window.__bbBadge), bar = document.querySelector('.top .bar'); if(bb && bar){ const w = document.createElement('div'); w.className = 'hdrbadge'; w.appendChild(bb); bar.after(w); } }catch(e){}
-  if(coach){ const b = document.createElement('button'); b.id = 'bbCoachBtn'; b.type = 'button'; b.textContent = 'Members'; b.onclick = openMembers; document.body.appendChild(b);
+  if(coach || IS_ADMIN){ const b = document.createElement('button'); b.id = 'bbCoachBtn'; b.type = 'button'; b.textContent = 'Members'; b.onclick = openMembers; document.body.appendChild(b);
     const t = document.createElement('button'); t.id = 'bbDashBtn'; t.type = 'button'; t.textContent = 'Team'; t.onclick = openDash; document.body.appendChild(t); }
   window.__bbSignOut = () => signOut(auth);
   try{ initSocial(u, coach); }catch(e){}
-  try{ initChat(u, coach); }catch(e){}
+  try{ initChat(u, coach || IS_ADMIN); }catch(e){}
+  try{ initPosts(u); }catch(e){}
   setTimeout(() => { try{ initPush(u); }catch(e){} }, 2500);
 }
 </script>

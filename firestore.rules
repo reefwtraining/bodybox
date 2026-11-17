@@ -14,17 +14,31 @@ service cloud.firestore {
       return signedIn()
         && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.approved == true;
     }
+    // Admin (Jameson, Nov 17): members/{uid}.admin == true, set only by a coach.
+    // Runs members, payments, events, challenges and athlete messages. No programming, Board or app changes.
+    function isAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.get('approved', false) == true
+        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.get('admin', false) == true;
+    }
+    function staff() { return isCoach() || isAdmin(); }
 
     // One doc per person who signs up. Only a coach can approve or turn programs on.
     // Members may only set their name and their picks/codes.
     match /members/{uid} {
-      allow read: if isCoach() || isMe(uid);
+      allow read: if staff() || isMe(uid);
       allow create: if isMe(uid)
         && request.resource.data.approved == false
         && request.resource.data.keys().hasOnly(['name', 'email', 'approved', 'created']);
       allow update: if isCoach()
         || (isMe(uid) && request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(['name', 'wants', 'codes', 'codeProgs', 'wantsAt', 'repick']));
+              .hasOnly(['name', 'wants', 'codes', 'codeProgs', 'wantsAt', 'repick', 'socials', 'about', 'photo']))
+        // Admin: approve, pause, programs on/off. Not coaches, not other admins, can't turn Personal on.
+        || (isAdmin() && resource.data.get('admin', false) != true
+            && !('staff' in resource.data.get('wants', []))
+            && resource.data.get('staffProgs', []).size() == 0
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approved', 'approvedAt', 'progs'])
+            && (!('personal' in request.resource.data.get('progs', [])) || ('personal' in resource.data.get('progs', []))));
       allow delete: if isCoach();
     }
 
@@ -43,14 +57,15 @@ service cloud.firestore {
 
     // Head-to-head challenges. Only the two people in it can change it.
     match /challenges/{id} {
-      allow read: if isCoach() || (signedIn() && request.auth.uid in resource.data.parts);
-      allow create: if (isCoach() || approved())
+      allow read: if staff() || (signedIn() && request.auth.uid in resource.data.parts);
+      allow create: if ((isCoach() || approved())
         && request.resource.data.from.uid == request.auth.uid
         && request.auth.uid in request.resource.data.parts
-        && request.resource.data.parts.size() == 2;
-      allow update: if isCoach() || (signedIn() && request.auth.uid in resource.data.parts
+        && request.resource.data.parts.size() == 2)
+        || (isAdmin() && request.resource.data.parts.size() == 2 && request.resource.data.setBy.uid == request.auth.uid);
+      allow update: if staff() || (signedIn() && request.auth.uid in resource.data.parts
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'scores', 'doneAt', 'at']));
-      allow delete: if isCoach() || (signedIn() && resource.data.from.uid == request.auth.uid);
+      allow delete: if staff() || (signedIn() && resource.data.from.uid == request.auth.uid);
     }
 
     // Good job taps. Everyone sees them; you can only add or remove your own.
@@ -68,20 +83,20 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid', 'name', 'badge', 'text', 'at'])
         && request.resource.data.text is string && request.resource.data.text.size() <= 600;
-      allow delete: if isCoach() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow delete: if staff() || (signedIn() && resource.data.uid == request.auth.uid);
     }
 
-    // One-on-one with Coach Reef. Only that athlete and the coaches.
+    // One-on-one with the coaches. Only that athlete, Coach Reef and the admin.
     match /dms/{uid}/msgs/{id} {
-      allow read: if isCoach() || (isMe(uid) && approved());
-      allow create: if (isCoach() || (isMe(uid) && approved()))
+      allow read: if staff() || (isMe(uid) && approved());
+      allow create: if (staff() || (isMe(uid) && approved()))
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid', 'name', 'badge', 'text', 'at'])
         && request.resource.data.text is string && request.resource.data.text.size() <= 600;
-      allow delete: if isCoach() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow delete: if staff() || (signedIn() && resource.data.uid == request.auth.uid);
     }
     match /{path=**}/msgs/{id} {
-      allow read: if isCoach();
+      allow read: if staff();
     }
 
     // Phone alerts: each person saves their own subscription; only coaches read them (to send).
@@ -94,6 +109,29 @@ service cloud.firestore {
     match /data/users/{uid}/{docId} {
       allow read, write: if isMe(uid) && (approved() || isCoach());
       allow read, write: if isCoach();
+      // Admin reads logs and check-ins (never the coach config with the timer PINs) and can start a new athlete's file on approval.
+      allow read: if isAdmin() && uid != 'coachcfg';
+      allow create: if isAdmin() && uid != 'coachcfg' && !uid.matches('pre_.*');
+    }
+
+    // Payments: one doc per member (rate, paid through, note) + billing/_prices. Coach and admin; each athlete reads their own.
+    match /billing/{id} {
+      allow read: if staff() || isMe(id);
+      allow write: if staff();
+    }
+
+    // Events and announcements. Approved members read; coach and admin post. Athletes tap I'm in (their own entry only).
+    match /posts/{id} {
+      allow read: if staff() || approved();
+      allow write: if staff();
+      match /going/{uid} {
+        allow read: if staff() || approved();
+        allow write: if isMe(uid) && (approved() || isCoach())
+          && (request.resource == null || request.resource.data.keys().hasOnly(['name', 'at']));
+      }
+    }
+    match /{path=**}/going/{uid} {
+      allow read: if staff() || approved();
     }
 
     // SugarWOD card notes. Athlete notes: approved members read. Coaches notes: coaches only.
