@@ -330,7 +330,7 @@ function renderMembers(){
         '<td><input class="rate" type="number" min="0" step="1" inputmode="numeric" data-rate="'+r.id+'" value="'+esc(b.rate||'')+'" placeholder="$" aria-label="Monthly rate"></td>'+
         '<td><input class="pt" type="date" data-pt="'+r.id+'" value="'+esc(b.paidThrough||'')+'" aria-label="Paid through"></td>'+
         '<td><input class="note" maxlength="140" data-note="'+r.id+'" value="'+esc(b.note||'')+'" placeholder="Note" aria-label="Note"></td>'+
-        '<td class="act">'+(s.k === 'free' ? '' : '<button class="btn sm" data-paid="'+r.id+'">Paid 1 month</button>')+'<button class="btn ghost sm" data-remind="'+r.id+'">'+(s.k === 'free' ? 'Message' : 'Reminder')+'</button><button class="btn ghost sm" data-price="'+r.id+'">Prices</button></td>'
+        '<td class="act">'+(s.k === 'free' ? '' : '<button class="btn sm" data-paid="'+r.id+'">Paid 1 month</button>')+'<button class="btn ghost sm" data-remind="'+r.id+'">'+(s.k === 'free' ? 'Message' : 'Reminder')+'</button><button class="btn ghost sm" data-price="'+r.id+'">Prices</button>'+(s.k === 'free' ? '' : '<button class="btn ghost sm" data-copy="'+r.id+'" title="Copy their Venmo link with their amount filled in">Copy pay link</button>')+'</td>'
       : '<td colspan="5" class="muted" style="font-size:13px">Coach. No payments. '+(IS_COACH ? '' : 'Coach Reef handles coaches.')+'</td>')+'</tr>'; }).join('');
   $('#view').innerHTML = '<h2>Athletes &amp; payments</h2><p class="note">Due the 1st. Not in by 7:59 PM on the 1st, pause their access. Paid by the 5th, turn it back on. $0 = no charge. Changes save as you go and show in the app right away.</p>'+
     '<div class="stats"><button class="stat" data-show="owe"><b style="color:var(--red2)">'+owe.length+'</b><span>Need to pay now</span></button><div class="stat"><b>$'+owed+'</b><span>Owed now</span></div><button class="stat" data-show="paid"><b>'+nextUp.length+'</b><span>Due '+esc(fmtD(nx))+'</span></button><button class="stat" data-show="wait"><b style="color:var(--gold)">'+c('wait')+'</b><span>Waiting for approval</span></button><button class="stat" data-show="unset"><b>'+c('unset')+'</b><span>Payment not set up</span></button><div class="stat"><b>$'+monthly+'</b><span>Monthly (everyone on)</span></div></div>'+
@@ -348,9 +348,15 @@ async function saveBill(id, patch){
   catch(e){ alert('Couldn\'t save. Check your internet and try again.'); return false; }
 }
 async function sendDm(uid, text){ await addDoc(collection(fs, 'dms', uid, 'msgs'), { uid: ME.uid, name: ME.name, badge: ME.badge, text: String(text).slice(0, 600), at: Date.now() }); }
-const prices = () => (D.bill._prices && D.bill._prices.text) || PRICE_DEFAULT;
+// Nov 17: how athletes pay. Venmo link opens Venmo with Team BodyBox, their amount and a note filled in.
+const payCfg = P => ({ venmo: String(P && P.venmo != null ? P.venmo : 'teambodybox').replace(/^@/, '').trim(), other: P && P.other != null ? P.other : 'Apple Pay: ask teambodybox@gmail.com' });
+const payMonth = b => { const ds = (b && b.paidThrough && b.paidThrough >= today()) ? b.paidThrough : today(); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+ds.slice(5,7)-1]; };
+const payLink = (P, b, first) => { const v = payCfg(P).venmo; if(!v) return ''; const amt = b && +b.rate > 0 ? +b.rate : 0; return 'https://venmo.com/?txn=pay&recipients='+encodeURIComponent(v)+(amt ? '&amount='+amt : '')+'&note='+encodeURIComponent('BODYBOX '+payMonth(b)+(first ? ' - '+first : '')); };
+const payBlock = (P, b, first) => { const c = payCfg(P), l = payLink(P, b, first); return (l ? '\nPay with Venmo (@'+c.venmo+'): '+l : '') + (c.other ? '\n'+c.other : ''); };
+const priceMsg = (P, txt) => { const c = payCfg(P); return (txt + (c.venmo ? '\nVenmo: https://venmo.com/u/'+c.venmo : '') + (c.other ? '\n'+c.other : '')).slice(0, 600); };
+const prices = () => priceMsg(D.bill._prices, (D.bill._prices && D.bill._prices.text) || PRICE_DEFAULT);
 const reminderText = r => { const b = D.bill[r.id] || {}, s = payState(b), first = (r.name||'').split(' ')[0];
-  return 'Hey '+first+', quick reminder: your BODYBOX payment '+(s.k === 'ok' ? 'is due '+fmtD(b.paidThrough) : 'is due')+'. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back. Questions: teambodybox@gmail.com'; };
+  return 'Hey '+first+', quick reminder: your BODYBOX payment '+(s.k === 'ok' ? 'is due '+fmtD(b.paidThrough) : 'is due')+'. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back. Questions: teambodybox@gmail.com' + payBlock(D.bill._prices, b, first); };
 const markPaid = r => { const b = D.bill[r.id] || {}, nx = addMonth(b.paidThrough || firstOfMonth(today())); return saveBill(r.id, { paidThrough: nx, lastPaid: today() }).then(ok => ({ ok, nx })); };
 function wireMembers(rows){
   const V = $('#view'), byId = id => D.members.find(x => x.id === id);
@@ -370,6 +376,7 @@ function wireMembers(rows){
     if(res.ok){ toast(r.name.split(' ')[0]+' paid through '+fmtD(res.nx)); if(!r.approved) toast('Saved. Their access is paused. Tap Turn back on.'); } renderMembers(); });
   V.querySelectorAll('[data-remind]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.remind), s = payState(D.bill[r.id]); const msg = prompt('Message to '+r.name+' (shows in their app chat):', s.k === 'free' ? '' : reminderText(r)); if(!msg) return; b.disabled = true; try{ await sendDm(r.id, msg); toast('Sent to '+r.name.split(' ')[0]); }catch(e){ alert('Couldn\'t send.'); } b.disabled = false; });
   V.querySelectorAll('[data-price]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.price); if(!confirm('Send the price sheet to '+r.name+' in the app chat?')) return; b.disabled = true; try{ await sendDm(r.id, prices()); toast('Price sheet sent to '+r.name.split(' ')[0]); }catch(e){ alert('Couldn\'t send.'); } b.disabled = false; });
+  V.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.copy), l = payLink(D.bill._prices, D.bill[r.id], (r.name||'').split(' ')[0]); if(!l){ alert('Add the Venmo username on the Price sheet tab first.'); return; } try{ await navigator.clipboard.writeText(l); toast('Pay link copied for '+r.name.split(' ')[0]); }catch(e){ prompt('Copy this link:', l); } });
   V.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.on); b.disabled = true;
     let progs = (r.progs && r.progs.length) ? r.progs : [...new Set((r.wants||[]).flatMap(w => PLAN_PROGS[w] || []))];
     try{ const em = (r.email||'').toLowerCase(); if(em && access(r) === 'wait'){ const pre = await getDoc(doc(fs,'data','users','pre_'+em,'bodybox')), own = await getDoc(doc(fs,'data','users',r.id,'bodybox')); if(pre.exists() && !own.exists()) await setDoc(doc(fs,'data','users',r.id,'bodybox'), pre.data()); } }catch(e){}
@@ -450,10 +457,19 @@ function renderCh(){
 
 /* ---------- price sheet ---------- */
 function renderPrices(){
-  $('#view').innerHTML = '<h2>Price sheet</h2><p class="note">This is what "Prices" sends to an athlete in their app chat. Max 600 characters.</p>'+
-    '<div class="panel form" style="max-width:640px;margin-top:16px"><textarea id="prText" rows="12" maxlength="600">'+esc(prices())+'</textarea><small class="muted" id="prLeft"></small><div><button class="btn" id="prSave" type="button">Save price sheet</button></div></div>';
-  const t = $('#prText'), left = () => $('#prLeft').textContent = (600 - t.value.length)+' characters left'; t.oninput = left; left();
-  $('#prSave').onclick = async () => { try{ await setDoc(doc(fs,'billing','_prices'), { text: t.value.slice(0,600), by: ME.name, at: serverTimestamp() }); toast('Saved'); }catch(e){ alert('Couldn\'t save.'); } };
+  const P = D.bill._prices || {}, c = payCfg(P);
+  $('#view').innerHTML = '<h2>Price sheet &amp; how to pay</h2><p class="note">"Prices" sends this sheet to an athlete in their app chat, with the ways to pay added at the end. Payment reminders include a Venmo link with their amount already filled in.</p>'+
+    '<div class="grid2" style="margin-top:16px"><div class="panel form"><b>Price sheet</b><textarea id="prText" rows="12" maxlength="600">'+esc((P.text) || PRICE_DEFAULT)+'</textarea><small class="muted" id="prLeft"></small></div>'+
+    '<div class="panel form"><b>How athletes pay</b><label>Venmo username<input id="pyV" maxlength="40" value="'+esc(c.venmo)+'" placeholder="teambodybox"></label>'+
+    '<label>Other ways to pay (one line, shows under the Venmo link)<input id="pyO" maxlength="120" value="'+esc(c.other)+'" placeholder="Apple Pay: ask teambodybox@gmail.com"></label>'+
+    '<p class="note" id="pyTest"></p><div><button class="btn" id="prSave" type="button">Save</button></div>'+
+    '<b style="margin-top:8px">What athletes get</b><div id="prPrev" style="white-space:pre-wrap;font-size:14px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px"></div></div></div>';
+  const t = $('#prText'), cur = () => ({ text: t.value, venmo: $('#pyV').value.replace(/^@/, '').trim(), other: $('#pyO').value.trim() });
+  const upd = () => { const C = cur(), full = priceMsg(C, C.text); $('#prLeft').textContent = Math.max(0, 600 - (C.text + (C.venmo ? '\nVenmo: https://venmo.com/u/'+C.venmo : '') + (C.other ? '\n'+C.other : '')).length)+' characters left (with the pay lines)'; $('#prPrev').textContent = full;
+    const l = payLink(C, { rate: 30 }, 'Ashley'); $('#pyTest').innerHTML = l ? 'Test the Venmo link (a $30 example): <a href="'+esc(l)+'" target="_blank" rel="noopener">open</a>' : 'No Venmo username: reminders go out without a pay link.'; };
+  [t, $('#pyV'), $('#pyO')].forEach(x => x.oninput = upd); upd();
+  $('#prSave').onclick = async () => { const C = cur();
+    try{ await setDoc(doc(fs,'billing','_prices'), { text: C.text.slice(0,600), venmo: C.venmo, other: C.other.slice(0,120), by: ME.name, at: serverTimestamp() }); toast('Saved'); }catch(e){ alert('Couldn\'t save.'); } };
 }
 </script>
 </body>
