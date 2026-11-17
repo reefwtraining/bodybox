@@ -128,6 +128,7 @@ h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color
     <nav class="tabs" role="tablist">
       <button role="tab" data-tab="calendar" aria-selected="false">Calendar</button>
       <button role="tab" data-tab="members" aria-selected="true">Athletes &amp; payments</button>
+      <button role="tab" data-tab="invite" aria-selected="false">New athlete</button>
       <button role="tab" data-tab="events" aria-selected="false">Events &amp; news</button>
       <button role="tab" data-tab="challenges" aria-selected="false">Challenges</button>
       <button role="tab" data-tab="prices" aria-selected="false">Price sheet</button>
@@ -200,7 +201,7 @@ onAuthStateChanged(auth, async u => {
 });
 
 /* ---------- live data ---------- */
-const D = { members: [], bill: {}, posts: [], going: {}, ch: [] };
+const D = { members: [], bill: {}, posts: [], going: {}, ch: [], inv: [] };
 let TAB = 'members', redrawT;
 const redraw = () => { clearTimeout(redrawT); redrawT = setTimeout(() => { if(!busyTyping()) render(); }, 120); };
 const busyTyping = () => { const a = document.activeElement; return a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('#view') && !a.matches('.search'); };
@@ -209,10 +210,11 @@ function live(){
   onSnapshot(collection(fs, 'billing'), s => { D.bill = {}; s.docs.forEach(d => D.bill[d.id] = d.data()); if(TAB !== 'calendar') redraw(); }, e => console.warn(e));
   onSnapshot(collection(fs, 'posts'), s => { D.posts = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'events') redraw(); }, () => {});
   onSnapshot(collectionGroup(fs, 'going'), s => { const G = {}; s.docs.forEach(d => { const k = d.ref.parent.parent.id; (G[k] = G[k] || []).push(Object.assign({ uid: d.id }, d.data())); }); D.going = G; if(TAB === 'events') redraw(); }, () => {});
+  onSnapshot(collection(fs, 'invites'), s => { D.inv = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'invite' || TAB === 'members') redraw(); }, () => {});
   onSnapshot(collection(fs, 'challenges'), s => { D.ch = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'challenges') redraw(); }, () => {});
 }
 function go(t){ TAB = t; document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t))); render(); }
-function render(){ ({ calendar: renderCal, members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices })[TAB](); }
+function render(){ ({ invite: renderInvite, calendar: renderCal, members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices })[TAB](); }
 
 /* ---------- calendar: the week's programming per track, like SugarWOD ---------- */
 const TRACKS = [['class','RT Movement','VXW86K','rt'],['comp','Athlete Comp','WGC534','comp'],['build','Building','RMXGZJ','build'],['cardio','Cardio','WQH7V7','cardio'],['garage','Garage Box','ZUBVXM','garage'],['shiit','S.H.I.I.T','56EG63','shiit']];
@@ -320,6 +322,7 @@ function renderMembers(){
     const lab = a === 'on' ? '<span class="acc on">Approved</span>' : a === 'wait' ? '<span class="acc wait">Waiting</span>' : '<span class="acc off">Paused</span>';
     if(locked(r)) return lab;
     return lab+'<div style="margin-top:6px">'+(a === 'on' ? '<button class="btn ghost sm" data-off="'+r.id+'">Pause</button>' : '<button class="btn sm" data-on="'+r.id+'">'+(a === 'wait' ? 'Approve' : 'Turn back on')+'</button>')+'</div>'+
+      (inviteFor(r) ? '<small style="font-size:12px;display:block;margin-top:4px;color:var(--gold)">Invited by '+esc(inviteFor(r).byName||'')+': '+esc(inviteFor(r).progs.map(progLabel).join(', '))+'</small>' : '')+
       ((r.wants||[]).length ? '<small class="muted" style="font-size:12px;display:block;margin-top:4px">Picked: '+esc(r.wants.map(w => PLANS[w] || w).join(' + '))+'</small>' : '')+
       (IS_COACH && !isStaff(r) && r.approved ? '<button class="btn ghost sm" style="margin-top:4px" data-adm="'+r.id+'">'+(r.admin ? 'Admin ✓' : 'Make admin')+'</button>' : ''); };
   const body = rows.map(r => { const b = B(r), s = payState(b), staff = isStaff(r), pay = !staff;
@@ -378,7 +381,8 @@ function wireMembers(rows){
   V.querySelectorAll('[data-price]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.price); if(!confirm('Send the price sheet to '+r.name+' in the app chat?')) return; b.disabled = true; try{ await sendDm(r.id, prices()); toast('Price sheet sent to '+r.name.split(' ')[0]); }catch(e){ alert('Couldn\'t send.'); } b.disabled = false; });
   V.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.copy), l = payLink(D.bill._prices, D.bill[r.id], (r.name||'').split(' ')[0]); if(!l){ alert('Add the Venmo username on the Price sheet tab first.'); return; } try{ await navigator.clipboard.writeText(l); toast('Pay link copied for '+r.name.split(' ')[0]); }catch(e){ prompt('Copy this link:', l); } });
   V.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.on); b.disabled = true;
-    let progs = (r.progs && r.progs.length) ? r.progs : [...new Set((r.wants||[]).flatMap(w => PLAN_PROGS[w] || []))];
+    const iv = inviteFor(r); let progs = (r.progs && r.progs.length) ? r.progs : iv ? iv.progs : [...new Set((r.wants||[]).flatMap(w => PLAN_PROGS[w] || []))];
+    if(iv && !(D.bill[r.id] && D.bill[r.id].rate)){ await saveBill(r.id, { rate: iv.rate || '', paidThrough: iv.firstPay || '', note: 'Free trial '+fmtD(iv.trialStart)+' to '+fmtD(addDays(iv.trialStart, 6))+'. Invited by '+(iv.byName||'')+'.' }); try{ await updateDoc(doc(fs,'invites',iv.id), { status: 'approved', uid: r.id }); }catch(e){} }
     try{ const em = (r.email||'').toLowerCase(); if(em && access(r) === 'wait'){ const pre = await getDoc(doc(fs,'data','users','pre_'+em,'bodybox')), own = await getDoc(doc(fs,'data','users',r.id,'bodybox')); if(pre.exists() && !own.exists()) await setDoc(doc(fs,'data','users',r.id,'bodybox'), pre.data()); } }catch(e){}
     try{ await updateDoc(doc(fs,'members',r.id), { approved: true, approvedAt: serverTimestamp(), progs }); toast(r.name.split(' ')[0]+' is in'); }catch(e){ alert('Couldn\'t approve. '+(isStaff(r) ? 'Coaches are approved by Coach Reef.' : 'Try again.')); b.disabled = false; } });
   V.querySelectorAll('[data-off]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.off); if(!confirm('Pause '+r.name+'\'s access? They can\'t open their programs until you turn it back on.')) return; b.disabled = true; try{ await updateDoc(doc(fs,'members',r.id), { approved: false }); toast(r.name.split(' ')[0]+' paused'); }catch(e){ alert('Couldn\'t pause.'); b.disabled = false; } });
@@ -398,6 +402,64 @@ function downloadCsv(){
   people().sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(r => { const b = D.bill[r.id] || {}, s = isStaff(r) ? { t:'Coach' } : payState(b);
     lines.push([r.name, r.email, { on:'Approved', off:'Paused', wait:'Waiting' }[access(r)], (r.progs||[]).join(' '), s.t, b.rate, b.paidThrough, b.lastPaid, b.note, r.admin ? 'yes' : '', isStaff(r) ? 'yes' : ''].map(q).join(',')); });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })); a.download = 'bodybox-members-'+today()+'.csv'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+
+/* ---------- new athlete: write the app setup email with the right code, remember the plan for approval ---------- */
+const CODE = { comp:'WGC534', build:'RMXGZJ', cardio:'WQH7V7', shiit:'56EG63', rt:'VXW86K', garage:'ZUBVXM' };
+const PICK = { comp:'Athlete Comp', build:'Body Box Building', cardio:'Cardio', garage:'Garage Box' };
+const progLabel = k => ({ comp:'Athlete Comp', build:'Building', cardio:'Cardio', shiit:'S.H.I.I.T', rt:'RT Movement', garage:'Garage Box' })[k] || k;
+const inviteFor = r => { const em = (r.email||'').toLowerCase(); return D.inv.filter(i => i.email === em).sort((a,b) => (b.at||0) - (a.at||0))[0] || null; };
+const nextFirst = ds => { const [y,m,d] = ds.split('-').map(Number), a = ymd(new Date(y, m-1, 1)), b = ymd(new Date(y, m, 1)); return Math.abs(dayDiff(ds, a)) <= Math.abs(dayDiff(b, ds)) ? a : b; }; // the 1st closest to when the trial ends
+function codesFor(progs){ const s = new Set(progs), out = [];
+  if(['comp','build','cardio'].every(k => s.has(k))){ out.push('AK4MVX'); ['comp','build','cardio','shiit'].forEach(k => s.delete(k)); }
+  [...s].forEach(k => CODE[k] && out.push(CODE[k])); return out; }
+function picksFor(progs){ const s = new Set(progs); if(['comp','build','cardio'].every(k => s.has(k))) return ['All 3 Programs'].concat(s.has('garage') ? ['Garage Box'] : []); return progs.filter(k => PICK[k]).map(k => PICK[k]); }
+function inviteEmail(v){
+  const codes = codesFor(v.progs), picks = picksFor(v.progs), trialEnd = addDays(v.trialStart, 6);
+  return { subject: 'Your BODYBOX app: full setup',
+    body: v.first+',\n\nWelcome to Team BodyBox. Here\'s everything to get you into the BODYBOX app.\n\n'+
+    'OPEN THE APP\nhttps://reefwtraining.github.io/bodybox/app2/\n\n'+
+    'YOUR LOGIN\nEmail: '+v.email+'\nPassword: you make it\nYour code: '+codes.join(' ')+'\n\n'+
+    'GET IN: 6 STEPS\n1. Open the app (link above).\n2. Tap Create account. Use '+v.email+' and make a password.\n'+
+    '3. Pick '+(picks.length ? picks.join(' + ') : 'your programs')+', then type your code: '+codes.join(' ')+'\n'+
+    '4. We approve you. Usually same day. The app opens by itself once you\'re in.\n'+
+    '5. Tap Me and check your numbers.\n6. Train and log every set and score.\n\n'+
+    'Put it on your home screen: on iPhone open the link in Safari, tap Share, then Add to Home Screen. Open it from there and tap Turn on so you get the 8 PM "tomorrow\'s workout is up" alert.\n\n'+
+    'YOUR FREE WEEK\nYour 7-day free trial runs '+fmtD(v.trialStart)+' to '+fmtD(trialEnd)+'. '+(v.rate ? 'Then it\'s $'+v.rate+' a month. ' : '')+'Your first payment is due '+fmtD(v.firstPay)+(v.lineUp ? ', so you\'re on the same schedule as the rest of the team (the 1st of every month)' : '')+'. Payments and account questions: teambodybox@gmail.com\n\n'+
+    'Team BodyBox\nKEEP DOING GREAT THINGS' };
+}
+let INV = null;
+function renderInvite(){
+  const td = today();
+  if(!INV) INV = { first:'', last:'', email:'', progs:['comp','build','cardio'], rate:'69', trialStart: td, lineUp: true };
+  const firstPay = () => { const end = addDays(INV.trialStart, 7); return INV.lineUp ? nextFirst(end) : end; };
+  const recent = D.inv.slice().sort((a,b) => (b.at||0) - (a.at||0)).slice(0, 15);
+  const status = i => { const m = D.members.find(x => (x.email||'').toLowerCase() === i.email); return !m ? '<span class="acc wait">Not signed up yet</span>' : m.approved ? '<span class="acc on">In the app</span>' : '<span class="acc wait">Signed up, waiting for approval</span>'; };
+  $('#view').innerHTML = '<h2>New athlete</h2><p class="note">Fill this in and you get the app setup email with the right code. Send it from your email. When they sign up they show as Waiting on Athletes &amp; payments: tap Approve and their programs, rate and first payment date are set for you.</p>'+
+    '<div class="grid2" style="margin-top:16px"><form class="panel form" id="ivForm"><b>Their info</b>'+
+    '<div class="row3"><label>First name<input id="ivF" required maxlength="40" value="'+esc(INV.first)+'"></label><label>Last name<input id="ivL" maxlength="40" value="'+esc(INV.last)+'"></label></div>'+
+    '<label>Email<input id="ivE" type="email" required maxlength="80" value="'+esc(INV.email)+'"></label>'+
+    '<label>Programs</label><div class="progs" style="max-width:none">'+['comp','build','cardio','garage','shiit','rt'].map(k => '<button type="button" class="'+(INV.progs.includes(k)?'on':'')+'" data-ivp="'+k+'">'+progLabel(k)+'</button>').join('')+'</div>'+
+    '<p class="note" style="margin-top:-4px">Personal programming: Coach Reef sets that up.</p>'+
+    '<div class="row3"><label>$ a month<input id="ivR" type="number" min="0" step="1" value="'+esc(INV.rate)+'"></label><label>Free trial starts<input id="ivT" type="date" value="'+esc(INV.trialStart)+'"></label></div>'+
+    '<label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--chalk)"><input type="checkbox" id="ivLine"'+(INV.lineUp?' checked':'')+' style="width:auto"> First payment on the 1st closest to the end of the trial, like everyone else</label>'+
+    '<p class="note">Trial: '+esc(fmtD(INV.trialStart))+' to '+esc(fmtD(addDays(INV.trialStart, 6)))+' · first payment '+esc(fmtD(firstPay()))+' · code '+esc(codesFor(INV.progs).join(' ') || '–')+'</p>'+
+    '<p id="ivErr" style="color:#ff8a7a;margin:0"></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="submit">Open the email to send</button><button class="btn ghost" type="button" id="ivCopy">Copy the email</button></div></form>'+
+    '<div style="display:grid;gap:10px"><b>Email preview</b><div id="ivPrev" class="item" style="white-space:pre-wrap;font-size:14px"></div>'+
+    '<h3>Invited</h3>'+(recent.length ? recent.map(i => '<div class="item"><b>'+esc(i.name)+'</b><small>'+esc(i.email)+' · '+esc(i.progs.map(progLabel).join(', '))+' · $'+esc(i.rate||'?')+'/mo · trial from '+esc(fmtD(i.trialStart))+' · by '+esc(i.byName||'')+'</small>'+status(i)+'</div>').join('') : '<p class="muted" style="margin:0">Nobody invited yet.</p>')+'</div></div>';
+  const sync = () => { INV.first = $('#ivF').value.trim(); INV.last = $('#ivL').value.trim(); INV.email = $('#ivE').value.trim().toLowerCase(); INV.rate = $('#ivR').value; INV.trialStart = $('#ivT').value || td; INV.lineUp = $('#ivLine').checked; };
+  const prev = () => { sync(); const e = inviteEmail(Object.assign({}, INV, { first: INV.first || '[First name]', email: INV.email || '[their email]', firstPay: firstPay() })); $('#ivPrev').textContent = 'Subject: '+e.subject+'\n\n'+e.body; };
+  ['#ivF','#ivL','#ivE','#ivR'].forEach(s => $(s).oninput = prev); $('#ivT').onchange = () => { sync(); renderInvite(); }; $('#ivLine').onchange = () => { sync(); renderInvite(); }; prev();
+  document.querySelectorAll('[data-ivp]').forEach(b => b.onclick = () => { sync(); const k = b.dataset.ivp, s = new Set(INV.progs); s.has(k) ? s.delete(k) : s.add(k); INV.progs = PROGS.map(p => p[0]).filter(x => s.has(x));
+    const main = INV.progs.filter(x => ['comp','build','cardio'].includes(x)).length; INV.rate = String(main === 3 ? 69 : main * 35 + (INV.progs.includes('garage') ? 25 : 0)); renderInvite(); });
+  const save = async () => { sync();
+    if(!INV.first || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(INV.email)){ $('#ivErr').textContent = 'Add their first name and a real email.'; return null; }
+    if(!INV.progs.length){ $('#ivErr').textContent = 'Pick at least one program.'; return null; }
+    const v = Object.assign({}, INV, { firstPay: firstPay() }), e = inviteEmail(v);
+    try{ await addDoc(collection(fs, 'invites'), { name: (INV.first+' '+INV.last).trim(), email: INV.email, progs: INV.progs, rate: INV.rate, trialStart: INV.trialStart, firstPay: v.firstPay, codes: codesFor(INV.progs), status: 'invited', by: ME.uid, byName: ME.name, at: Date.now() }); }catch(x){ $('#ivErr').textContent = 'Couldn\'t save. Check your internet and try again.'; return null; }
+    return e; };
+  $('#ivForm').onsubmit = async ev => { ev.preventDefault(); const e = await save(); if(!e) return; location.href = 'mailto:'+encodeURIComponent(INV.email)+'?subject='+encodeURIComponent(e.subject)+'&body='+encodeURIComponent(e.body); toast('Saved. Your email app is opening.'); INV = null; setTimeout(renderInvite, 800); };
+  $('#ivCopy').onclick = async () => { const e = await save(); if(!e) return; const txt = e.body; try{ await navigator.clipboard.writeText(txt); toast('Email copied. Paste it into a new email to '+INV.email+' (subject: '+e.subject+')'); }catch(x){ prompt('Copy this:', txt); } INV = null; setTimeout(renderInvite, 800); };
 }
 
 /* ---------- events & news ---------- */

@@ -120,6 +120,11 @@ service cloud.firestore {
       allow write: if staff();
     }
 
+    // New athlete invites (written by Coach Reef or the admin from the admin page).
+    match /invites/{id} {
+      allow read, write: if staff();
+    }
+
     // Events and announcements. Approved members read; coach and admin post. Athletes tap I'm in (their own entry only).
     match /posts/{id} {
       allow read: if staff() || approved();
