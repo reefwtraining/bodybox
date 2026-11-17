@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>BODYBOX Admin</title>
+<link rel="icon" href="../icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Barlow:wght@400;500;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>
+:root{--bg:#111111;--panel:#1B1B1B;--panel2:#151515;--line:#2A2A2A;--chalk:#F4F2EE;--muted:#8F8B84;--red:#C8102E;--red2:#FF5A64;--gold:#E8B44C;--green:#6FBF73;
+  --display:"Anton",Impact,"Arial Narrow",sans-serif;--cond:"Barlow Condensed","Arial Narrow",sans-serif;--body:"Barlow","Helvetica Neue",Arial,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--chalk);font:15px/1.45 var(--body)}
+a{color:var(--red2)}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--chalk);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--red2);outline-offset:1px}
+.btn{background:var(--red);border:0;border-radius:999px;color:#fff;font-weight:600;padding:8px 16px;white-space:nowrap}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--chalk)}
+.btn.sm{padding:5px 11px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:default}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.wrap{max-width:1400px;margin:0 auto;padding:0 20px}
+/* gate */
+#gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+#gate .card{width:100%;max-width:380px;display:grid;gap:14px}
+#gate h1{font:400 34px/1 var(--display);text-align:center;margin:0;letter-spacing:.03em}#gate h1 span{color:var(--red2)}
+#gate p{margin:0;text-align:center;color:var(--muted)}
+#gate label{display:grid;gap:4px;font:600 13px var(--cond);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#gate input{padding:12px 14px;border-radius:12px;background:var(--panel)}
+#gate .btn{padding:13px;font-size:16px}
+#gate .err{color:#ff8a7a;text-align:center;min-height:1.2em;font-size:14px}
+/* top */
+header.top{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(17,17,17,.96);backdrop-filter:blur(6px);z-index:20}
+header.top .wrap{display:flex;align-items:center;gap:18px;padding-block:12px;flex-wrap:wrap}
+.brand{font:400 26px/1 var(--display);letter-spacing:.03em}.brand span{color:var(--red2)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{background:none;border:0;border-radius:999px;padding:7px 14px;color:var(--muted);font-weight:600}
+.tabs button[aria-selected="true"]{background:var(--panel);color:var(--chalk);box-shadow:inset 0 0 0 1px var(--line)}
+.who{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted)}
+main{padding:22px 0 60px}
+h2{font:400 30px/1.1 var(--display);margin:0 0 4px;letter-spacing:.02em}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:2px;text-align:left}
+button.stat:hover{border-color:#444}
+.stat b{font:700 26px var(--mono)}.stat span{font-size:13px;color:var(--muted)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{background:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--muted)}
+.chips button[aria-pressed="true"]{background:var(--chalk);border-color:var(--chalk);color:#111}
+.chips button i{font-style:normal;opacity:.7;margin-left:4px}
+.search{flex:1;min-width:180px;max-width:320px}
+.bulk{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--red);border-radius:12px;padding:8px 12px;margin:0 0 12px}
+.tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;max-height:calc(100vh - 300px);min-height:300px}
+table{border-collapse:separate;border-spacing:0;width:100%;min-width:1150px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+th{position:sticky;top:0;background:var(--panel);z-index:2;font:700 12px var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+th.sort{cursor:pointer}th.sort:hover{color:var(--chalk)}th .ar{color:var(--red2)}
+tr:hover td{background:#161616}
+td.nm b{display:block;font-size:15px}td.nm small{color:var(--muted);font-size:12px;display:block;word-break:break-all}
+.tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--line);color:var(--gold);margin-top:3px}
+.acc{font-weight:600;font-size:13px}.acc.on{color:var(--green)}.acc.wait{color:var(--gold)}.acc.off{color:var(--red2)}
+.progs{display:flex;flex-wrap:wrap;gap:4px;max-width:440px}
+.progs button{border:1px solid var(--line);background:none;border-radius:999px;padding:3px 9px;font-size:12px;color:var(--muted)}
+.progs button.on{background:var(--red);border-color:var(--red);color:#fff}
+.progs span{font-size:12px;color:var(--gold);padding:3px 0}
+.pst{font-weight:600;font-size:13px;white-space:nowrap}.pst.ok{color:var(--green)}.pst.due{color:var(--gold)}.pst.late{color:var(--red2)}.pst.none{color:var(--muted)}.pst.free{color:#C9C5BE}
+td input.rate{width:74px}td input.pt{width:142px}td input.note{width:100%;min-width:170px}
+td.act{white-space:nowrap}td.act .btn{margin:0 4px 4px 0}
+.saved{color:var(--green);font-size:12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px}
+.grid2{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:18px;align-items:start}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.form{display:grid;gap:10px}
+.form label{display:grid;gap:4px;font-size:12px;color:var(--muted);letter-spacing:.04em}
+.row3{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.seg{display:flex;gap:6px}.seg button{background:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:600}.seg button[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.item{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--panel2);display:grid;gap:4px}
+.item b{font-size:16px}.item small{color:var(--muted)}
+.item .acts{display:flex;gap:6px;margin-top:4px}
+h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:10px 0 0}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--chalk);color:#111;border-radius:999px;padding:10px 18px;font-weight:600;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.note{font-size:13px;color:var(--muted);margin:0}
+</style>
+</head>
+<body>
+<div id="gate"><div class="card"><div class="gspin label" style="text-align:center">Loading…</div></div></div>
+<div id="appRoot" hidden>
+  <header class="top"><div class="wrap">
+    <div class="brand">BODY<span>BOX</span> ADMIN</div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="members" aria-selected="true">Members &amp; payments</button>
+      <button role="tab" data-tab="events" aria-selected="false">Events &amp; news</button>
+      <button role="tab" data-tab="challenges" aria-selected="false">Challenges</button>
+      <button role="tab" data-tab="prices" aria-selected="false">Price sheet</button>
+    </nav>
+    <div class="who"><span id="whoName"></span><a href="../app2/" class="btn ghost sm" style="text-decoration:none">Open the app</a><button class="btn ghost sm" id="outBtn" type="button">Sign out</button></div>
+  </div></header>
+  <main><div class="wrap" id="view"></div></main>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, onSnapshot, collectionGroup, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const cfg = { apiKey: "AIzaSyAMHdGXPgAwPkbdGdcmA538JHBAF_QWAEU", authDomain: "teambodybox-app.firebaseapp.com", projectId: "teambodybox-app", storageBucket: "teambodybox-app.firebasestorage.app", messagingSenderId: "212485533701", appId: "1:212485533701:web:a42605f3fdf0ad6b60ec6c" };
+const fb = initializeApp(cfg), auth = getAuth(fb), fs = getFirestore(fb);
+setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+// same lists as the app
+const COACHES = ['reefwtraining@gmail.com'];
+const PROGS = [['comp','Athlete Comp'],['build','Building'],['cardio','Cardio'],['shiit','S.H.I.I.T'],['rt','RT Movement'],['garage','Garage Box']];
+const PERSONAL = ['personal','Personal'];
+const PLANS = { comp:'Athlete Comp', build:'Body Box Building', cardio:'Cardio', garage:'Garage Box', all3:'All 3 Programs', coach:'Personal Coaching', staff:'Coach access' };
+const PLAN_PROGS = { comp:['comp'], build:['build'], cardio:['cardio'], garage:['garage'], all3:['comp','build','cardio'], coach:['comp','build','cardio'] };
+const PRICE_DEFAULT = 'BODYBOX prices (per month)\n- One program (Athlete Comp, Body Box Building or Cardio): $35\n- All 3 programs: $69\n- All 3 programs + personal programming from Coach Reef: $129\n- Garage Box: $25\nPayment is due on the 1st of every month. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back.\nPayments and account questions: teambodybox@gmail.com';
+
+const $ = s => document.querySelector(s), esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0'), ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()), today = () => ymd(new Date());
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmtD = ds => { if(!ds) return ''; const [y,m,d] = ds.split('-').map(Number); return MON[m-1]+' '+d+(y !== new Date().getFullYear() ? ', '+y : ''); };
+const addMonth = ds => { const [y,m,d] = ds.split('-').map(Number); return ymd(new Date(y, m, d)); };
+const addDays = (ds, n) => { const [y,m,d] = ds.split('-').map(Number); return ymd(new Date(y, m-1, d+n)); };
+const firstOfMonth = ds => ds.slice(0,8)+'01';
+const dayDiff = (a, b) => Math.round((new Date(a+'T12:00:00') - new Date(b+'T12:00:00')) / 864e5);
+function payState(b){
+  const pt = b && b.paidThrough, td = today();
+  if(b && String(b.rate) === '0') return { k:'free', t:'No charge' };
+  if(!pt) return { k:'none', t:'Not set up' };
+  if(pt > td) return { k:'ok', t:'Paid through '+fmtD(pt) };
+  const late = dayDiff(td, pt);
+  if(late < 5) return { k:'due', t:'Due '+fmtD(pt)+(late ? ' · '+late+'d late' : ' · today') };
+  return { k:'late', t:'Not paid since '+fmtD(pt) };
+}
+let toastT; function toast(t){ let el = $('.toast'); if(!el){ el = document.createElement('div'); el.className = 'toast'; document.body.appendChild(el); } el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2200); }
+
+/* ---------- gate ---------- */
+const gate = h => { $('#gate').hidden = false; $('#appRoot').hidden = true; $('#gate .card').innerHTML = '<h1>BODY<span>BOX</span> ADMIN</h1>'+h; };
+function showSignIn(msg){
+  gate('<p>For Coach Reef and BODYBOX admins. Use your BODYBOX app login.</p>'+
+    '<form id="gIn" class="card" style="gap:12px"><label>Email<input id="gEm" type="email" autocomplete="email" required></label><label>Password<input id="gPw" type="password" autocomplete="current-password" required></label>'+
+    '<p class="err" id="gErr">'+esc(msg||'')+'</p><button class="btn" type="submit">Sign in</button></form><p><button type="button" id="gForgot" style="background:none;border:0;color:var(--red2);text-decoration:underline">Forgot password</button></p>');
+  $('#gIn').onsubmit = async e => { e.preventDefault(); const b = e.target.querySelector('button'); b.disabled = true;
+    try{ await signInWithEmailAndPassword(auth, $('#gEm').value.trim(), $('#gPw').value); }
+    catch(x){ $('#gErr').textContent = /network/.test(x.code||'') ? 'No connection. Try again.' : 'That email and password don\'t match.'; b.disabled = false; } };
+  $('#gForgot').onclick = async () => { const em = $('#gEm').value.trim(); if(!em){ $('#gErr').textContent = 'Type your email, then tap Forgot password.'; return; } try{ await sendPasswordResetEmail(auth, em); $('#gErr').textContent = 'Check your email for a reset link.'; }catch(x){ $('#gErr').textContent = 'Couldn\'t send it. Check the email.'; } };
+}
+let ME = null, IS_COACH = false;
+onAuthStateChanged(auth, async u => {
+  if(!u){ showSignIn(''); return; }
+  gate('<p>Checking your access…</p>');
+  IS_COACH = COACHES.includes((u.email||'').toLowerCase());
+  let md = {}; try{ const s = await getDoc(doc(fs, 'members', u.uid)); md = s.exists() ? s.data() : {}; }catch(e){}
+  if(!IS_COACH && !(md.admin && md.approved)){ gate('<p>This page is for BODYBOX staff only. You\'re signed in as '+esc(u.email)+'.</p><button class="btn ghost" id="gOut">Sign out</button>'); $('#gOut').onclick = () => signOut(auth); return; }
+  ME = { uid: u.uid, name: md.name || u.displayName || (IS_COACH ? 'Coach Reef' : 'Admin'), badge: md.coachBadge || '' };
+  $('#whoName').textContent = ME.name + (IS_COACH ? ' · Head Coach' : ' · Admin');
+  $('#gate').hidden = true; $('#appRoot').hidden = false;
+  $('#outBtn').onclick = () => signOut(auth);
+  document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => go(b.dataset.tab));
+  live(); go('members');
+});
+
+/* ---------- live data ---------- */
+const D = { members: [], bill: {}, posts: [], going: {}, ch: [] };
+let TAB = 'members', redrawT;
+const redraw = () => { clearTimeout(redrawT); redrawT = setTimeout(() => { if(!busyTyping()) render(); }, 120); };
+const busyTyping = () => { const a = document.activeElement; return a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('#view') && !a.matches('.search'); };
+function live(){
+  onSnapshot(collection(fs, 'members'), s => { D.members = s.docs.map(d => Object.assign({ id: d.id }, d.data())); redraw(); }, e => console.warn(e));
+  onSnapshot(collection(fs, 'billing'), s => { D.bill = {}; s.docs.forEach(d => D.bill[d.id] = d.data()); redraw(); }, e => console.warn(e));
+  onSnapshot(collection(fs, 'posts'), s => { D.posts = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'events') redraw(); }, () => {});
+  onSnapshot(collectionGroup(fs, 'going'), s => { const G = {}; s.docs.forEach(d => { const k = d.ref.parent.parent.id; (G[k] = G[k] || []).push(Object.assign({ uid: d.id }, d.data())); }); D.going = G; if(TAB === 'events') redraw(); }, () => {});
+  onSnapshot(collection(fs, 'challenges'), s => { D.ch = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'challenges') redraw(); }, () => {});
+}
+function go(t){ TAB = t; document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t))); render(); }
+function render(){ ({ members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices })[TAB](); }
+
+/* ---------- members & payments ---------- */
+const isStaff = r => (r.wants||[]).includes('staff') || (r.staffProgs||[]).length > 0 || !!r.coachBadge;
+const access = r => r.approved ? 'on' : (r.approvedAt || (r.progs||[]).length) ? 'off' : 'wait';
+const locked = r => !IS_COACH && (isStaff(r) || r.admin);
+let F = { show: 'owe', q: '', sort: 'status', dir: 1 }, SEL = new Set();
+function people(){ return D.members.filter(r => !COACHES.includes((r.email||'').toLowerCase())); }
+function rowsFor(show){
+  const all = people();
+  const pay = r => !isStaff(r) && r.approved;
+  const k = r => payState(D.bill[r.id]).k;
+  return ({
+    owe: all.filter(r => pay(r) && ['due','late'].includes(k(r))),
+    unset: all.filter(r => pay(r) && k(r) === 'none'),
+    wait: all.filter(r => access(r) === 'wait'),
+    paused: all.filter(r => access(r) === 'off'),
+    paid: all.filter(r => pay(r) && k(r) === 'ok'),
+    free: all.filter(r => pay(r) && k(r) === 'free'),
+    coaches: all.filter(isStaff),
+    all
+  })[show] || all;
+}
+const ORDER = { late:0, due:1, none:2, ok:3, free:4 };
+function sorted(rows){
+  const s = F.sort, d = F.dir, B = r => D.bill[r.id] || {};
+  const key = { name: r => (r.name||r.email||'').toLowerCase(), status: r => (access(r) === 'wait' ? -2 : access(r) === 'off' ? -1 : ORDER[payState(B(r)).k]) * 1e9 + 0, pt: r => B(r).paidThrough || '9999', rate: r => +(B(r).rate || 0) }[s];
+  return rows.slice().sort((a,b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : (a.name||'').localeCompare(b.name||'')) * d; });
+}
+function renderMembers(){
+  const c = k => rowsFor(k).length, B = r => D.bill[r.id] || {};
+  const owe = rowsFor('owe'), owed = owe.reduce((t,r) => t + (+B(r).rate || 0), 0);
+  const nx = addMonth(firstOfMonth(today())), nextUp = rowsFor('paid').filter(r => B(r).paidThrough === nx);
+  const monthly = people().filter(r => r.approved && !isStaff(r)).reduce((t,r) => t + (+B(r).rate || 0), 0);
+  let rows = rowsFor(F.show);
+  if(F.q){ const q = F.q.toLowerCase(); rows = people().filter(r => ((r.name||'')+' '+(r.email||'')+' '+(B(r).note||'')).toLowerCase().includes(q)); }
+  rows = sorted(rows); SEL = new Set([...SEL].filter(id => rows.some(r => r.id === id)));
+  const chip = (k, t) => '<button type="button" data-show="'+k+'" aria-pressed="'+(F.show === k && !F.q)+'">'+t+'<i>'+c(k)+'</i></button>';
+  const th = (k, t) => '<th class="sort" data-sort="'+k+'">'+t+(F.sort === k ? ' <span class="ar">'+(F.dir > 0 ? '▲' : '▼')+'</span>' : '')+'</th>';
+  const progCell = r => { if(locked(r)) return '<span class="muted" style="font-size:13px">'+esc((r.progs||[]).join(', ') || '–')+'</span>';
+    const L = IS_COACH ? PROGS.concat([PERSONAL]) : PROGS;
+    return '<div class="progs">'+L.map(p => '<button type="button" class="'+((r.progs||[]).includes(p[0])?'on':'')+'" data-prog="'+r.id+'|'+p[0]+'"'+(r.approved?'':' disabled title="Approve first"')+'>'+p[1]+'</button>').join('')+(!IS_COACH && (r.progs||[]).includes('personal') ? '<span>+ Personal</span>' : '')+'</div>'; };
+  const accCell = r => { const a = access(r);
+    const lab = a === 'on' ? '<span class="acc on">Approved</span>' : a === 'wait' ? '<span class="acc wait">Waiting</span>' : '<span class="acc off">Paused</span>';
+    if(locked(r)) return lab;
+    return lab+'<div style="margin-top:6px">'+(a === 'on' ? '<button class="btn ghost sm" data-off="'+r.id+'">Pause</button>' : '<button class="btn sm" data-on="'+r.id+'">'+(a === 'wait' ? 'Approve' : 'Turn back on')+'</button>')+'</div>'+
+      ((r.wants||[]).length ? '<small class="muted" style="font-size:12px;display:block;margin-top:4px">Picked: '+esc(r.wants.map(w => PLANS[w] || w).join(' + '))+'</small>' : '')+
+      (IS_COACH && !isStaff(r) && r.approved ? '<button class="btn ghost sm" style="margin-top:4px" data-adm="'+r.id+'">'+(r.admin ? 'Admin ✓' : 'Make admin')+'</button>' : ''); };
+  const body = rows.map(r => { const b = B(r), s = payState(b), staff = isStaff(r), pay = !staff;
+    return '<tr data-id="'+r.id+'"><td><input type="checkbox" data-sel="'+r.id+'"'+(SEL.has(r.id)?' checked':'')+(staff?' disabled':'')+' aria-label="Select '+esc(r.name)+'"></td>'+
+      '<td class="nm"><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small>'+(r.admin ? '<span class="tag">Admin</span>' : '')+(staff ? '<span class="tag">'+esc(r.coachBadge || 'Coach')+'</span>' : '')+'</td>'+
+      '<td>'+accCell(r)+'</td><td>'+progCell(r)+'</td>'+
+      (pay ? '<td><span class="pst '+s.k+'">'+esc(s.t)+'</span>'+(b.lastPaid ? '<small class="muted" style="display:block;font-size:12px">Last paid '+esc(fmtD(b.lastPaid))+'</small>' : '')+'</td>'+
+        '<td><input class="rate" type="number" min="0" step="1" inputmode="numeric" data-rate="'+r.id+'" value="'+esc(b.rate||'')+'" placeholder="$" aria-label="Monthly rate"></td>'+
+        '<td><input class="pt" type="date" data-pt="'+r.id+'" value="'+esc(b.paidThrough||'')+'" aria-label="Paid through"></td>'+
+        '<td><input class="note" maxlength="140" data-note="'+r.id+'" value="'+esc(b.note||'')+'" placeholder="Note" aria-label="Note"></td>'+
+        '<td class="act">'+(s.k === 'free' ? '' : '<button class="btn sm" data-paid="'+r.id+'">Paid 1 month</button>')+'<button class="btn ghost sm" data-remind="'+r.id+'">'+(s.k === 'free' ? 'Message' : 'Reminder')+'</button><button class="btn ghost sm" data-price="'+r.id+'">Prices</button></td>'
+      : '<td colspan="5" class="muted" style="font-size:13px">Coach. No payments. '+(IS_COACH ? '' : 'Coach Reef handles coaches.')+'</td>')+'</tr>'; }).join('');
+  $('#view').innerHTML = '<h2>Members &amp; payments</h2><p class="note">Due the 1st. Not in by 7:59 PM on the 1st, pause their access. Paid by the 5th, turn it back on. $0 = no charge. Changes save as you go and show in the app right away.</p>'+
+    '<div class="stats"><button class="stat" data-show="owe"><b style="color:var(--red2)">'+owe.length+'</b><span>Need to pay now</span></button><div class="stat"><b>$'+owed+'</b><span>Owed now</span></div><button class="stat" data-show="paid"><b>'+nextUp.length+'</b><span>Due '+esc(fmtD(nx))+'</span></button><button class="stat" data-show="wait"><b style="color:var(--gold)">'+c('wait')+'</b><span>Waiting for approval</span></button><button class="stat" data-show="unset"><b>'+c('unset')+'</b><span>Payment not set up</span></button><div class="stat"><b>$'+monthly+'</b><span>Monthly (everyone on)</span></div></div>'+
+    '<div class="bar"><div class="chips">'+chip('owe','Need to pay')+chip('unset','Not set up')+chip('wait','Waiting')+chip('paused','Paused')+chip('paid','Paid up')+chip('free','No charge')+chip('coaches','Coaches')+chip('all','Everyone')+'</div>'+
+    '<input class="search" type="search" placeholder="Search name, email or note" value="'+esc(F.q)+'" aria-label="Search"><button class="btn ghost sm" id="csv" type="button">Download spreadsheet</button></div>'+
+    (SEL.size ? '<div class="bulk"><b>'+SEL.size+' selected</b><button class="btn sm" data-bulk="paid">Mark paid 1 month</button><button class="btn ghost sm" data-bulk="remind">Send payment reminder</button><button class="btn ghost sm" data-bulk="price">Send price sheet</button><button class="btn ghost sm" data-bulk="clear">Clear</button></div>' : '')+
+    '<div class="tbl-wrap"><table><thead><tr><th><input type="checkbox" id="selAll" aria-label="Select all"></th>'+th('name','Member')+th('status','Access')+'<th>Programs</th><th>Payment</th>'+th('rate','$ / mo')+th('pt','Paid through')+'<th>Note</th><th>Actions</th></tr></thead><tbody>'+
+    (body || '<tr><td colspan="9" class="muted" style="padding:24px">'+(F.show === 'owe' && !F.q ? 'Nobody owes right now.' : 'Nobody here.')+'</td></tr>')+'</tbody></table></div>';
+  wireMembers(rows);
+}
+async function saveBill(id, patch){
+  const r = D.members.find(x => x.id === id) || {};
+  D.bill[id] = Object.assign({}, D.bill[id], patch);
+  try{ await setDoc(doc(fs, 'billing', id), Object.assign({}, patch, { name: r.name || '', by: ME.name, at: serverTimestamp() }), { merge: true }); return true; }
+  catch(e){ alert('Couldn\'t save. Check your internet and try again.'); return false; }
+}
+async function sendDm(uid, text){ await addDoc(collection(fs, 'dms', uid, 'msgs'), { uid: ME.uid, name: ME.name, badge: ME.badge, text: String(text).slice(0, 600), at: Date.now() }); }
+const prices = () => (D.bill._prices && D.bill._prices.text) || PRICE_DEFAULT;
+const reminderText = r => { const b = D.bill[r.id] || {}, s = payState(b), first = (r.name||'').split(' ')[0];
+  return 'Hey '+first+', quick reminder: your BODYBOX payment '+(s.k === 'ok' ? 'is due '+fmtD(b.paidThrough) : 'is due')+'. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back. Questions: teambodybox@gmail.com'; };
+const markPaid = r => { const b = D.bill[r.id] || {}, nx = addMonth(b.paidThrough || firstOfMonth(today())); return saveBill(r.id, { paidThrough: nx, lastPaid: today() }).then(ok => ({ ok, nx })); };
+function wireMembers(rows){
+  const V = $('#view'), byId = id => D.members.find(x => x.id === id);
+  V.querySelectorAll('[data-show]').forEach(b => b.onclick = () => { F.show = b.dataset.show; F.q = ''; SEL.clear(); renderMembers(); });
+  V.querySelectorAll('[data-sort]').forEach(t => t.onclick = () => { const k = t.dataset.sort; if(F.sort === k) F.dir *= -1; else { F.sort = k; F.dir = 1; } renderMembers(); });
+  const sq = V.querySelector('.search'); sq.oninput = () => { F.q = sq.value; renderMembers(); const s2 = $('#view .search'); s2.focus(); s2.setSelectionRange(s2.value.length, s2.value.length); };
+  V.querySelector('#csv').onclick = () => downloadCsv();
+  const sa = V.querySelector('#selAll'); const selectable = rows.filter(r => !isStaff(r)); sa.checked = selectable.length && selectable.every(r => SEL.has(r.id));
+  sa.onchange = () => { selectable.forEach(r => sa.checked ? SEL.add(r.id) : SEL.delete(r.id)); renderMembers(); };
+  V.querySelectorAll('[data-sel]').forEach(c => c.onchange = () => { c.checked ? SEL.add(c.dataset.sel) : SEL.delete(c.dataset.sel); renderMembers(); });
+  const flash = el => { const s = document.createElement('span'); s.className = 'saved'; s.textContent = ' Saved'; el.after(s); setTimeout(() => s.remove(), 1400); };
+  V.querySelectorAll('[data-rate]').forEach(i => i.onchange = async () => { if(await saveBill(i.dataset.rate, { rate: i.value === '' ? '' : String(Math.max(0, Math.round(+i.value))) })){ flash(i); setTimeout(() => { if(TAB === 'members') renderMembers(); }, 600); } });
+  V.querySelectorAll('[data-pt]').forEach(i => i.onchange = async () => { if(await saveBill(i.dataset.pt, { paidThrough: i.value || '' })){ flash(i); setTimeout(() => { if(TAB === 'members') renderMembers(); }, 600); } });
+  V.querySelectorAll('[data-note]').forEach(i => i.onchange = async () => { if(await saveBill(i.dataset.note, { note: i.value.trim().slice(0,140) })) flash(i); });
+  V.querySelectorAll('[data-paid]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.paid), nx = addMonth((D.bill[r.id]||{}).paidThrough || firstOfMonth(today()));
+    if(!confirm('Mark '+r.name+' paid for a month? Paid through goes to '+fmtD(nx)+'.')) return; b.disabled = true; const res = await markPaid(r);
+    if(res.ok){ toast(r.name.split(' ')[0]+' paid through '+fmtD(res.nx)); if(!r.approved) toast('Saved. Their access is paused. Tap Turn back on.'); } renderMembers(); });
+  V.querySelectorAll('[data-remind]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.remind), s = payState(D.bill[r.id]); const msg = prompt('Message to '+r.name+' (shows in their app chat):', s.k === 'free' ? '' : reminderText(r)); if(!msg) return; b.disabled = true; try{ await sendDm(r.id, msg); toast('Sent to '+r.name.split(' ')[0]); }catch(e){ alert('Couldn\'t send.'); } b.disabled = false; });
+  V.querySelectorAll('[data-price]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.price); if(!confirm('Send the price sheet to '+r.name+' in the app chat?')) return; b.disabled = true; try{ await sendDm(r.id, prices()); toast('Price sheet sent to '+r.name.split(' ')[0]); }catch(e){ alert('Couldn\'t send.'); } b.disabled = false; });
+  V.querySelectorAll('[data-on]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.on); b.disabled = true;
+    let progs = (r.progs && r.progs.length) ? r.progs : [...new Set((r.wants||[]).flatMap(w => PLAN_PROGS[w] || []))];
+    try{ const em = (r.email||'').toLowerCase(); if(em && access(r) === 'wait'){ const pre = await getDoc(doc(fs,'data','users','pre_'+em,'bodybox')), own = await getDoc(doc(fs,'data','users',r.id,'bodybox')); if(pre.exists() && !own.exists()) await setDoc(doc(fs,'data','users',r.id,'bodybox'), pre.data()); } }catch(e){}
+    try{ await updateDoc(doc(fs,'members',r.id), { approved: true, approvedAt: serverTimestamp(), progs }); toast(r.name.split(' ')[0]+' is in'); }catch(e){ alert('Couldn\'t approve. '+(isStaff(r) ? 'Coaches are approved by Coach Reef.' : 'Try again.')); b.disabled = false; } });
+  V.querySelectorAll('[data-off]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.off); if(!confirm('Pause '+r.name+'\'s access? They can\'t open their programs until you turn it back on.')) return; b.disabled = true; try{ await updateDoc(doc(fs,'members',r.id), { approved: false }); toast(r.name.split(' ')[0]+' paused'); }catch(e){ alert('Couldn\'t pause.'); b.disabled = false; } });
+  V.querySelectorAll('[data-prog]').forEach(b => b.onclick = async () => { const [id, k] = b.dataset.prog.split('|'), r = byId(id), cur = new Set(r.progs || []); cur.has(k) ? cur.delete(k) : cur.add(k); b.disabled = true; try{ await updateDoc(doc(fs,'members',id), { progs: [...cur] }); }catch(e){ alert('Couldn\'t change programs.'); b.disabled = false; } });
+  V.querySelectorAll('[data-adm]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.adm); if(!confirm(r.admin ? 'Take admin away from '+r.name+'?' : 'Make '+r.name+' an admin?')) return; try{ await updateDoc(doc(fs,'members',r.id), { admin: !r.admin }); }catch(e){ alert('Couldn\'t change it.'); } });
+  V.querySelectorAll('[data-bulk]').forEach(b => b.onclick = async () => { const kind = b.dataset.bulk, list = [...SEL].map(byId).filter(Boolean);
+    if(kind === 'clear'){ SEL.clear(); renderMembers(); return; }
+    const names = list.map(r => r.name.split(' ')[0]).join(', ');
+    if(kind === 'paid'){ if(!confirm('Mark paid for 1 month: '+names+'?')) return; for(const r of list) await markPaid(r); toast('Marked '+list.length+' paid'); }
+    if(kind === 'remind'){ if(!confirm('Send a payment reminder in the app chat to: '+names+'?')) return; let n = 0; for(const r of list){ try{ await sendDm(r.id, reminderText(r)); n++; }catch(e){} } toast('Reminder sent to '+n); }
+    if(kind === 'price'){ if(!confirm('Send the price sheet in the app chat to: '+names+'?')) return; let n = 0; for(const r of list){ try{ await sendDm(r.id, prices()); n++; }catch(e){} } toast('Price sheet sent to '+n); }
+    SEL.clear(); renderMembers(); });
+}
+function downloadCsv(){
+  const q = v => '"'+String(v == null ? '' : v).replace(/"/g, '""')+'"';
+  const lines = [['Name','Email','Access','Programs','Payment status','Rate per month','Paid through','Last paid','Note','Admin','Coach'].map(q).join(',')];
+  people().sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(r => { const b = D.bill[r.id] || {}, s = isStaff(r) ? { t:'Coach' } : payState(b);
+    lines.push([r.name, r.email, { on:'Approved', off:'Paused', wait:'Waiting' }[access(r)], (r.progs||[]).join(' '), s.t, b.rate, b.paidThrough, b.lastPaid, b.note, r.admin ? 'yes' : '', isStaff(r) ? 'yes' : ''].map(q).join(',')); });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })); a.download = 'bodybox-members-'+today()+'.csv'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+
+/* ---------- events & news ---------- */
+let EV = { edit: null, type: 'event' };
+function renderEvents(){
+  const td = today(), live = p => (p.type === 'event' ? p.date : (p.until || p.date)) >= td;
+  const P = D.posts.slice().sort((a,b) => (a.date||'') < (b.date||'') ? -1 : 1), cur = P.filter(live), old = P.filter(p => !live(p)).reverse().slice(0, 10);
+  const e0 = EV.edit ? (P.find(p => p.id === EV.edit) || {}) : {};
+  const item = p => { const g = D.going[p.id] || [];
+    return '<div class="item"><b>'+esc(p.title)+'</b><small>'+(p.type === 'event' ? 'Event · '+esc(fmtD(p.date))+(p.time ? ' · '+esc(p.time) : '')+(p.place ? ' · '+esc(p.place) : '') : 'Announcement · '+esc(fmtD(p.date))+' to '+esc(fmtD(p.until||p.date)))+' · by '+esc(p.byName||'')+'</small>'+
+      (p.body ? '<div style="white-space:pre-wrap;font-size:14px">'+esc(p.body)+'</div>' : '')+
+      (p.type === 'event' ? '<small>'+(g.length ? g.length+' in: '+esc(g.map(x => x.name).join(', ')) : 'Nobody in yet')+'</small>' : '')+
+      '<div class="acts"><button class="btn ghost sm" data-pedit="'+p.id+'">Edit</button><button class="btn ghost sm" data-pdel="'+p.id+'">Delete</button></div></div>'; };
+  $('#view').innerHTML = '<h2>Events &amp; news</h2><p class="note">Athletes see these at the top of their day in the app. Events stay up through the event day and athletes can tap I\'m in. Announcements show between the dates you pick.</p>'+
+    '<div class="grid2" style="margin-top:16px"><form class="panel form" id="pForm"><b>'+(EV.edit ? 'Edit post' : 'New post')+'</b><div class="seg"><button type="button" data-pt2="event">Event</button><button type="button" data-pt2="note">Announcement</button></div>'+
+    '<label>Title<input id="pTitle" maxlength="70" required value="'+esc(e0.title||'')+'" placeholder="Holiday schedule, In-house comp, Team lift…"></label>'+
+    '<div class="row3"><label id="pDateL"><span>Date</span><input id="pDate" type="date" required value="'+esc(e0.date||td)+'"></label><label class="ev">Time<input id="pTime" maxlength="30" value="'+esc(e0.time||'')+'" placeholder="9:00 AM"></label><label class="nt">Show till<input id="pUntil" type="date" value="'+esc(e0.until||addDays(td,7))+'"></label></div>'+
+    '<label class="ev">Where<input id="pPlace" maxlength="60" value="'+esc(e0.place||'')+'" placeholder="Rebuilt Training"></label>'+
+    '<label>Details<textarea id="pBody" maxlength="800" rows="6" placeholder="What to know, what to bring, how to sign up">'+esc(e0.body||'')+'</textarea></label>'+
+    '<p id="pErr" style="color:#ff8a7a;margin:0"></p><div style="display:flex;gap:8px"><button class="btn" type="submit">'+(EV.edit ? 'Save changes' : 'Post it')+'</button>'+(EV.edit ? '<button class="btn ghost" type="button" id="pCancel">Cancel</button>' : '')+'</div></form>'+
+    '<div style="display:grid;gap:10px"><h3 style="margin:0">Up now</h3>'+(cur.length ? cur.map(item).join('') : '<p class="muted" style="margin:0">Nothing posted.</p>')+(old.length ? '<h3>Past</h3>'+old.map(item).join('') : '')+'</div></div>';
+  if(EV.edit) EV.type = e0.type || 'event';
+  const sync = () => { document.querySelectorAll('[data-pt2]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pt2 === EV.type))); const ev = EV.type === 'event'; document.querySelectorAll('#pForm .ev').forEach(x => x.hidden = !ev); document.querySelectorAll('#pForm .nt').forEach(x => x.hidden = ev); $('#pDateL span').textContent = ev ? 'Date' : 'Starts'; };
+  document.querySelectorAll('[data-pt2]').forEach(b => b.onclick = () => { EV.type = b.dataset.pt2; sync(); }); sync();
+  const cc = $('#pCancel'); if(cc) cc.onclick = () => { EV.edit = null; renderEvents(); };
+  $('#pForm').onsubmit = async e => { e.preventDefault(); const v = s => $(s).value.trim(), t = EV.type;
+    const d = { type: t, title: v('#pTitle').slice(0,70), date: v('#pDate'), time: t === 'event' ? v('#pTime').slice(0,30) : '', place: t === 'event' ? v('#pPlace').slice(0,60) : '', until: t === 'note' ? (v('#pUntil') || v('#pDate')) : '', body: v('#pBody').slice(0,800), byName: ME.name, by: ME.uid, at: Date.now() };
+    if(!d.title || !d.date){ $('#pErr').textContent = 'Add a title and a date.'; return; }
+    if(t === 'note' && d.until < d.date){ $('#pErr').textContent = 'Show till has to be on or after the start.'; return; }
+    const b = e.target.querySelector('[type=submit]'); b.disabled = true;
+    try{ if(EV.edit) await setDoc(doc(fs,'posts',EV.edit), d); else await addDoc(collection(fs,'posts'), d); toast(EV.edit ? 'Saved' : 'Posted. Athletes see it now.'); EV.edit = null; renderEvents(); }catch(x){ b.disabled = false; $('#pErr').textContent = 'Couldn\'t save. Try again.'; } };
+  document.querySelectorAll('[data-pedit]').forEach(b => b.onclick = () => { EV.edit = b.dataset.pedit; renderEvents(); window.scrollTo(0,0); });
+  document.querySelectorAll('[data-pdel]').forEach(b => b.onclick = async () => { const p = D.posts.find(x => x.id === b.dataset.pdel); if(!confirm('Delete "'+p.title+'"? Athletes stop seeing it.')) return; try{ await deleteDoc(doc(fs,'posts',p.id)); toast('Deleted'); }catch(e){ alert('Couldn\'t delete.'); } });
+}
+
+/* ---------- challenges ---------- */
+const SC = { time:'Fastest time wins', more:'Most reps wins', load:'Heaviest wins', text:'Just compare' };
+function renderCh(){
+  const ppl = people().filter(r => r.approved).map(r => ({ uid: r.id, name: r.name || r.email })).sort((a,b) => a.name.localeCompare(b.name));
+  const now = Date.now(), act = D.ch.filter(c => (c.status === 'open' || c.status === 'accepted') && (c.due||0) > now).sort((a,b) => a.due - b.due), done = D.ch.filter(c => c.status === 'done').sort((a,b) => (b.doneAt||0) - (a.doneAt||0)).slice(0, 10);
+  const opt = sel => ppl.map(p => '<option value="'+esc(p.uid)+'"'+(p.uid === sel ? ' selected' : '')+'>'+esc(p.name)+'</option>').join('');
+  const fmtSc = (c, uid) => { const s = (c.scores||{})[uid]; if(!s) return 'no score'; if(s.txt) return s.txt; if(c.what && c.what.score === 'time'){ const v = Math.round(s.v); return Math.floor(v/60)+':'+pad(v%60); } return String(s.v) + (s.u ? ' '+s.u : ''); };
+  const item = c => '<div class="item"><b>'+esc(c.from.name)+' vs '+esc(c.to.name)+'</b><small>'+esc(c.what && c.what.label)+' · '+esc(SC[(c.what||{}).score]||'')+(c.status === 'done' ? ' · finished' : ' · ends '+esc(new Date(c.due).toLocaleDateString([], { weekday:'short', month:'short', day:'numeric' })))+(c.setBy ? ' · set up by '+esc(c.setBy.name) : '')+'</small>'+
+    '<small>'+esc(c.from.name.split(' ')[0])+': '+esc(fmtSc(c, c.from.uid))+' · '+esc(c.to.name.split(' ')[0])+': '+esc(fmtSc(c, c.to.uid))+'</small>'+(c.status !== 'done' ? '<div class="acts"><button class="btn ghost sm" data-cdel="'+c.id+'">Remove</button></div>' : '')+'</div>';
+  $('#view').innerHTML = '<h2>Challenges</h2><p class="note">Set up a head-to-head between two athletes. It shows up for both of them in the app, ready to log. Coach Reef picks the workout.</p>'+
+    '<div class="grid2" style="margin-top:16px"><form class="panel form" id="cForm"><b>New challenge</b><div class="row3"><label>Athlete 1<select id="cA">'+opt(ppl[0]&&ppl[0].uid)+'</select></label><label>Athlete 2<select id="cB">'+opt(ppl[1]&&ppl[1].uid)+'</select></label></div>'+
+    '<label>Workout or lift<input id="cName" maxlength="60" required placeholder="Total double-unders, 2k row…"></label><div class="row3"><label>Scored by<select id="cScore">'+Object.keys(SC).map(k => '<option value="'+k+'">'+SC[k]+'</option>').join('')+'</select></label><label>Days to finish<input id="cDays" type="number" min="1" max="30" value="7"></label></div>'+
+    '<label>Message (optional)<input id="cMsg" maxlength="80"></label><p id="cErr" style="color:#ff8a7a;margin:0"></p><div><button class="btn" type="submit">Start challenge</button></div></form>'+
+    '<div style="display:grid;gap:10px"><h3 style="margin:0">Going on</h3>'+(act.length ? act.map(item).join('') : '<p class="muted" style="margin:0">No challenges going on.</p>')+(done.length ? '<h3>Finished</h3>'+done.map(item).join('') : '')+'</div></div>';
+  $('#cForm').onsubmit = async e => { e.preventDefault(); const A = ppl.find(p => p.uid === $('#cA').value), B = ppl.find(p => p.uid === $('#cB').value), nm = $('#cName').value.trim();
+    if(!A || !B || A.uid === B.uid){ $('#cErr').textContent = 'Pick two different athletes.'; return; } if(!nm){ $('#cErr').textContent = 'Name the workout or lift.'; return; }
+    const days = Math.min(30, Math.max(1, parseInt($('#cDays').value, 10) || 7)), t = Date.now(), b = e.target.querySelector('[type=submit]'); b.disabled = true;
+    try{ await setDoc(doc(collection(fs, 'challenges')), { from: { uid: A.uid, name: A.name }, to: { uid: B.uid, name: B.name }, parts: [A.uid, B.uid], what: { kind:'other', label: nm.slice(0,60), score: $('#cScore').value }, msg: $('#cMsg').value.trim().slice(0,80), status: 'accepted', scores: {}, created: t, due: t + days*864e5, at: t, setBy: { uid: ME.uid, name: ME.name } }); toast('Challenge is live'); }
+    catch(x){ b.disabled = false; $('#cErr').textContent = 'Couldn\'t start it. Try again.'; } };
+  document.querySelectorAll('[data-cdel]').forEach(b => b.onclick = async () => { if(!confirm('Remove this challenge for both athletes?')) return; try{ await deleteDoc(doc(fs, 'challenges', b.dataset.cdel)); toast('Removed'); }catch(e){ alert('Couldn\'t remove.'); } });
+}
+
+/* ---------- price sheet ---------- */
+function renderPrices(){
+  $('#view').innerHTML = '<h2>Price sheet</h2><p class="note">This is what "Prices" sends to an athlete in their app chat. Max 600 characters.</p>'+
+    '<div class="panel form" style="max-width:640px;margin-top:16px"><textarea id="prText" rows="12" maxlength="600">'+esc(prices())+'</textarea><small class="muted" id="prLeft"></small><div><button class="btn" id="prSave" type="button">Save price sheet</button></div></div>';
+  const t = $('#prText'), left = () => $('#prLeft').textContent = (600 - t.value.length)+' characters left'; t.oninput = left; left();
+  $('#prSave').onclick = async () => { try{ await setDoc(doc(fs,'billing','_prices'), { text: t.value.slice(0,600), by: ME.name, at: serverTimestamp() }); toast('Saved'); }catch(e){ alert('Couldn\'t save.'); } };
+}
+</script>
+</body>
+</html>
