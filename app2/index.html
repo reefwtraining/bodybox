@@ -5163,7 +5163,7 @@ async function openVideos(members){
     '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><a href="'+esc(x.vid)+'" target="_blank" rel="noopener" style="background:#C8102E;color:#fff;border-radius:999px;padding:8px 12px;font:600 13px var(--body);text-decoration:none">Watch</a>'+
     '<button class="ghost" data-rv="'+esc(x.key)+'">'+(seen[x.key]?'Undo':'Reviewed')+'</button><button data-fb="'+esc(x.key)+'">'+(x.fb?'Feedback sent ✓':'Give feedback')+'</button></div></div>'+
     '<div class="fbform" data-fbf="'+esc(x.key)+'" hidden><textarea rows="3" maxlength="800" placeholder="What did you see? Cues, what to fix, what was great">'+esc(x.fb ? x.fb.text || '' : '')+'</textarea>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="ghost" data-fbrec="'+esc(x.key)+'">Record voice note</button><span class="fbst" style="color:#8F8B84;font-size:13px"></span></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="fbst" style="color:#8F8B84;font-size:13px"></span></div>'+ // Nov 17: typing only for now (voice note code kept, button hidden)
     '<div style="display:flex;gap:8px"><button data-fbsend="'+esc(x.key)+'">Send to athlete</button><button class="ghost" data-fbx="'+esc(x.key)+'">Cancel</button></div></div>';
   box.innerHTML = '<div class="mcard"><h3>Videos to review</h3><p style="color:#8F8B84;margin:0">'+(out.length ? todo+' new · '+(out.length-todo)+' reviewed' : 'No videos yet. Athletes add a YouTube link when they log a lift or a score, or later from their Logbook.')+'</p>'+
     out.map(row).join('')+'<div class="mrow"><button class="ghost" id="vBack">Back to members</button><button class="ghost" id="vClose">Close</button></div></div>';
@@ -5191,7 +5191,7 @@ async function openVideos(members){
   });
   box.querySelectorAll('[data-fbsend]').forEach(b => b.onclick = async () => {
     const k = b.dataset.fbsend, x = out.find(o => o.key === k), f = form(k), text = f.querySelector('textarea').value.trim(), audio = FBA[k] && FBA[k].url || '';
-    if(!text && !audio){ f.querySelector('.fbst').textContent = 'Type a note or record a voice note first.'; return; }
+    if(!text && !audio){ f.querySelector('.fbst').textContent = 'Type your feedback first.'; return; }
     b.disabled = true; b.textContent = 'Sending…';
     try{
       const ref = doc(fs, 'members', x.uid), cur = ((await getDoc(ref)).data() || {}).feedback || [];
