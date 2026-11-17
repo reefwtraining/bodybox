@@ -118,6 +118,7 @@ h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color
 .nbox h4{margin:0;font:700 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .nbox.co h4{color:var(--gold)}
 .tmr{font-size:13px;color:var(--muted)}
+.flyers{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:10px}
 </style>
 </head>
 <body>
@@ -518,6 +519,10 @@ function renderCh(){
 }
 
 /* ---------- price sheet ---------- */
+const FLYERS = [
+  { name:'BODYBOX Programs flyer', png:'bodybox-prices.png', pdf:'bodybox-prices.pdf', dl:'BODYBOX-Programs-Flyer', desc:'The programs and app prices: $35 a program, $69 for all 3, Garage Box $25, S.H.I.I.T $35 for 4 weeks, Rebuilt member prices, 7 days free.' },
+  { name:'Train With Reef flyer', png:'train-with-reef.png', pdf:'', dl:'Train-With-Reef-Flyer', desc:'In-person coaching with Coach Reef at Rebuilt: 1:1 $170, 2:1 $105 each, 3:1 $85 each per session, plus remote and programs prices.' }
+];
 function renderPrices(){
   const P = D.bill._prices || {}, c = payCfg(P);
   $('#view').innerHTML = '<h2>Price sheet &amp; how to pay</h2><p class="note">"Prices" sends this sheet to an athlete in their app chat, with the ways to pay added at the end. Payment reminders include a Venmo link with their amount already filled in.</p>'+
@@ -526,15 +531,13 @@ function renderPrices(){
     '<label>Other ways to pay (one line, shows under the Venmo link)<input id="pyO" maxlength="120" value="'+esc(c.other)+'" placeholder="Apple Pay: ask teambodybox@gmail.com"></label>'+
     '<p class="note" id="pyTest"></p><div><button class="btn" id="prSave" type="button">Save</button></div>'+
     '<b style="margin-top:8px">What athletes get</b><div id="prPrev" style="white-space:pre-wrap;font-size:14px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px"></div></div></div>'+
-    '<div class="panel" style="margin-top:18px;grid-template-columns:minmax(220px,360px) 1fr;align-items:start;gap:20px"><a href="../img/bodybox-prices.png" target="_blank" rel="noopener"><img src="../img/bodybox-prices.png" alt="BODYBOX Programs flyer with prices" style="width:100%;border-radius:12px;border:1px solid var(--line);display:block"></a>'+
-    '<div class="form"><b>BODYBOX Programs flyer</b><p class="note">The prices flyer. Text the picture, attach it to an email, or print the PDF.</p>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="../img/bodybox-prices.png" download="BODYBOX-Programs-Flyer.png" style="text-decoration:none">Download picture</a><a class="btn ghost" href="../img/bodybox-prices.pdf" download="BODYBOX-Programs-Flyer.pdf" style="text-decoration:none">Download PDF to print</a><button class="btn ghost" type="button" id="prImgLink">Copy picture link</button></div>'+
-    '<p class="note">Link: https://reefwtraining.github.io/bodybox/img/bodybox-prices.png</p></div></div>';
+    '<h3 style="margin-top:22px">Price flyers</h3><div class="flyers">'+FLYERS.map((f, i) => '<div class="panel" style="align-content:start"><a href="../img/'+f.png+'" target="_blank" rel="noopener"><img src="../img/'+f.png+'" alt="'+esc(f.name)+'" style="width:100%;border-radius:10px;border:1px solid var(--line);display:block"></a>'+
+      '<b>'+esc(f.name)+'</b><p class="note">'+esc(f.desc)+'</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="../img/'+f.png+'" download="'+f.dl+'.png" style="text-decoration:none">Download picture</a>'+(f.pdf ? '<a class="btn ghost sm" href="../img/'+f.pdf+'" download="'+f.dl+'.pdf" style="text-decoration:none">PDF to print</a>' : '')+'<button class="btn ghost sm" type="button" data-flink="'+i+'">Copy link</button></div></div>').join('')+'</div>';
   const t = $('#prText'), cur = () => ({ text: t.value, venmo: $('#pyV').value.replace(/^@/, '').trim(), other: $('#pyO').value.trim() });
   const upd = () => { const C = cur(), full = priceMsg(C, C.text); $('#prLeft').textContent = Math.max(0, 600 - (C.text + (C.venmo ? '\nVenmo: https://venmo.com/u/'+C.venmo : '') + (C.other ? '\n'+C.other : '')).length)+' characters left (with the pay lines)'; $('#prPrev').textContent = full;
     const l = payLink(C, { rate: 30 }, 'Ashley'); $('#pyTest').innerHTML = l ? 'Test the Venmo link (a $30 example): <a href="'+esc(l)+'" target="_blank" rel="noopener">open</a>' : 'No Venmo username: reminders go out without a pay link.'; };
   [t, $('#pyV'), $('#pyO')].forEach(x => x.oninput = upd); upd();
-  $('#prImgLink').onclick = async () => { const l = 'https://reefwtraining.github.io/bodybox/img/bodybox-prices.png'; try{ await navigator.clipboard.writeText(l); toast('Picture link copied'); }catch(e){ prompt('Copy this link:', l); } };
+  document.querySelectorAll('[data-flink]').forEach(b => b.onclick = async () => { const l = 'https://reefwtraining.github.io/bodybox/img/'+FLYERS[+b.dataset.flink].png; try{ await navigator.clipboard.writeText(l); toast('Link copied'); }catch(e){ prompt('Copy this link:', l); } });
   $('#prSave').onclick = async () => { const C = cur();
     try{ await setDoc(doc(fs,'billing','_prices'), { text: C.text.slice(0,600), venmo: C.venmo, other: C.other.slice(0,120), by: ME.name, at: serverTimestamp() }); toast('Saved'); }catch(e){ alert('Couldn\'t save.'); } };
 }
