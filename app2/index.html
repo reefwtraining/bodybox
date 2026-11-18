@@ -5446,6 +5446,9 @@ const payBlock = (P, b, first) => { const c = payCfg(P), l = payLink(P, b, first
 const priceMsg = (P, txt) => { const c = payCfg(P); return (txt + (c.venmo ? '\nVenmo: https://venmo.com/u/'+c.venmo : '') + (c.other ? '\n'+c.other : '')).slice(0, 600); };
 async function sendDm(uid, text){ await addDoc(collection(fs, 'dms', uid, 'msgs'), { uid: auth.currentUser.uid, name: myNameF(), badge: window.__bbBadge || '', text: String(text).slice(0, 600), at: Date.now() }); }
 
+const dateDone = (inp, fn) => { const ok = v => !v || (/^\d{4}-\d{2}-\d{2}$/.test(v) && +v.slice(0,4) >= 2020 && +v.slice(0,4) <= 2100); let last = inp.value;
+  const go = () => { const v = inp.value; if(v === last) return; if(!ok(v)){ inp.value = last; return; } last = v; fn(v); };
+  inp.onchange = null; inp.addEventListener('blur', go); inp.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); inp.blur(); } }); };
 /* -- Payments -- */
 async function openPay(){
   const box = adminPanel('Payments');
@@ -5479,7 +5482,7 @@ async function openPay(){
     box.querySelector('#pSave').onclick = async e => { e.target.disabled = true; try{ await setDoc(doc(fs,'billing','_prices'), { text: pt.value.slice(0,600), by: myNameF(), at: serverTimestamp() }, { merge: true }); prices = pt.value; e.target.textContent = 'Saved'; }catch(x){ e.target.textContent = 'Couldn\'t save'; } setTimeout(() => { e.target.disabled = false; e.target.textContent = 'Save price sheet'; }, 1500); };
     const save = async (id, patch) => { BILL[id] = Object.assign({}, BILL[id], patch); try{ await setDoc(doc(fs,'billing',id), Object.assign({}, patch, { name: (rows.find(r => r.id === id)||{}).name || '', by: myNameF(), at: serverTimestamp() }), { merge: true }); return true; }catch(e){ alert('Couldn\'t save. Check your internet and try again.'); return false; } };
     box.querySelectorAll('[data-rate]').forEach(i => i.onchange = () => save(i.dataset.rate, { rate: i.value ? String(Math.max(0, Math.round(+i.value))) : '' }).then(draw));
-    box.querySelectorAll('[data-pt]').forEach(i => i.onchange = () => save(i.dataset.pt, { paidThrough: i.value || '' }).then(draw));
+    box.querySelectorAll('[data-pt]').forEach(i => dateDone(i, v => save(i.dataset.pt, { paidThrough: v || '' }).then(draw)));
     box.querySelectorAll('[data-note]').forEach(i => i.onchange = () => save(i.dataset.note, { note: i.value.trim().slice(0,140) }));
     box.querySelectorAll('[data-paid]').forEach(b => b.onclick = async () => { const id = b.dataset.paid, r = rows.find(x => x.id === id), cur = (BILL[id]||{}).paidThrough || firstOfMonth(todayStr()), nx = addMonth(cur);
       if(!confirm('Mark '+(r.name||'them')+' paid? Paid through goes to '+fmtD(nx)+'.')) return; b.disabled = true;

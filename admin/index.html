@@ -306,6 +306,9 @@ function sorted(rows){
   const key = { name: r => (r.name||r.email||'').toLowerCase(), status: r => (access(r) === 'wait' ? -2 : access(r) === 'off' ? -1 : ORDER[payState(B(r)).k]) * 1e9 + 0, pt: r => B(r).paidThrough || '9999', rate: r => +(B(r).rate || 0) }[s];
   return rows.slice().sort((a,b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : (a.name||'').localeCompare(b.name||'')) * d; });
 }
+const dateDone = (inp, fn) => { const ok = v => !v || (/^\d{4}-\d{2}-\d{2}$/.test(v) && +v.slice(0,4) >= 2020 && +v.slice(0,4) <= 2100); let last = inp.value;
+  const go = () => { const v = inp.value; if(v === last) return; if(!ok(v)){ inp.value = last; return; } last = v; fn(v); };
+  inp.onchange = null; inp.addEventListener('blur', go); inp.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); inp.blur(); } }); };
 function renderMembers(){
   const c = k => rowsFor(k).length, B = r => D.bill[r.id] || {};
   const owe = rowsFor('owe'), owed = owe.reduce((t,r) => t + (+B(r).rate || 0), 0);
@@ -373,7 +376,7 @@ function wireMembers(rows){
   V.querySelectorAll('[data-sel]').forEach(c => c.onchange = () => { c.checked ? SEL.add(c.dataset.sel) : SEL.delete(c.dataset.sel); renderMembers(); });
   const flash = el => { const s = document.createElement('span'); s.className = 'saved'; s.textContent = ' Saved'; el.after(s); setTimeout(() => s.remove(), 1400); };
   V.querySelectorAll('[data-rate]').forEach(i => i.onchange = async () => { if(await saveBill(i.dataset.rate, { rate: i.value === '' ? '' : String(Math.max(0, Math.round(+i.value))) })){ flash(i); setTimeout(() => { if(TAB === 'members') renderMembers(); }, 600); } });
-  V.querySelectorAll('[data-pt]').forEach(i => i.onchange = async () => { if(await saveBill(i.dataset.pt, { paidThrough: i.value || '' })){ flash(i); setTimeout(() => { if(TAB === 'members') renderMembers(); }, 600); } });
+  V.querySelectorAll('[data-pt]').forEach(i => dateDone(i, async v => { if(await saveBill(i.dataset.pt, { paidThrough: v || '' })){ flash(i); setTimeout(() => { if(TAB === 'members' && !busyTyping()) renderMembers(); }, 600); } }));
   V.querySelectorAll('[data-note]').forEach(i => i.onchange = async () => { if(await saveBill(i.dataset.note, { note: i.value.trim().slice(0,140) })) flash(i); });
   V.querySelectorAll('[data-paid]').forEach(b => b.onclick = async () => { const r = byId(b.dataset.paid), nx = addMonth((D.bill[r.id]||{}).paidThrough || firstOfMonth(today()));
     if(!confirm('Mark '+r.name+' paid for a month? Paid through goes to '+fmtD(nx)+'.')) return; b.disabled = true; const res = await markPaid(r);
@@ -450,7 +453,7 @@ function renderInvite(){
     '<h3>Invited</h3>'+(recent.length ? recent.map(i => '<div class="item"><b>'+esc(i.name)+'</b><small>'+esc(i.email)+' · '+esc(i.progs.map(progLabel).join(', '))+' · $'+esc(i.rate||'?')+'/mo · trial from '+esc(fmtD(i.trialStart))+' · by '+esc(i.byName||'')+'</small>'+status(i)+'</div>').join('') : '<p class="muted" style="margin:0">Nobody invited yet.</p>')+'</div></div>';
   const sync = () => { INV.first = $('#ivF').value.trim(); INV.last = $('#ivL').value.trim(); INV.email = $('#ivE').value.trim().toLowerCase(); INV.rate = $('#ivR').value; INV.trialStart = $('#ivT').value || td; INV.lineUp = $('#ivLine').checked; };
   const prev = () => { sync(); const e = inviteEmail(Object.assign({}, INV, { first: INV.first || '[First name]', email: INV.email || '[their email]', firstPay: firstPay() })); $('#ivPrev').textContent = 'Subject: '+e.subject+'\n\n'+e.body; };
-  ['#ivF','#ivL','#ivE','#ivR'].forEach(s => $(s).oninput = prev); $('#ivT').onchange = () => { sync(); renderInvite(); }; $('#ivLine').onchange = () => { sync(); renderInvite(); }; prev();
+  ['#ivF','#ivL','#ivE','#ivR'].forEach(s => $(s).oninput = prev); dateDone($('#ivT'), () => { sync(); renderInvite(); }); $('#ivLine').onchange = () => { sync(); renderInvite(); }; prev();
   document.querySelectorAll('[data-ivp]').forEach(b => b.onclick = () => { sync(); const k = b.dataset.ivp, s = new Set(INV.progs); s.has(k) ? s.delete(k) : s.add(k); INV.progs = PROGS.map(p => p[0]).filter(x => s.has(x));
     const main = INV.progs.filter(x => ['comp','build','cardio'].includes(x)).length; INV.rate = String(main === 3 ? 69 : main * 35 + (INV.progs.includes('garage') ? 25 : 0)); renderInvite(); });
   const save = async () => { sync();
