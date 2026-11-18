@@ -119,6 +119,21 @@ h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color
 .modal h2{font-size:26px}
 .modal .pt{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:12px}
 .modal .tg{font:700 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--red2);margin-bottom:4px}
+.ad-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 14px}
+.ad-bar .chips{display:flex;gap:6px;flex-wrap:wrap}
+.ad-bar .chips button{border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:999px;padding:6px 12px;font:600 13px var(--body);cursor:pointer}
+.ad-bar .chips button[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.ad-ath{border:1px solid var(--line);border-radius:16px;padding:16px;margin:0 0 18px;background:var(--panel)}
+.ad-ath>h3{margin:0 0 2px;font-size:20px}.ad-ath>.sub{color:var(--muted);font-size:13px;margin:0 0 10px}
+.ad-prog{margin-top:14px}.ad-prog>.pl{font:700 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.ad-part{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 10px;display:grid;gap:3px}
+.ad-part.mine{border-color:var(--gold);box-shadow:inset 4px 0 0 var(--gold)}
+.ad-part .tg{font:700 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--red2)}
+.ad-part.mine .tg{color:var(--gold)}
+.ad-part .ti{font-weight:700;font-size:16px;margin:2px 0}
+.ad-part .ln{white-space:pre-wrap;line-height:1.45}.ad-part .ln.h{font-weight:700;margin-top:6px}.ad-part .ln.r{color:var(--muted)}.ad-part .ln.sc{color:var(--gold)}.ad-part .ln.tip{color:var(--muted);font-style:italic}
+.ad-part .nt{color:var(--muted);font-size:13px;font-style:italic;margin-top:4px}
+.ad-off{color:var(--muted);font-size:13px;margin:0 0 8px}
 .modal .ln{white-space:pre-wrap}.modal .ln.h{font-weight:700;font-size:16px}.modal .ln.r{color:var(--muted)}.modal .ln.sc{color:var(--gold)}
 .nbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;font-size:14px}
 .nbox.co{border-color:rgba(232,180,76,.5)}
@@ -135,6 +150,7 @@ h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color
     <div class="brand">BODY<span>BOX</span> ADMIN</div>
     <nav class="tabs" role="tablist">
       <button role="tab" data-tab="calendar" aria-selected="false">Calendar</button>
+      <button role="tab" data-tab="days" aria-selected="false" id="tabDays" hidden>Athlete days</button>
       <button role="tab" data-tab="members" aria-selected="true">Athletes &amp; payments</button>
       <button role="tab" data-tab="invite" aria-selected="false">New athlete</button>
       <button role="tab" data-tab="events" aria-selected="false">Events &amp; news</button>
@@ -204,6 +220,7 @@ onAuthStateChanged(auth, async u => {
   $('#whoName').textContent = ME.name + (IS_COACH ? ' · Head Coach' : ' · Admin');
   $('#gate').hidden = true; $('#appRoot').hidden = false;
   $('#outBtn').onclick = () => signOut(auth);
+  if(IS_COACH) $('#tabDays').hidden = false;
   document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => go(b.dataset.tab));
   live(); go(IS_COACH ? 'calendar' : 'members');
 });
@@ -222,7 +239,7 @@ function live(){
   onSnapshot(collection(fs, 'challenges'), s => { D.ch = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'challenges') redraw(); }, () => {});
 }
 function go(t){ TAB = t; document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t))); render(); }
-function render(){ ({ invite: renderInvite, calendar: renderCal, members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices })[TAB](); }
+function render(){ if(TAB === 'days' && !IS_COACH) TAB = 'members'; ({ days: renderDays, invite: renderInvite, calendar: renderCal, members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices })[TAB](); }
 
 /* ---------- calendar: the week's programming per track, like SugarWOD ---------- */
 const TRACKS = [['class','RT Movement','VXW86K','rt'],['comp','Athlete Comp','WGC534','comp'],['build','Building','RMXGZJ','build'],['cardio','Cardio','WQH7V7','cardio'],['garage','Garage Box','ZUBVXM','garage'],['shiit','S.H.I.I.T','56EG63','shiit'],['yoga','Yoga & Toning','GN83T7','yoga']];
@@ -240,9 +257,9 @@ async function loadProgramming(){
         const key = await crypto.subtle.deriveKey({ name:'PBKDF2', salt: b64d(sl.salt), iterations: enc.iter || 150000, hash:'SHA-256' }, base, { name:'AES-GCM', length:256 }, false, ['decrypt']);
         const obj = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name:'AES-GCM', iv: b64d(sl.iv) }, key, b64d(sl.ct))));
         Object.assign(M, obj); }catch(e){} }));
-    CAL.mem = M;
+    CAL.mem = M; CAL.ind = LB.ind || null;
   }catch(e){ CAL.err = 'Couldn\'t load the programming. Check your internet and reload.'; }
-  CAL.loading = false; if(TAB === 'calendar') renderCal();
+  CAL.loading = false; if(TAB === 'calendar') renderCal(); if(TAB === 'days') renderDays();
 }
 async function loadNotes(dates){
   await Promise.all(dates.filter(d => !(d in CAL.notes)).map(async d => { const o = { a: null, c: null }; CAL.notes[d] = o;
@@ -284,6 +301,68 @@ async function openDay(ds){
     (IS_COACH && cn.length ? '<div class="nbox co"><h4>Coach notes</h4>'+cn.map(x => '<div><b>'+esc(x.t)+'</b><div style="white-space:pre-wrap">'+esc(x.c)+'</div></div>').join('')+'</div>' : '')+
     '<div><button class="btn ghost" type="button" id="mClose">Close</button></div>';
   m.querySelector('#mClose').onclick = () => m.remove();
+}
+
+
+/* ---------- athlete days (Coach Reef only): each athlete's day exactly as written for them ---------- */
+const AD = { date: null, who: 'all', cache: {}, busy: false };
+const PROGMAP = { rt:'class', comp:'comp', build:'build', cardio:'cardio', garage:'garage', shiit:'shiit', yoga:'yoga' };
+const PNAME = { class:'RT Movement', comp:'Athlete Comp', build:'Building', cardio:'Cardio', garage:'Garage Box', shiit:'S.H.I.I.T', yoga:'Yoga & Toning', own:'Their own work' };
+async function athPlan(r){
+  if(AD.cache[r.id] !== undefined) return AD.cache[r.id];
+  let out = { me: null, items: [] };
+  try{ const s = await getDoc(doc(fs, 'data', 'users', r.id, 'bodybox')); if(s.exists()){ const j = JSON.parse(s.data().json || '{}'); out.me = j.me || null;
+      const I = CAL.ind, ka = j.ka; if(I && out.me && ka && I.ath && I.ath[out.me]){
+        const k = await crypto.subtle.importKey('raw', b64d(ka), 'AES-GCM', false, ['decrypt']); const box = I.ath[out.me].d;
+        const p = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name:'AES-GCM', iv: b64d(box.iv) }, k, b64d(box.ct))));
+        out.items = (p.items || []).filter(it => !it.who || it.who.includes(out.me)); } } }catch(e){}
+  AD.cache[r.id] = out; return out;
+}
+const adLine = l => { const t = String(l); if(/^\*/.test(t.trim())) return '<span class="ln tip">'+esc(t.trim().replace(/^\*\s*/,''))+'</span>';
+  return '<span class="ln '+(/:\s*$/.test(t.trim()) && t.trim().length <= 60 ? 'h' : lineCls(t))+'">'+esc(lineTxt(t))+'</span>'; };
+function adPart(tag, title, lines, note, mine){
+  return '<div class="ad-part'+(mine ? ' mine' : '')+'"><span class="tg">'+esc(mine ? (tag ? tag+' · just for them' : 'Just for them') : (tag || ''))+'</span>'+(title ? '<span class="ti">'+esc(title)+'</span>' : '')+(lines||[]).map(adLine).join('')+(note ? '<span class="nt">'+esc(note)+'</span>' : '')+'</div>';
+}
+function adDayHtml(r, plan, ds){
+  const progs = [...new Set((r.progs||[]).map(p => PROGMAP[p]).filter(Boolean))];
+  const items = plan.items.filter(it => it.date === ds);
+  let h = '';
+  for(const pk of progs){
+    const e = entryOf(pk, ds), parts = e ? (e.parts||[]) : [], mine = items.filter(it => it.prog === pk || (pk === 'class' && it.prog === 'rt'));
+    if(!e && !mine.length) continue;
+    const off = mine.filter(it => it.pos && it.pos.t === 'replace' && it.skip).length;
+    if(e && off >= parts.length && !mine.some(it => !it.skip)){ h += '<div class="ad-prog"><p class="pl">'+esc(PNAME[pk])+'</p><p class="ad-off">Off for them today.</p></div>'; continue; }
+    let out = '';
+    parts.forEach((pt, i) => {
+      const rep = mine.find(it => it.pos && it.pos.t === 'replace' && it.pos.i === i);
+      if(rep){ if(!rep.skip) out += adPart(rep.tag || pt.tag, rep.title, rep.lines, rep.note, true); }
+      else out += adPart(pt.tag, '', pt.lines, '', false);
+      mine.filter(it => it.pos && it.pos.t === 'after' && it.pos.i === i).forEach(it => { out += adPart(it.tag, it.title, it.lines, it.note, true); });
+    });
+    mine.filter(it => !it.pos || it.pos.t === 'end' || (it.pos.t !== 'replace' && it.pos.i >= parts.length)).forEach(it => { out += adPart(it.tag, it.title, it.lines, it.note, true); });
+    if(out) h += '<div class="ad-prog"><p class="pl">'+esc(PNAME[pk])+(e && e.title ? ' · '+esc(e.title) : '')+'</p>'+out+'</div>';
+  }
+  const own = items.filter(it => it.prog === 'own' || !PNAME[it.prog]);
+  if(own.length) h += '<div class="ad-prog"><p class="pl">'+PNAME.own+'</p>'+own.map(it => adPart(it.tag, it.title, it.lines, it.note, true)).join('')+'</div>';
+  return h || '<p class="ad-off">Nothing programmed for them this day.</p>';
+}
+async function renderDays(){
+  if(!AD.date) AD.date = today();
+  if(!CAL.mem){ $('#view').innerHTML = '<h2>Athlete days</h2><p class="muted">Loading the programming…</p>'; if(!CAL.loading) loadProgramming(); return; }
+  const list = people().filter(r => r.approved && !isStaff(r) && (r.progs||[]).some(p => PROGMAP[p])).sort((a, b) => ((b.progs||[]).includes('personal') - (a.progs||[]).includes('personal')) || String(a.name).localeCompare(String(b.name)));
+  const [y,mo,d] = AD.date.split('-').map(Number), dl = new Date(y, mo-1, d).toLocaleDateString([], { weekday:'long', month:'long', day:'numeric' });
+  const show = AD.who === 'all' ? list : list.filter(r => r.id === AD.who);
+  $('#view').innerHTML = '<h2>Athlete days</h2><p class="note">Each athlete\'s day exactly as it reads in their app: their programs, with anything written just for them in gold. Only you can see this tab.</p>'+
+    '<div class="ad-bar"><button class="btn ghost sm" data-ad="-1">‹ Prev day</button><b style="min-width:180px;text-align:center">'+esc(dl)+'</b><button class="btn ghost sm" data-ad="1">Next day ›</button><button class="btn ghost sm" data-ad="0">Today</button></div>'+
+    '<div class="ad-bar"><div class="chips"><button type="button" data-adw="all" aria-pressed="'+(AD.who === 'all')+'">Everyone</button>'+list.map(r => '<button type="button" data-adw="'+r.id+'" aria-pressed="'+(AD.who === r.id)+'">'+esc(String(r.name||'').split(' ')[0])+'</button>').join('')+'</div></div>'+
+    '<div id="adList"><p class="muted">Loading their days…</p></div>';
+  document.querySelectorAll('[data-ad]').forEach(b => b.onclick = () => { const n = +b.dataset.ad; AD.date = n === 0 ? today() : addDays(AD.date, n); renderDays(); });
+  document.querySelectorAll('[data-adw]').forEach(b => b.onclick = () => { AD.who = b.dataset.adw; renderDays(); });
+  const ds = AD.date, html = [];
+  for(const r of show){ const plan = await athPlan(r);
+    const tags = (r.progs||[]).map(p => p === 'personal' ? 'Personal' : PNAME[PROGMAP[p]] || p).join(' · ');
+    html.push('<div class="ad-ath"><h3>'+esc(r.name||'')+'</h3><p class="sub">'+esc(tags)+(plan.items.length || !(r.progs||[]).includes('personal') ? '' : ' · personal plan not readable yet (they need to open the app once)')+'</p>'+adDayHtml(r, plan, ds)+'</div>'); }
+  if(TAB === 'days' && AD.date === ds && $('#adList')) $('#adList').innerHTML = html.join('') || '<p class="muted">No athletes.</p>';
 }
 
 /* ---------- members & payments ---------- */
