@@ -119,6 +119,10 @@ h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color
 .modal h2{font-size:26px}
 .modal .pt{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:12px}
 .modal .tg{font:700 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--red2);margin-bottom:4px}
+.cal-split{display:grid;grid-template-columns:400px minmax(0,1fr);gap:18px;align-items:start}
+#adSide{position:sticky;top:8px;max-height:calc(100vh - 24px);overflow-y:auto;border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--panel)}
+#adSide .ad-h{margin:0 0 4px;font-size:18px}#adSide .ad-ath{padding:12px;background:transparent}#adSide .ad-ath>h3{font-size:17px}
+@media (max-width:1000px){.cal-split{grid-template-columns:1fr}#adSide{position:static;max-height:none;order:2}}
 .ad-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 14px}
 .ad-bar .chips{display:flex;gap:6px;flex-wrap:wrap}
 .ad-bar .chips button{border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:999px;padding:6px 12px;font:600 13px var(--body);cursor:pointer}
@@ -209,20 +213,23 @@ function showSignIn(msg){
     catch(x){ $('#gErr').textContent = /network/.test(x.code||'') ? 'No connection. Try again.' : 'That email and password don\'t match.'; b.disabled = false; } };
   $('#gForgot').onclick = async () => { const em = $('#gEm').value.trim(); if(!em){ $('#gErr').textContent = 'Type your email, then tap Forgot password.'; return; } try{ await sendPasswordResetEmail(auth, em); $('#gErr').textContent = 'Check your email for a reset link.'; }catch(x){ $('#gErr').textContent = 'Couldn\'t send it. Check the email.'; } };
 }
-let ME = null, IS_COACH = false;
+let ME = null, IS_COACH = false, DAYS_OK = false;
+// Athlete days: Coach Reef's own logins only (his coach email and the Team BodyBox account). Not Jameson.
+const DAYS_EMAILS = ['reefwtraining@gmail.com', 'teambodybox@gmail.com'];
 onAuthStateChanged(auth, async u => {
   if(!u){ showSignIn(''); return; }
   gate('<p>Checking your access…</p>');
   IS_COACH = COACHES.includes((u.email||'').toLowerCase());
+  DAYS_OK = DAYS_EMAILS.includes((u.email||'').toLowerCase());
   let md = {}; try{ const s = await getDoc(doc(fs, 'members', u.uid)); md = s.exists() ? s.data() : {}; }catch(e){}
   if(!IS_COACH && !(md.admin && md.approved)){ gate('<p>This page is for BODYBOX staff only. You\'re signed in as '+esc(u.email)+'.</p><button class="btn ghost" id="gOut">Sign out</button>'); $('#gOut').onclick = () => signOut(auth); return; }
   ME = { uid: u.uid, name: md.name || u.displayName || (IS_COACH ? 'Coach Reef' : 'Admin'), badge: md.coachBadge || '' };
   $('#whoName').textContent = ME.name + (IS_COACH ? ' · Head Coach' : ' · Admin');
   $('#gate').hidden = true; $('#appRoot').hidden = false;
   $('#outBtn').onclick = () => signOut(auth);
-  if(IS_COACH) $('#tabDays').hidden = false;
+  if(DAYS_OK) $('#tabDays').hidden = false;
   document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => go(b.dataset.tab));
-  live(); go(IS_COACH ? 'calendar' : 'members');
+  live(); go(IS_COACH || DAYS_OK ? 'calendar' : 'members');
 });
 
 /* ---------- live data ---------- */
@@ -239,7 +246,7 @@ function live(){
   onSnapshot(collection(fs, 'challenges'), s => { D.ch = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'challenges') redraw(); }, () => {});
 }
 function go(t){ TAB = t; document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t))); render(); }
-function render(){ if(TAB === 'days' && !IS_COACH) TAB = 'members'; ({ days: renderDays, invite: renderInvite, calendar: renderCal, members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices })[TAB](); }
+function render(){ if(TAB === 'days' && !DAYS_OK) TAB = 'members'; ({ days: renderDays, invite: renderInvite, calendar: renderCal, members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices })[TAB](); }
 
 /* ---------- calendar: the week's programming per track, like SugarWOD ---------- */
 const TRACKS = [['class','RT Movement','VXW86K','rt'],['comp','Athlete Comp','WGC534','comp'],['build','Building','RMXGZJ','build'],['cardio','Cardio','WQH7V7','cardio'],['garage','Garage Box','ZUBVXM','garage'],['shiit','S.H.I.I.T','56EG63','shiit'],['yoga','Yoga & Toning','GN83T7','yoga']];
@@ -282,7 +289,10 @@ function renderCal(){
     '<div class="calbar"><div class="tracks">'+TRACKS.map(t => '<button type="button" data-track="'+t[0]+'" aria-pressed="'+(CAL.track === t[0])+'">'+t[1]+'</button>').join('')+'</div>'+
     '<div style="display:flex;gap:6px;align-items:center;margin-left:auto"><button class="btn ghost sm" data-wk="-1" aria-label="Previous week">‹ Prev</button><span class="wk">'+esc(wkLabel)+'</span><button class="btn ghost sm" data-wk="1" aria-label="Next week">Next ›</button><button class="btn ghost sm" data-wk="0">This week</button></div></div>'+
     (CAL.loading ? '<p class="muted">Loading the programming…</p>' : CAL.err ? '<p style="color:#ff8a7a">'+esc(CAL.err)+'</p>' :
-    '<div class="cal-wrap"><div class="cal">'+days.map((ds, i) => '<div class="cday'+(ds === td ? ' today' : ds < td ? ' past' : '')+'"><div class="dh"><b>'+DN[i]+'</b><span>'+Number(ds.slice(8))+'</span></div>'+card(ds)+'</div>').join('')+'</div></div>');
+    (DAYS_OK ? '<div class="cal-split"><aside id="adSide"></aside><div class="cal-main">' : '')+
+    '<div class="cal-wrap"><div class="cal">'+days.map((ds, i) => '<div class="cday'+(ds === td ? ' today' : ds < td ? ' past' : '')+'"><div class="dh"><b>'+DN[i]+'</b><span>'+Number(ds.slice(8))+'</span></div>'+card(ds)+'</div>').join('')+'</div></div>'+
+    (DAYS_OK ? '</div></div>' : ''));
+  if(DAYS_OK && $('#adSide')){ document.querySelectorAll('.cday .dh').forEach((h, i) => { h.style.cursor = 'pointer'; h.title = 'Show athletes for this day'; h.onclick = () => { AD.date = days[i]; renderDays(true); }; }); renderDays(true); }
   document.querySelectorAll('[data-track]').forEach(b => b.onclick = () => { CAL.track = b.dataset.track; renderCal(); });
   document.querySelectorAll('[data-wk]').forEach(b => b.onclick = () => { const n = +b.dataset.wk; CAL.mon = n === 0 ? mondayOf(today()) : addDays(CAL.mon, 7*n); renderCal(); });
   document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openDay(b.dataset.open));
@@ -346,23 +356,25 @@ function adDayHtml(r, plan, ds){
   if(own.length) h += '<div class="ad-prog"><p class="pl">'+PNAME.own+'</p>'+own.map(it => adPart(it.tag, it.title, it.lines, it.note, true)).join('')+'</div>';
   return h || '<p class="ad-off">Nothing programmed for them this day.</p>';
 }
-async function renderDays(){
+async function renderDays(side){
   if(!AD.date) AD.date = today();
-  if(!CAL.mem){ $('#view').innerHTML = '<h2>Athlete days</h2><p class="muted">Loading the programming…</p>'; if(!CAL.loading) loadProgramming(); return; }
+  const box = side ? $('#adSide') : $('#view'); if(!box) return;
+  if(!CAL.mem){ box.innerHTML = '<h2>Athlete days</h2><p class="muted">Loading the programming…</p>'; if(!CAL.loading) loadProgramming(); return; }
   const list = people().filter(r => r.approved && !isStaff(r) && (r.progs||[]).some(p => PROGMAP[p])).sort((a, b) => ((b.progs||[]).includes('personal') - (a.progs||[]).includes('personal')) || String(a.name).localeCompare(String(b.name)));
   const [y,mo,d] = AD.date.split('-').map(Number), dl = new Date(y, mo-1, d).toLocaleDateString([], { weekday:'long', month:'long', day:'numeric' });
   const show = AD.who === 'all' ? list : list.filter(r => r.id === AD.who);
-  $('#view').innerHTML = '<h2>Athlete days</h2><p class="note">Each athlete\'s day exactly as it reads in their app: their programs, with anything written just for them in gold. Only you can see this tab.</p>'+
-    '<div class="ad-bar"><button class="btn ghost sm" data-ad="-1">‹ Prev day</button><b style="min-width:180px;text-align:center">'+esc(dl)+'</b><button class="btn ghost sm" data-ad="1">Next day ›</button><button class="btn ghost sm" data-ad="0">Today</button></div>'+
+  box.innerHTML = (side ? '<h3 class="ad-h">Athlete days</h3><p class="note" style="margin:0 0 8px">Each athlete\'s day as written for them. Gold = just for them. Tap a day on the calendar to switch.</p>' : '<h2>Athlete days</h2><p class="note">Each athlete\'s day exactly as it reads in their app: their programs, with anything written just for them in gold. Only you can see this.</p>')+
+    '<div class="ad-bar"><button class="btn ghost sm" data-ad="-1">‹ Prev</button><b style="min-width:150px;text-align:center">'+esc(dl)+'</b><button class="btn ghost sm" data-ad="1">Next ›</button><button class="btn ghost sm" data-ad="0">Today</button></div>'+
     '<div class="ad-bar"><div class="chips"><button type="button" data-adw="all" aria-pressed="'+(AD.who === 'all')+'">Everyone</button>'+list.map(r => '<button type="button" data-adw="'+r.id+'" aria-pressed="'+(AD.who === r.id)+'">'+esc(String(r.name||'').split(' ')[0])+'</button>').join('')+'</div></div>'+
-    '<div id="adList"><p class="muted">Loading their days…</p></div>';
-  document.querySelectorAll('[data-ad]').forEach(b => b.onclick = () => { const n = +b.dataset.ad; AD.date = n === 0 ? today() : addDays(AD.date, n); renderDays(); });
-  document.querySelectorAll('[data-adw]').forEach(b => b.onclick = () => { AD.who = b.dataset.adw; renderDays(); });
+    '<div class="adList"><p class="muted">Loading their days…</p></div>';
+  box.querySelectorAll('[data-ad]').forEach(b => b.onclick = () => { const n = +b.dataset.ad; AD.date = n === 0 ? today() : addDays(AD.date, n); renderDays(side); });
+  box.querySelectorAll('[data-adw]').forEach(b => b.onclick = () => { AD.who = b.dataset.adw; renderDays(side); });
   const ds = AD.date, html = [];
   for(const r of show){ const plan = await athPlan(r);
     const tags = (r.progs||[]).map(p => p === 'personal' ? 'Personal' : PNAME[PROGMAP[p]] || p).join(' · ');
     html.push('<div class="ad-ath"><h3>'+esc(r.name||'')+'</h3><p class="sub">'+esc(tags)+(plan.items.length || !(r.progs||[]).includes('personal') ? '' : ' · personal plan not readable yet (they need to open the app once)')+'</p>'+adDayHtml(r, plan, ds)+'</div>'); }
-  if(TAB === 'days' && AD.date === ds && $('#adList')) $('#adList').innerHTML = html.join('') || '<p class="muted">No athletes.</p>';
+  const L = box.isConnected && box.querySelector('.adList');
+  if(L && AD.date === ds) L.innerHTML = html.join('') || '<p class="muted">No athletes.</p>';
 }
 
 /* ---------- members & payments ---------- */
