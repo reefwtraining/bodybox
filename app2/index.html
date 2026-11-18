@@ -1017,6 +1017,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const bold = l.trim().startsWith('!');
     let t = esc(bold ? l.trim().slice(1) : l);
     t = t.replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, (m, txt, u) => '<a href="'+u+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">'+txt+'</a>');
+    // Nov 18: bare links (class timer) are tappable
+    t = t.replace(/(^|[\s:])(https:\/\/[^\s<"]+)/g, (m, pre, u) => pre+'<a href="'+u+'" target="_blank" rel="noopener" style="color:#FF5A64;text-decoration:underline;font-weight:700">'+(/claude\.ai\/artifact/.test(u) ? 'Open timer ↗' : (u.length > 40 ? u.slice(0, 37)+'…' : u))+'</a>');
     if(!lift) lift = detectLift(l);
     if(lift){
       const b = bestOf(lift);
@@ -3276,6 +3278,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       else if(mv && memDay === today) h += '<div class="logbar" style="margin-bottom:10px"><span>You moved '+longDate(mv.from)+' to today.</span><button class="linkbtn" type="button" id="mvBack">Back to it</button></div>';
       else if(memDay < today && entry) h += '<div class="logbar" style="margin-bottom:10px"><span>Missed this day?</span><button class="btn" type="button" id="mvToday" style="padding:7px 12px">Do it today</button></div>';
       h += '<div class="head" style="margin-bottom:10px"><span class="sched">'+esc(p.name)+' · '+longDate(showMoved ? mv.from : memDay)+(showMoved ? ' · doing it today' : '')+'</span><h1 style="font-size:clamp(28px,7.5vw,40px)">'+esc(entry.title)+'</h1></div>';
+      const myTm = (window.__bbCoachTimers || []).find(t => t.k === memProg); // Nov 18: coach's own class timer on the day view
+      if(myTm) h += '<a class="btn solid" href="'+esc(myTm.url)+(/^\d{4}-\d{2}-\d{2}$/.test(memDay) ? '#'+memDay.slice(5).replace('-','') : '')+'" target="_blank" rel="noopener" style="display:block;text-decoration:none;text-align:center;margin:0 0 12px">Open '+esc(myTm.name)+' · your PIN '+esc(myTm.pin)+'</a>';
       if(entry.timer) h += '<button class="go" type="button" id="memTimer"><span class="tri" aria-hidden="true"></span>Start timer<small>'+(entry.timer.every(t => t.nocap)?'counts up':timerSummary(entry.timer))+'</small></button>';
       const cmap = coachByTag(cn, entry.parts||[]);
       h += cnotesHtml(cmap.rest);
