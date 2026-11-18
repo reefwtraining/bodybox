@@ -4773,6 +4773,14 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       if(n){ saveA(); render(); }
       if(unlock) unlockSaved().then(() => indInit()).catch(() => indInit());
     }
+    async function pullCoach(){
+      if(!window.__bbCoachLogs) return; let L = []; try{ L = await window.__bbCoachLogs(); }catch(e){ return; }
+      let n = 0; A.indr = A.indr || {};
+      L.sort((a, b) => ((a.r||{}).t||0) - ((b.r||{}).t||0)).forEach(c => { if(!c || !c.item || !c.r) return;
+        const cur = A.indr[c.item]; if(!cur || (c.r.t||0) > (cur.t||0)){ A.indr[c.item] = c.r; n++; }
+        if(c.log && c.log.lift && c.log.w > 0){ const ex = A.log.find(x => x.id === c.log.id); if(!ex || (c.log.t||0) > (ex.t||0)){ A.log = A.log.filter(x => x.id !== c.log.id); A.log.push(c.log); n++; } } });
+      if(n){ saveA(); render(); push(); }
+    }
     async function push(){
       if(!ref || !ready) return;
       if(busy){ again = true; return; }
@@ -4794,7 +4802,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       try{ s = await ref.get(); }
       catch(e){ try{ await new Promise(r => setTimeout(r, 800 + Math.random()*800)); s = await ref.get(); }catch(x){ ref = null; return; } }
       if(s && s.exists){ const d = s.data(); if(d) try{ mergeIn(JSON.parse(JSON.stringify(d))); }catch(e){} }
-      ready = true; push();
+      ready = true; pullCoach(); push();
+      setInterval(pullCoach, 60000); document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') pullCoach(); });
       setInterval(push, 4000);
       document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') push(); });
       window.addEventListener('pagehide', () => { push(); });
@@ -5485,6 +5494,8 @@ const payMonth = b => { const ds = (b && b.paidThrough && b.paidThrough >= today
 const payLink = (P, b, first) => { const v = payCfg(P).venmo; if(!v) return ''; const amt = b && +b.rate > 0 ? +b.rate : 0; return 'https://venmo.com/?txn=pay&recipients='+encodeURIComponent(v)+(amt ? '&amount='+amt : '')+'&note='+encodeURIComponent('BODYBOX '+payMonth(b)+(first ? ' - '+first : '')); };
 const payBlock = (P, b, first) => { const c = payCfg(P), l = payLink(P, b, first); return (l ? '\nPay with Venmo (@'+c.venmo+'): '+l : '') + (c.other ? '\n'+c.other : ''); };
 const priceMsg = (P, txt) => { const c = payCfg(P); return (txt + (c.venmo ? '\nVenmo: https://venmo.com/u/'+c.venmo : '') + (c.other ? '\n'+c.other : '')).slice(0, 600); };
+// Nov 18: results Coach Reef enters for this athlete from the admin page (data/users/{uid}/cl_*), merged into their app.
+window.__bbCoachLogs = async () => { const u = auth.currentUser; if(!u) return []; try{ const q = await getDocs(collection(fs, 'data', 'users', u.uid)); return q.docs.filter(d => d.id.startsWith('cl_')).map(d => { try{ return JSON.parse(d.data().json); }catch(e){ return null; } }).filter(Boolean); }catch(e){ return []; } };
 window.__bbAsk = text => auth.currentUser ? sendDm(auth.currentUser.uid, text) : Promise.reject(new Error('signed out'));
 async function sendDm(uid, text){ await addDoc(collection(fs, 'dms', uid, 'msgs'), { uid: auth.currentUser.uid, name: myNameF(), badge: window.__bbBadge || '', text: String(text).slice(0, 600), at: Date.now() }); }
 

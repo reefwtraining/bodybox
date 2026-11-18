@@ -128,6 +128,8 @@ h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color
 .ad-part .ln.ask .noans{margin-left:6px;color:var(--muted);font-style:italic}
 .ad-part .wt{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--gold);font-weight:700;font-size:.92em}
 .ad-part .wt.none{color:var(--muted);font-weight:500;font-style:italic;background:none}
+.ad-res{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:8px;padding-top:10px;border-top:1px dashed var(--line)}
+.ad-res .rv{font-size:14px}.ad-res .rv b{color:var(--gold)}
 .ad-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 14px}
 .ad-bar .chips{display:flex;gap:6px;flex-wrap:wrap}
 .ad-bar .chips button{border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:999px;padding:6px 12px;font:600 13px var(--body);cursor:pointer}
@@ -337,6 +339,9 @@ async function athPlan(r){
         const k = await crypto.subtle.importKey('raw', b64d(ka), 'AES-GCM', false, ['decrypt']); const box = I.ath[out.me].d;
         const p = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name:'AES-GCM', iv: b64d(box.iv) }, k, b64d(box.ct))));
         out.items = (p.items || []).filter(it => !it.who || it.who.includes(out.me)); } } }catch(e){}
+  out.res = Object.assign({}, (out.A && out.A.indr) || {});
+  try{ const cs = await getDocs(collection(fs, 'data', 'users', r.id)); cs.docs.filter(d => d.id.startsWith('cl_')).map(d => { try{ return JSON.parse(d.data().json); }catch(e){ return null; } }).filter(Boolean).sort((a, b) => (a.r.t||0) - (b.r.t||0))
+    .forEach(c => { const cur = out.res[c.item]; if(!cur || (c.r.t||0) >= (cur.t||0)) out.res[c.item] = Object.assign({ coach: true }, c.r); }); }catch(e){}
   AD.cache[r.id] = out; return out;
 }
 /* Their weights on % lines, same math as the app (best logged lift, Epley for multi-rep sets, gym rounding). */
@@ -360,8 +365,10 @@ const adLine = (l, lift) => { const t = String(l);
   if(/^\?/.test(t.trim())){ const qp = t.trim().slice(1).split('|').map(x => x.trim()), q = qp[0] || '', ans = ((AD.qa||{})[AD.ds+'|'+q.slice(0, 80)]||{}).a;
     return '<span class="ln ask"><b>Asked:</b> '+esc(q)+' <span class="'+(ans ? 'ans' : 'noans')+'">'+(ans ? esc(ans) : 'No answer yet')+'</span></span>'; } if(/^\*/.test(t.trim())) return '<span class="ln tip">'+esc(t.trim().replace(/^\*\s*/,''))+'</span>';
   return '<span class="ln '+(/:\s*$/.test(t.trim()) && t.trim().length <= 60 ? 'h' : lineCls(t))+'">'+esc(lineTxt(t))+adWeights(t, lift)+'</span>'; };
-function adPart(tag, title, lines, note, mine, lift){
-  return '<div class="ad-part'+(mine ? ' mine' : '')+'"><span class="tg">'+esc(mine ? (tag ? tag+' · just for them' : 'Just for them') : (tag || ''))+'</span>'+(title ? '<span class="ti">'+esc(title)+'</span>' : '')+(lines||[]).map(l => adLine(l, lift)).join('')+(note ? '<span class="nt">'+esc(note)+'</span>' : '')+'</div>';
+function adPart(tag, title, lines, note, mine, lift, itemId){
+  const res = itemId ? (AD.res||{})[itemId] : null;
+  const logBox = mine && itemId && DAYS_OK ? '<div class="ad-res">'+(res ? '<span class="rv"><b>Result'+(res.coach ? ' (you entered)' : '')+':</b> '+esc(res.s || res.txt || 'Done')+(res.note ? ' · '+esc(res.note) : '')+'</span>' : '')+'<button type="button" class="btn ghost sm" data-adlog="'+esc(itemId)+'" data-aduid="'+esc(AD.uid)+'" data-adt="'+esc(title||tag||'')+'" data-adnm="'+esc(AD.nm||'')+'">'+(res ? 'Change result' : 'Enter result')+'</button></div>' : '';
+  return '<div class="ad-part'+(mine ? ' mine' : '')+'"><span class="tg">'+esc(mine ? (tag ? tag+' · just for them' : 'Just for them') : (tag || ''))+'</span>'+(title ? '<span class="ti">'+esc(title)+'</span>' : '')+(lines||[]).map(l => adLine(l, lift)).join('')+(note ? '<span class="nt">'+esc(note)+'</span>' : '')+logBox+'</div>';
 }
 function adDayHtml(r, plan, ds){
   const progs = [...new Set((r.progs||[]).map(p => PROGMAP[p]).filter(Boolean))];
@@ -375,18 +382,48 @@ function adDayHtml(r, plan, ds){
     let out = '';
     parts.forEach((pt, i) => {
       const rep = mine.find(it => it.pos && it.pos.t === 'replace' && it.pos.i === i);
-      if(rep){ if(!rep.skip) out += adPart(rep.tag || pt.tag, rep.title, rep.lines, rep.note, true, rep.lift || pt.lift); }
+      if(rep){ if(!rep.skip) out += adPart(rep.tag || pt.tag, rep.title, rep.lines, rep.note, true, rep.lift || pt.lift, rep.id); }
       else out += adPart(pt.tag, '', pt.lines, '', false, pt.lift);
-      mine.filter(it => it.pos && it.pos.t === 'after' && it.pos.i === i).forEach(it => { out += adPart(it.tag, it.title, it.lines, it.note, true); });
+      mine.filter(it => it.pos && it.pos.t === 'after' && it.pos.i === i).forEach(it => { out += adPart(it.tag, it.title, it.lines, it.note, true, it.lift, it.id); });
     });
-    mine.filter(it => !it.pos || it.pos.t === 'end' || (it.pos.t !== 'replace' && it.pos.i >= parts.length)).forEach(it => { out += adPart(it.tag, it.title, it.lines, it.note, true); });
+    mine.filter(it => !it.pos || it.pos.t === 'end' || (it.pos.t !== 'replace' && it.pos.i >= parts.length)).forEach(it => { out += adPart(it.tag, it.title, it.lines, it.note, true, it.lift, it.id); });
     const allMine = e && parts.every((pt, i) => mine.some(it => it.pos && it.pos.t === 'replace' && it.pos.i === i));
     if(out) h += '<div class="ad-prog"><p class="pl">'+esc(PNAME[pk])+(e && e.title && !allMine ? ' · '+esc(e.title) : '')+'</p>'+out+'</div>';
   }
   const own = items.filter(it => it.prog === 'own' || !PNAME[it.prog]);
-  if(own.length) h += '<div class="ad-prog"><p class="pl">'+PNAME.own+'</p>'+own.map(it => adPart(it.tag, it.title, it.lines, it.note, true)).join('')+'</div>';
+  if(own.length) h += '<div class="ad-prog"><p class="pl">'+PNAME.own+'</p>'+own.map(it => adPart(it.tag, it.title, it.lines, it.note, true, it.lift, it.id)).join('')+'</div>';
   if(offList.length) h += '<p class="ad-off" style="margin-top:10px">Off today: '+esc(offList.join(', '))+'</p>';
   return h || '<p class="ad-off">Nothing programmed for them this day.</p>';
+}
+/* Coach enters an athlete's result from here (Nov 18). Saved as its own doc data/users/{uid}/cl_<item>_<time>; the athlete's app pulls it in, so their phone can't overwrite it. */
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-adlog]'); if(!b) return; adLogSheet(b.dataset.aduid, b.dataset.adlog, b.dataset.adt, b.dataset.adnm); });
+function adLogSheet(uid, item, title, nm){
+  const cur = (AD.cache[uid] && AD.cache[uid].res || {})[item] || {};
+  const m = document.createElement('div'); m.className = 'modal';
+  const opts = '<option value="">No lift (just the result)</option>'+Object.keys(ADL).map(k => '<option value="'+k+'">'+esc(ADL[k])+'</option>').join('');
+  m.innerHTML = '<div class="box" style="display:grid;gap:12px;max-width:460px"><div><span class="label">Enter result for '+esc(nm||'athlete')+'</span><h2 style="margin:4px 0 0">'+esc(title)+'</h2></div>'+
+    '<label>Result<input id="alS" placeholder="e.g. 50, 50, 55, 55, 55, 60 · all crisp" value="'+esc(cur.s || cur.txt || '')+'"></label>'+
+    '<label>Time (optional, min:sec)<input id="alT" placeholder="12:34" inputmode="numeric"></label>'+
+    '<label>Add to her numbers (optional)<select id="alL">'+opts+'</select></label>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label>Heaviest weight (lb)<input id="alW" type="number" inputmode="decimal"></label><label>Reps<input id="alR" type="number" inputmode="numeric" value="1"></label></div>'+
+    '<label>Note (optional)<input id="alN" placeholder="e.g. great turnover, rushed the pull on set 5" value="'+esc(cur.note || '')+'"></label>'+
+    '<p class="err" id="alE" style="margin:0"></p><div style="display:flex;gap:8px"><button class="btn" type="button" id="alSave">Save</button><button class="btn ghost" type="button" id="alX">Cancel</button></div></div>';
+  document.body.appendChild(m); m.onclick = ev => { if(ev.target === m) m.remove(); }; m.querySelector('#alX').onclick = () => m.remove();
+  m.querySelector('#alSave').onclick = async () => {
+    const S = m.querySelector('#alS').value.trim().slice(0, 80), T = m.querySelector('#alT').value.trim(), L = m.querySelector('#alL').value, W = parseFloat(m.querySelector('#alW').value), R = parseInt(m.querySelector('#alR').value, 10) || 1, N = m.querySelector('#alN').value.trim().slice(0, 300);
+    const err = t => { m.querySelector('#alE').textContent = t; };
+    if(!S && !T && !(L && W > 0)) return err('Enter a result, a time or a weight.');
+    let sec = null; if(T){ const mm = /^(\d{1,3}):([0-5]\d)$/.exec(T); if(!mm) return err('Time looks like 12:34.'); sec = (+mm[1])*60 + (+mm[2]); }
+    if(L && !(W > 0)) return err('Enter the heaviest weight for the lift.');
+    const now = Date.now(), date = AD.date || today();
+    const rr = { date, t: now, title: title || 'Workout', s: [S, sec != null ? T : '', L && W > 0 ? W+' lb × '+R : ''].filter(Boolean).join(' · ') || 'Done', by: 'Coach Reef' };
+    if(S) rr.txt = S; if(sec != null) rr.sec = sec; if(L && W > 0){ rr.w = W; rr.reps = R; } if(N) rr.note = N;
+    const body = { kind: 'indr', item, r: rr }; if(L && W > 0) body.log = { id: 'cl-'+item, lift: L, w: W, u: 'lb', reps: R, date, t: now, src: 'cl-'+item, note: 'Entered by Coach Reef' };
+    const b = m.querySelector('#alSave'); b.disabled = true; b.textContent = 'Saving…';
+    try{ await setDoc(doc(fs, 'data', 'users', uid, 'cl_'+String(item).replace(/[^A-Za-z0-9_-]/g, '')+'_'+now.toString(36)), { json: JSON.stringify(body), at: serverTimestamp() });
+      delete AD.cache[uid]; m.remove(); if($('#adSide')) renderDays(true); if(TAB === 'days') renderDays(); }
+    catch(x){ b.disabled = false; b.textContent = 'Save'; err('Couldn\'t save. Check your connection and that you\'re signed in as Coach Reef.'); }
+  };
 }
 async function renderDays(side){
   if(!AD.date) AD.date = today();
@@ -402,7 +439,7 @@ async function renderDays(side){
   box.querySelectorAll('[data-ad]').forEach(b => b.onclick = () => { const n = +b.dataset.ad; AD.date = n === 0 ? today() : addDays(AD.date, n); renderDays(side); });
   box.querySelectorAll('[data-adw]').forEach(b => b.onclick = () => { AD.who = b.dataset.adw; renderDays(side); });
   const ds = AD.date, html = [];
-  for(const r of show){ const plan = await athPlan(r); AD.qa = plan.qa; AD.ds = ds; AD.A = plan.A;
+  for(const r of show){ const plan = await athPlan(r); AD.qa = plan.qa; AD.ds = ds; AD.A = plan.A; AD.res = plan.res || {}; AD.uid = r.id; AD.nm = String(r.name||'').split(' ')[0];
     const tags = (r.progs||[]).map(p => p === 'personal' ? 'Personal' : PNAME[PROGMAP[p]] || p).join(' · ');
     html.push('<div class="ad-ath"><h3>'+esc(r.name||'')+'</h3><p class="sub">'+esc(tags)+(plan.items.length || !(r.progs||[]).includes('personal') ? '' : ' · personal plan not readable yet (they need to open the app once)')+'</p>'+adDayHtml(r, plan, ds)+'</div>'); }
   const L = box.isConnected && box.querySelector('.adList');
