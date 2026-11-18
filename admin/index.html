@@ -135,12 +135,18 @@ h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color
 .ad-ath{border:1px solid var(--line);border-radius:16px;padding:16px;margin:0 0 18px;background:var(--panel)}
 .ad-ath>h3{margin:0 0 2px;font-size:20px}.ad-ath>.sub{color:var(--muted);font-size:13px;margin:0 0 10px}
 .ad-prog{margin-top:14px}.ad-prog>.pl{font:700 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
-.ad-part{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 10px;display:grid;gap:3px}
+.ad-part{border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:0 0 16px;display:grid;gap:7px}
 .ad-part.mine{border-color:var(--gold);box-shadow:inset 4px 0 0 var(--gold)}
 .ad-part .tg{font:700 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--red2)}
 .ad-part.mine .tg{color:var(--gold)}
-.ad-part .ti{font-weight:700;font-size:16px;margin:2px 0}
+.ad-part .ti{font-weight:700;font-size:19px;margin:2px 0 4px}
 .ad-part .ln{white-space:pre-wrap;line-height:1.45}.ad-part .ln.h{font-weight:700;margin-top:6px}.ad-part .ln.r{color:var(--muted)}.ad-part .ln.sc{color:var(--gold)}.ad-part .ln.tip{color:var(--muted);font-style:italic}
+.ad-part .ln{font-size:15px;line-height:1.55}
+.ad-part .ln.h{margin-top:10px;padding-top:12px;border-top:1px solid var(--line);font:700 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ad-part .ti + .ln.h{border-top:0;padding-top:0;margin-top:2px}
+.ad-part .ln.h ~ .ln:not(.h):not(.tip):not(.ask):not(.sc){padding-left:12px;border-left:2px solid var(--line)}
+.ad-part .ln.tip{margin-top:6px;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.04);font-size:14px}
+.ad-part .ln.sc{margin-top:8px;font-weight:700}
 .ad-part .nt{color:var(--muted);font-size:13px;font-style:italic;margin-top:4px}
 .ad-off{color:var(--muted);font-size:13px;margin:0 0 8px}
 .modal .ln{white-space:pre-wrap}.modal .ln.h{font-weight:700;font-size:16px}.modal .ln.r{color:var(--muted)}.modal .ln.sc{color:var(--gold)}
@@ -360,12 +366,12 @@ function adPart(tag, title, lines, note, mine, lift){
 function adDayHtml(r, plan, ds){
   const progs = [...new Set((r.progs||[]).map(p => PROGMAP[p]).filter(Boolean))];
   const items = plan.items.filter(it => it.date === ds);
-  let h = '';
+  let h = ''; const offList = [];
   for(const pk of progs){
     const e = entryOf(pk, ds), parts = e ? (e.parts||[]) : [], mine = items.filter(it => it.prog === pk || (pk === 'class' && it.prog === 'rt'));
     if(!e && !mine.length) continue;
     const off = mine.filter(it => it.pos && it.pos.t === 'replace' && it.skip).length;
-    if(e && off >= parts.length && !mine.some(it => !it.skip)){ h += '<div class="ad-prog"><p class="pl">'+esc(PNAME[pk])+'</p><p class="ad-off">Off for them today.</p></div>'; continue; }
+    if(e && off >= parts.length && !mine.some(it => !it.skip)){ offList.push(PNAME[pk]); continue; }
     let out = '';
     parts.forEach((pt, i) => {
       const rep = mine.find(it => it.pos && it.pos.t === 'replace' && it.pos.i === i);
@@ -374,10 +380,12 @@ function adDayHtml(r, plan, ds){
       mine.filter(it => it.pos && it.pos.t === 'after' && it.pos.i === i).forEach(it => { out += adPart(it.tag, it.title, it.lines, it.note, true); });
     });
     mine.filter(it => !it.pos || it.pos.t === 'end' || (it.pos.t !== 'replace' && it.pos.i >= parts.length)).forEach(it => { out += adPart(it.tag, it.title, it.lines, it.note, true); });
-    if(out) h += '<div class="ad-prog"><p class="pl">'+esc(PNAME[pk])+(e && e.title ? ' · '+esc(e.title) : '')+'</p>'+out+'</div>';
+    const allMine = e && parts.every((pt, i) => mine.some(it => it.pos && it.pos.t === 'replace' && it.pos.i === i));
+    if(out) h += '<div class="ad-prog"><p class="pl">'+esc(PNAME[pk])+(e && e.title && !allMine ? ' · '+esc(e.title) : '')+'</p>'+out+'</div>';
   }
   const own = items.filter(it => it.prog === 'own' || !PNAME[it.prog]);
   if(own.length) h += '<div class="ad-prog"><p class="pl">'+PNAME.own+'</p>'+own.map(it => adPart(it.tag, it.title, it.lines, it.note, true)).join('')+'</div>';
+  if(offList.length) h += '<p class="ad-off" style="margin-top:10px">Off today: '+esc(offList.join(', '))+'</p>';
   return h || '<p class="ad-off">Nothing programmed for them this day.</p>';
 }
 async function renderDays(side){
