@@ -120,6 +120,16 @@ service cloud.firestore {
       allow write: if staff();
     }
 
+    // Price flyers uploaded from the admin page (picture + optional PDF). Public read so share links work; coach and admin write.
+    match /flyers/{id} {
+      allow read: if true;
+      allow write: if staff();
+    }
+    match /flyerpdfs/{id} {
+      allow read: if true;
+      allow write: if staff();
+    }
+
     // New athlete invites (written by Coach Reef or the admin from the admin page).
     match /invites/{id} {
       allow read, write: if staff();

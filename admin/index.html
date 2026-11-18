@@ -523,10 +523,71 @@ function renderCh(){
 
 /* ---------- price sheet ---------- */
 const FLYERS = [
-  { name:'BODYBOX Programs flyer', png:'bodybox-prices.png', pdf:'bodybox-prices.pdf', dl:'BODYBOX-Programs-Flyer', desc:'The programs and app prices: $35 a program, $69 for all 3, Garage Box $25, S.H.I.I.T $35 for 4 weeks, Rebuilt member prices, 7 days free.' },
-  { name:'Yoga & Toning flyer', png:'yoga-toning-prices.png', pdf:'yoga-toning-prices.pdf', dl:'Yoga-Toning-Flyer', desc:'Yoga & Toning classes at Rebuilt with Lead Coach Monalisa: unlimited $129, 8 a month $99, 4 a month $59, drop-in $20 ($10 members), Rebuilt Unlimited + Yoga & Toning $240, $40 member add-on, first month $59.' },
-  { name:'Train With Reef flyer', png:'train-with-reef.png', pdf:'', dl:'Train-With-Reef-Flyer', desc:'In-person coaching with Coach Reef at Rebuilt: 1:1 $170, 2:1 $105 each, 3:1 $85 each per session, plus remote and programs prices.' }
+  { id:'programs', name:'BODYBOX Programs flyer', png:'bodybox-prices.png', pdf:'bodybox-prices.pdf', dl:'BODYBOX-Programs-Flyer', desc:'The programs and app prices: $35 a program, $69 for all 3, Garage Box $25, S.H.I.I.T $35 for 4 weeks, Rebuilt member prices, 7 days free.' },
+  { id:'yoga', name:'Yoga & Toning flyer', png:'yoga-toning-prices.png', pdf:'yoga-toning-prices.pdf', dl:'Yoga-Toning-Flyer', desc:'Yoga & Toning classes at Rebuilt with Lead Coach Monalisa: unlimited $129, 8 a month $99, 4 a month $59, drop-in $20 ($10 members), Rebuilt Unlimited + Yoga & Toning $240, $40 member add-on, first month $59.' },
+  { id:'shiit', name:'S.H.I.I.T flyer', png:'shiit-prices.png', pdf:'shiit-prices.pdf', dl:'SHIIT-Flyer', desc:'S.H.I.I.T classes at Rebuilt with Lead Coach Dennis: unlimited $99, 8 a month $79, 4 a month $49, drop-in $30, included for Rebuilt members, first class free.' },
+  { id:'reef', name:'Train With Reef flyer', png:'train-with-reef.png', pdf:'', dl:'Train-With-Reef-Flyer', desc:'In-person coaching with Coach Reef at Rebuilt: 1:1 $170, 2:1 $105 each, 3:1 $85 each per session, plus remote and programs prices.' }
 ];
+// Nov 18: Jameson can upload new flyers or new versions here (stored in flyers/{id} + flyerpdfs/{id}; public read for share links)
+let FLY = null;
+async function loadFlyers(force){ if(FLY && !force) return FLY; const F = {}; try{ const s = await getDocs(collection(fs, 'flyers')); s.forEach(d => { F[d.id] = d.data(); }); }catch(e){ console.warn(e); } FLY = F; return F; }
+function flyerList(){
+  const F = FLY || {};
+  const base = FLYERS.map(f => { const o = F[f.id] || {}; return { id:f.id, name:o.name || f.name, desc:o.desc || f.desc, dl:f.dl, img:o.img || '../img/'+f.png, pdf: o.hasPdf ? 'db' : (!o.img && f.pdf ? '../img/'+f.pdf : ''), up: !!(o.img || o.hasPdf), builtin:true, png:f.png }; });
+  const extra = Object.keys(F).filter(k => !FLYERS.some(f => f.id === k) && F[k].img).sort((a, b) => String(F[a].name).localeCompare(String(F[b].name))).map(k => ({ id:k, name:F[k].name || 'Flyer', desc:F[k].desc || '', dl:F[k].dl || 'Flyer', img:F[k].img, pdf:F[k].hasPdf ? 'db' : '', up:true, builtin:false }));
+  return base.concat(extra);
+}
+const fileUrl = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(f); });
+async function shrinkImg(file){
+  const url = await fileUrl(file); const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+  const w = Math.min(1700, im.naturalWidth), hh = Math.round(im.naturalHeight * w / im.naturalWidth), c = document.createElement('canvas'); c.width = w; c.height = hh;
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, hh); x.drawImage(im, 0, 0, w, hh);
+  for(const q of [0.92, 0.85, 0.75, 0.65, 0.55]){ const d = c.toDataURL('image/jpeg', q); if(d.length < 900000) return d; }
+  throw new Error('That picture is too big. Try a smaller one.');
+}
+async function pdfUrl(file){ if(file.size > 700000) throw new Error('That PDF is over 700 KB. Export it smaller (or skip the PDF; the picture prints fine).'); return fileUrl(file); }
+const slug = s => String(s||'flyer').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'flyer';
+async function saveFlyer(id, meta, imgFile, pdfFile){
+  const cur = (FLY || {})[id] || {}; const upd = Object.assign({}, meta, { by: ME.name, at: serverTimestamp() });
+  if(imgFile){ upd.img = await shrinkImg(imgFile); if(!pdfFile) upd.hasPdf = false; }
+  if(pdfFile){ await setDoc(doc(fs, 'flyerpdfs', id), { pdf: await pdfUrl(pdfFile), by: ME.name, at: serverTimestamp() }); upd.hasPdf = true; }
+  await setDoc(doc(fs, 'flyers', id), Object.assign({ name: cur.name || meta.name || '', desc: cur.desc || '', img: cur.img || '', hasPdf: !!cur.hasPdf }, upd));
+  await loadFlyers(true);
+}
+async function downloadPdf(f){
+  if(f.pdf !== 'db'){ const a = document.createElement('a'); a.href = f.pdf; a.download = f.dl+'.pdf'; a.click(); return; }
+  const s = await getDoc(doc(fs, 'flyerpdfs', f.id)); if(!s.exists()) return alert('No PDF saved for this flyer.');
+  const a = document.createElement('a'); a.href = s.data().pdf; a.download = f.dl+'.pdf'; document.body.appendChild(a); a.click(); a.remove();
+}
+const flyerLink = f => f.up ? 'https://reefwtraining.github.io/bodybox/flyer.html?f='+encodeURIComponent(f.id) : 'https://reefwtraining.github.io/bodybox/img/'+f.png;
+function flyersHtml(){
+  const L = flyerList();
+  return '<h3 style="margin-top:22px">Price flyers</h3><p class="note">Made a new version? Tap <b>Upload new version</b> on that flyer and pick the picture (PNG or JPG), plus the PDF if you have one. It replaces the flyer here and on its share link right away. Use <b>Add a flyer</b> for a brand new one.</p><div class="flyers">'+
+    L.map((f, i) => '<div class="panel" style="align-content:start"><a href="'+esc(f.img)+'" target="_blank" rel="noopener"><img src="'+esc(f.img)+'" alt="'+esc(f.name)+'" style="width:100%;border-radius:10px;border:1px solid var(--line);display:block"></a>'+
+      '<b>'+esc(f.name)+'</b><p class="note">'+esc(f.desc)+(f.up && f.builtin ? ' <i>(your uploaded version)</i>' : '')+'</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="'+esc(f.img)+'" download="'+esc(f.dl)+(f.img.startsWith('data:image/jpeg') ? '.jpg' : '.png')+'" style="text-decoration:none">Download picture</a>'+(f.pdf ? '<button class="btn ghost sm" type="button" data-fpdf="'+i+'">PDF to print</button>' : '')+'<button class="btn ghost sm" type="button" data-flink="'+i+'">Copy link</button></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn ghost sm" type="button" data-fup="'+i+'">Upload new version</button>'+(f.up ? '<button class="btn ghost sm" type="button" data-fdel="'+i+'">'+(f.builtin ? 'Go back to the original' : 'Remove')+'</button>' : '')+'</div></div>').join('')+
+    '<div class="panel form" style="align-content:start"><b>Add a flyer</b><label>Name<input id="nfName" maxlength="60" placeholder="Holiday class schedule"></label><label>What it\'s for (one line)<input id="nfDesc" maxlength="200"></label><label>Picture (PNG or JPG)<input id="nfImg" type="file" accept="image/png,image/jpeg"></label><label>PDF to print (optional)<input id="nfPdf" type="file" accept="application/pdf"></label><div><button class="btn" type="button" id="nfSave">Add flyer</button></div><p class="err" id="nfErr"></p></div></div>'+
+    '<input type="file" id="fUpFile" accept="image/png,image/jpeg,application/pdf" multiple hidden>';
+}
+function wireFlyers(){
+  const L = flyerList(); let upTo = null;
+  document.querySelectorAll('[data-flink]').forEach(b => b.onclick = async () => { const l = flyerLink(L[+b.dataset.flink]); try{ await navigator.clipboard.writeText(l); toast('Link copied'); }catch(e){ prompt('Copy this link:', l); } });
+  document.querySelectorAll('[data-fpdf]').forEach(b => b.onclick = () => downloadPdf(L[+b.dataset.fpdf]).catch(() => alert('Couldn\'t get the PDF.')));
+  const inp = $('#fUpFile');
+  document.querySelectorAll('[data-fup]').forEach(b => b.onclick = () => { upTo = L[+b.dataset.fup]; inp.value = ''; inp.click(); });
+  inp.onchange = async () => { if(!upTo || !inp.files.length) return; const fs_ = [...inp.files], img = fs_.find(f => /^image\//.test(f.type)), pdf = fs_.find(f => f.type === 'application/pdf');
+    if(!img && !pdf) return alert('Pick a PNG or JPG picture, and the PDF if you have one.');
+    if(!confirm('Replace "'+upTo.name+'" with '+[img ? 'this picture' : '', pdf ? 'this PDF' : ''].filter(Boolean).join(' and ')+'?'+(img && !pdf && upTo.pdf ? '\n\nThe old PDF will be taken down so it doesn\'t show old prices. Upload the new PDF too if you have one.' : ''))) return;
+    toast('Uploading…'); try{ await saveFlyer(upTo.id, { name: upTo.name }, img, pdf); toast('Flyer updated'); renderPrices(); }catch(e){ alert(e.message && !/permission/i.test(e.message) ? e.message : 'Couldn\'t upload. Try again.'); } };
+  document.querySelectorAll('[data-fdel]').forEach(b => b.onclick = async () => { const f = L[+b.dataset.fdel];
+    if(!confirm(f.builtin ? 'Go back to the original "'+f.name+'"? Your uploaded version will be removed.' : 'Remove "'+f.name+'"?')) return;
+    try{ await deleteDoc(doc(fs, 'flyers', f.id)); try{ await deleteDoc(doc(fs, 'flyerpdfs', f.id)); }catch(e){} await loadFlyers(true); toast('Done'); renderPrices(); }catch(e){ alert('Couldn\'t remove.'); } });
+  $('#nfSave').onclick = async () => { const n = $('#nfName').value.trim(), img = $('#nfImg').files[0], pdf = $('#nfPdf').files[0]; $('#nfErr').textContent = '';
+    if(!n) return $('#nfErr').textContent = 'Give it a name.'; if(!img) return $('#nfErr').textContent = 'Pick the picture.';
+    let id = slug(n); while((FLY || {})[id] || FLYERS.some(f => f.id === id)) id += '-2';
+    $('#nfSave').disabled = true; toast('Uploading…');
+    try{ await saveFlyer(id, { name: n, desc: $('#nfDesc').value.trim(), dl: slug(n) }, img, pdf); toast('Flyer added'); renderPrices(); }catch(e){ $('#nfSave').disabled = false; $('#nfErr').textContent = e.message && !/permission/i.test(e.message) ? e.message : 'Couldn\'t upload. Try again.'; } };
+}
 function renderPrices(){
   const P = D.bill._prices || {}, c = payCfg(P);
   $('#view').innerHTML = '<h2>Price sheet &amp; how to pay</h2><p class="note">"Prices" sends this sheet to an athlete in their app chat, with the ways to pay added at the end. Payment reminders include a Venmo link with their amount already filled in.</p>'+
@@ -535,13 +596,12 @@ function renderPrices(){
     '<label>Other ways to pay (one line, shows under the Venmo link)<input id="pyO" maxlength="120" value="'+esc(c.other)+'" placeholder="Apple Pay: ask teambodybox@gmail.com"></label>'+
     '<p class="note" id="pyTest"></p><div><button class="btn" id="prSave" type="button">Save</button></div>'+
     '<b style="margin-top:8px">What athletes get</b><div id="prPrev" style="white-space:pre-wrap;font-size:14px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px"></div></div></div>'+
-    '<h3 style="margin-top:22px">Price flyers</h3><div class="flyers">'+FLYERS.map((f, i) => '<div class="panel" style="align-content:start"><a href="../img/'+f.png+'" target="_blank" rel="noopener"><img src="../img/'+f.png+'" alt="'+esc(f.name)+'" style="width:100%;border-radius:10px;border:1px solid var(--line);display:block"></a>'+
-      '<b>'+esc(f.name)+'</b><p class="note">'+esc(f.desc)+'</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="../img/'+f.png+'" download="'+f.dl+'.png" style="text-decoration:none">Download picture</a>'+(f.pdf ? '<a class="btn ghost sm" href="../img/'+f.pdf+'" download="'+f.dl+'.pdf" style="text-decoration:none">PDF to print</a>' : '')+'<button class="btn ghost sm" type="button" data-flink="'+i+'">Copy link</button></div></div>').join('')+'</div>';
+    flyersHtml();
   const t = $('#prText'), cur = () => ({ text: t.value, venmo: $('#pyV').value.replace(/^@/, '').trim(), other: $('#pyO').value.trim() });
   const upd = () => { const C = cur(), full = priceMsg(C, C.text); $('#prLeft').textContent = Math.max(0, 600 - (C.text + (C.venmo ? '\nVenmo: https://venmo.com/u/'+C.venmo : '') + (C.other ? '\n'+C.other : '')).length)+' characters left (with the pay lines)'; $('#prPrev').textContent = full;
     const l = payLink(C, { rate: 30 }, 'Ashley'); $('#pyTest').innerHTML = l ? 'Test the Venmo link (a $30 example): <a href="'+esc(l)+'" target="_blank" rel="noopener">open</a>' : 'No Venmo username: reminders go out without a pay link.'; };
   [t, $('#pyV'), $('#pyO')].forEach(x => x.oninput = upd); upd();
-  document.querySelectorAll('[data-flink]').forEach(b => b.onclick = async () => { const l = 'https://reefwtraining.github.io/bodybox/img/'+FLYERS[+b.dataset.flink].png; try{ await navigator.clipboard.writeText(l); toast('Link copied'); }catch(e){ prompt('Copy this link:', l); } });
+  wireFlyers(); if(!FLY) loadFlyers().then(() => { if(TAB === 'prices') renderPrices(); });
   $('#prSave').onclick = async () => { const C = cur();
     try{ await setDoc(doc(fs,'billing','_prices'), { text: C.text.slice(0,600), venmo: C.venmo, other: C.other.slice(0,120), by: ME.name, at: serverTimestamp() }); toast('Saved'); }catch(e){ alert('Couldn\'t save.'); } };
 }

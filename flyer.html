@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BODYBOX Flyer</title>
+<style>
+:root{--bg:#111;--fg:#F4F2EE;--mute:#8F8B84;--red:#C8102E;--line:#2A2A2A}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;padding:16px}
+.wrap{max-width:760px;margin:0 auto;display:grid;gap:14px}
+img{width:100%;height:auto;border-radius:10px;display:block;background:#fff}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+a.btn,button.btn{flex:1;min-width:150px;text-align:center;text-decoration:none;padding:13px 16px;border-radius:999px;border:1px solid var(--line);background:#1B1B1B;color:var(--fg);font:700 15px system-ui,sans-serif;cursor:pointer}
+a.btn.main{background:var(--red);border-color:var(--red);color:#fff}
+p{color:var(--mute);margin:0;text-align:center}
+</style></head><body>
+<div class="wrap" id="w"><p>Loading the flyer…</p></div>
+<script>
+// Public share page for flyers uploaded from the BODYBOX admin page (flyers/{id}, public read).
+const KEY = 'AIzaSyAMHdGXPgAwPkbdGdcmA538JHBAF_QWAEU';
+const BASE = 'https://firestore.googleapis.com/v1/projects/teambodybox-app/databases/(default)/documents/';
+const BUILT = { programs:'bodybox-prices.png', yoga:'yoga-toning-prices.png', shiit:'shiit-prices.png', reef:'train-with-reef.png' };
+const PDFS = { programs:'bodybox-prices.pdf', yoga:'yoga-toning-prices.pdf', shiit:'shiit-prices.pdf' };
+const id = (new URLSearchParams(location.search).get('f') || '').replace(/[^a-z0-9-]/gi, '');
+const w = document.getElementById('w');
+const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+async function get(path){ const r = await fetch(BASE + path + '?key=' + KEY); if(!r.ok) return null; return (await r.json()).fields || null; }
+function show(name, img, pdf){
+  document.title = name + ' · BODYBOX';
+  w.innerHTML = '<img src="' + esc(img) + '" alt="' + esc(name) + '"><div class="row"><a class="btn main" id="dl" href="' + esc(img) + '" download="' + esc(name.replace(/[^a-z0-9]+/gi, '-')) + (img.startsWith('data:image/jpeg') ? '.jpg' : '.png') + '">Save the flyer</a>' + (pdf ? '<button class="btn" id="pdf" type="button">PDF to print</button>' : '') + '</div><p>Questions or sign-up: jayteambodybox@gmail.com</p>';
+  const b = document.getElementById('pdf');
+  if(b) b.onclick = async () => { let u = pdf; if(pdf === 'db'){ const f = await get('flyerpdfs/' + id); u = f && f.pdf && f.pdf.stringValue; } if(!u) return alert('No PDF for this flyer.'); const a = document.createElement('a'); a.href = u; a.download = name.replace(/[^a-z0-9]+/gi, '-') + '.pdf'; document.body.appendChild(a); a.click(); a.remove(); };
+}
+(async () => {
+  if(!id){ w.innerHTML = '<p>No flyer picked.</p>'; return; }
+  let f = null; try{ f = await get('flyers/' + id); }catch(e){}
+  const v = k => f && f[k] ? (f[k].stringValue !== undefined ? f[k].stringValue : f[k].booleanValue) : undefined;
+  if(v('img')) return show(v('name') || 'BODYBOX flyer', v('img'), v('hasPdf') ? 'db' : '');
+  if(BUILT[id]) return show(v('name') || 'BODYBOX flyer', 'img/' + BUILT[id], v('hasPdf') ? 'db' : (PDFS[id] ? 'img/' + PDFS[id] : ''));
+  w.innerHTML = '<p>This flyer isn\'t up anymore. Ask jayteambodybox@gmail.com for the latest prices.</p>';
+})();
+</script>
+</body></html>
