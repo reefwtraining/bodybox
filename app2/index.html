@@ -75,6 +75,10 @@ main{padding-block:18px 40px}
 .part .rx li.lbold{padding:2px 0 6px}.part .rx li.lbold b{font-size:17px;font-weight:700;letter-spacing:.01em}
 .part .rx li.lnote{font-size:14px;color:var(--muted);line-height:1.45;padding:2px 0 8px}
 .part .rx li.lrest{color:var(--muted);font-size:14px}
+.part .rx li.lhead{font-weight:700;font-size:15px;letter-spacing:.02em;text-transform:uppercase;color:var(--chalk);margin:16px 0 2px;padding:12px 0 2px;border-top:1px solid var(--line)}
+.part .rx li.lhead:first-child{margin-top:0;padding-top:0;border-top:0}
+.part .rx li.lhead ~ li:not(.lhead):not(.lscore):not(.lsec):not(.ltip){padding-left:12px;border-left:2px solid var(--line)}
+.part .rx li.ltip{font-size:14px;color:var(--muted);font-style:italic;margin-top:10px;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:8px}
 .part .rx li.lscore{display:grid;gap:2px;margin:14px 0 2px;padding:10px 12px;border-left:3px solid #C8102E;background:rgba(200,16,46,.08);border-radius:0 8px 8px 0;font-size:15px}
 .lscore-n{font:700 11px var(--body);letter-spacing:.12em;text-transform:uppercase;color:#FF5A64}
 .part .rx .wt{font-family:var(--mono)}
@@ -1036,6 +1040,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const raw = l.trim();
     if(!bold && /^score\s*[:\-–]/i.test(raw)) return '<li class="lscore"><span class="lscore-n">Score</span><span>'+t.replace(/^\s*score\s*[:\-–]\s*/i,'')+'</span></li>';
     if(!bold && /^(rest\b|then rest\b)/i.test(raw)) return '<li class="lrest">'+t+'</li>';
+    // Nov 18: cleaner cards. Movement/round headers ("Depth Jump to Box Jump:", "Then 2 rounds:", "3 Sets of:") get their own bold line with space above; "*" lines read as a coach tip.
+    if(!bold && /^\*/.test(raw)) return '<li class="ltip">'+t.replace(/^\s*\*\s*/,'')+'</li>';
+    if(/:\s*$/.test(raw) && raw.length <= 60 && !/^(score|note|tip)\b/i.test(raw)) return '<li class="lhead">'+t.replace(/:\s*$/,'')+'</li>';
     if(!bold && raw.length > 70 && !/^\d/.test(raw) && !/[@%]/.test(raw)) return '<li class="lnote">'+t+(noSwap ? '' : swapPills(l))+'</li>';
     return '<li'+(bold?' class="lbold"':'')+'>' + (bold ? '<b>'+t+'</b>' : t) + (noSwap ? '' : swapPills(l)) + '</li>';
   }
