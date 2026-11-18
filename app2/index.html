@@ -1197,7 +1197,10 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         h += '<div class="empty" style="margin-bottom:12px"><b>No class today</b>'+esc(p.sched)+'</div>';
       }
       if(prog !== 'yoga') h += signupHtml(p);
-      if(entry && entry.timer){
+      const myT = (window.__bbCoachTimers || []).find(t => t.k === prog); // Nov 17: coaches (Dennis, Mona) get their own class timer here, not the coach-code PIN
+      if(myT && !isCoach()){
+        h += '<a class="btn coachbtn" href="'+esc(myT.url)+'" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">Open '+esc(myT.name)+' · your PIN '+esc(myT.pin)+'</a>';
+      } else if(entry && entry.timer){
         h += '<button class="btn coachbtn" type="button" id="coachTimer">'+(isCoach()?'Start class timer · '+timerSummary(entry.timer):'Coach timer (PIN)')+'</button>';
       }
     }
