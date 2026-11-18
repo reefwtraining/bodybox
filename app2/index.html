@@ -1341,7 +1341,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     $('tFeel').hidden = true;
     const el = Math.min(s.secs, segElapsed());
     $('tPart').textContent = s.part || '';
-    $('tClock').textContent = s.up ? fmt(el) : (T.i===0 && s.kind==='prep' ? ':'+String(Math.ceil(s.secs - el)).padStart(2,'0') : fmt(Math.ceil(s.secs - el)));
+    $('tClock').textContent = s.up ? fmt(Math.ceil(el)) : (T.i===0 && s.kind==='prep' ? ':'+String(Math.ceil(s.secs - el)).padStart(2,'0') : fmt(Math.ceil(s.secs - el)));
     $('tLabel').textContent = s.label;
     $('tRound').textContent = s.of ? s.unit+' '+s.round+' of '+s.of : (s.up ? (/no cap/.test(s.part) ? 'Counting up · tap Pause when you finish' : 'Counting up · cap '+fmt(s.secs)) : '');
     const nx = T.segs[T.i+1]; $('tNext').textContent = nx ? 'Next: '+nx.label+' · '+fmt(nx.secs) : 'Last one';
@@ -1411,13 +1411,13 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function clockAt(t){
     if(VC.go === null) return { big:'--:--', label:'Set GO', sub:'', kind:'prep' };
     if(t < 0){ return { big: t > -10 ? ':'+String(Math.ceil(-t)).padStart(2,'0') : ':10', label: 'Get ready', sub:'', kind:'prep' }; }
-    if(!VC.segs) return { big: fmt(Math.floor(t)), label:'Running clock', sub:'', kind:'work' };
+    if(!VC.segs) return { big: fmt(Math.ceil(t)), label:'Running clock', sub:'', kind:'work' };
     let acc = 0;
     for(const sg of VC.segs){
       if(t < acc + sg.secs){
         const into = t - acc;
-        return { big: sg.up ? fmt(Math.floor(into)) : fmt(Math.ceil(sg.secs - into)), label: sg.label,
-                 sub: (sg.of ? sg.unit+' '+sg.round+' of '+sg.of : (sg.part||'')) + ' · ' + fmt(Math.floor(t)) + ' total', kind: sg.kind };
+        return { big: sg.up ? fmt(Math.ceil(into)) : fmt(Math.ceil(sg.secs - into)), label: sg.label, // Nov 18: count-up reads 0:01 right after GO
+                 sub: (sg.of ? sg.unit+' '+sg.round+' of '+sg.of : (sg.part||'')) + ' · ' + fmt(Math.ceil(t)) + ' total', kind: sg.kind };
       }
       acc += sg.secs;
     }
