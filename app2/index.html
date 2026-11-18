@@ -3006,6 +3006,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     let pre = '';
     if(me){
       pre = profileHtml(me, true) + meIndHtml() + personalHtml();
+    } else if(window.__bbMyName){
+      // Nov 17: signed into the new app but not linked to a Board profile (coaches like Mona): no old PIN sign-in form.
+      pre = '<div class="prof">'+avatarHtml(null)+'<div style="min-width:0"><span class="label">My profile</span><h1>'+esc(window.__bbMyName)+'</h1><p class="tagl">'+(window.__bbBadge ? esc(window.__bbBadge) : 'Signed in')+'</p></div></div>';
     } else {
       pre = '<div class="prof">'+avatarHtml(null)+'<div style="min-width:0"><span class="label">My profile</span><h1>Sign in</h1><p class="tagl">See your rank, points and scores</p></div></div>'+
         '<form class="connect" id="loginForm" autocomplete="on"><span class="label">Athlete sign in</span><h2>Welcome back</h2>'+
@@ -3784,7 +3787,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     document.querySelectorAll('.tabs [data-tab]').forEach(b => { if(b.dataset.tab === tab) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     const w = tab === 'workouts';
     $('progs').hidden = true; $('exampleNote').hidden = true;
-    $('hdrLbl').textContent = tab === 'plans' ? 'Join' : w ? longDate(todayStr()) : tab === 'named' ? 'Saved on this phone' : tab === 'numbers' ? (meId && athById(meId) ? 'Signed in' : 'Sign in') : tab === 'board' ? (lbPer === 'week' ? 'This week' : lbPer === 'month' ? 'This month' : 'All-time') : tab === 'clock' ? 'Any workout' : '';
+    $('hdrLbl').textContent = tab === 'plans' ? 'Join' : w ? longDate(todayStr()) : tab === 'named' ? 'Saved on this phone' : tab === 'numbers' ? ((meId && athById(meId)) || window.__bbMyName ? 'Signed in' : 'Sign in') : tab === 'board' ? (lbPer === 'week' ? 'This week' : lbPer === 'month' ? 'This month' : 'All-time') : tab === 'clock' ? 'Any workout' : '';
     if(tab === 'coach'){ renderCoachHub(); } else if(tab === 'moves'){ renderMoves(); } else if(w) renderWorkouts(); else if(tab === 'plans') renderPlans(); else if(tab === 'named') renderNamed(); else if(tab === 'board') renderBoard(); else if(tab === 'numbers') renderMe(); else if(tab === 'clock') renderClock(); else renderCalc();
     if(toastPR){ const t = document.createElement('div'); t.className = 'example'; t.style.marginBottom = '12px'; t.innerHTML = '<b>'+esc(toastPR)+'</b>'+(toastShare?' <button class="linkbtn" type="button" data-shareprs="1">Share it</button>':''); $('view').prepend(t); toastPR = ''; }
   }
