@@ -149,7 +149,7 @@ setPersistence(auth, browserLocalPersistence).catch(() => {});
 
 // same lists as the app
 const COACHES = ['reefwtraining@gmail.com'];
-const PROGS = [['comp','Athlete Comp'],['build','Building'],['cardio','Cardio'],['shiit','S.H.I.I.T'],['rt','RT Movement'],['garage','Garage Box']];
+const PROGS = [['comp','Athlete Comp'],['build','Building'],['cardio','Cardio'],['shiit','S.H.I.I.T'],['rt','RT Movement'],['garage','Garage Box'],['yoga','Yoga & Toning']];
 const PERSONAL = ['personal','Personal'];
 const PLANS = { comp:'Athlete Comp', build:'Body Box Building', cardio:'Cardio', garage:'Garage Box', all3:'All 3 Programs', coach:'Personal Coaching', staff:'Coach access' };
 const PLAN_PROGS = { comp:['comp'], build:['build'], cardio:['cardio'], garage:['garage'], all3:['comp','build','cardio'], coach:['comp','build','cardio'] };
@@ -218,7 +218,7 @@ function go(t){ TAB = t; document.querySelectorAll('[data-tab]').forEach(b => b.
 function render(){ ({ invite: renderInvite, calendar: renderCal, members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices })[TAB](); }
 
 /* ---------- calendar: the week's programming per track, like SugarWOD ---------- */
-const TRACKS = [['class','RT Movement','VXW86K','rt'],['comp','Athlete Comp','WGC534','comp'],['build','Building','RMXGZJ','build'],['cardio','Cardio','WQH7V7','cardio'],['garage','Garage Box','ZUBVXM','garage'],['shiit','S.H.I.I.T','56EG63','shiit']];
+const TRACKS = [['class','RT Movement','VXW86K','rt'],['comp','Athlete Comp','WGC534','comp'],['build','Building','RMXGZJ','build'],['cardio','Cardio','WQH7V7','cardio'],['garage','Garage Box','ZUBVXM','garage'],['shiit','S.H.I.I.T','56EG63','shiit'],['yoga','Yoga & Toning','GN83T7','yoga']];
 const CAL = { track: 'class', mon: null, mem: null, loading: false, err: '', notes: {} };
 const mondayOf = ds => { const [y,m,d] = ds.split('-').map(Number), t = new Date(y, m-1, d); t.setDate(t.getDate() - ((t.getDay()+6)%7)); return ymd(t); };
 const b64d = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
@@ -411,7 +411,7 @@ function downloadCsv(){
 /* ---------- new athlete: write the app setup email with the right code, remember the plan for approval ---------- */
 const CODE = { comp:'WGC534', build:'RMXGZJ', cardio:'WQH7V7', shiit:'56EG63', rt:'VXW86K', garage:'ZUBVXM' };
 const PICK = { comp:'Athlete Comp', build:'Body Box Building', cardio:'Cardio', garage:'Garage Box' };
-const progLabel = k => ({ comp:'Athlete Comp', build:'Building', cardio:'Cardio', shiit:'S.H.I.I.T', rt:'RT Movement', garage:'Garage Box' })[k] || k;
+const progLabel = k => ({ comp:'Athlete Comp', build:'Building', cardio:'Cardio', shiit:'S.H.I.I.T', rt:'RT Movement', garage:'Garage Box', yoga:'Yoga & Toning' })[k] || k;
 const inviteFor = r => { const em = (r.email||'').toLowerCase(); return D.inv.filter(i => i.email === em).sort((a,b) => (b.at||0) - (a.at||0))[0] || null; };
 const nextFirst = ds => { const [y,m,d] = ds.split('-').map(Number), a = ymd(new Date(y, m-1, 1)), b = ymd(new Date(y, m, 1)); return Math.abs(dayDiff(ds, a)) <= Math.abs(dayDiff(b, ds)) ? a : b; }; // the 1st closest to when the trial ends
 function codesFor(progs){ const s = new Set(progs), out = [];
