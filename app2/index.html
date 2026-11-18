@@ -1417,7 +1417,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       if(t < acc + sg.secs){
         const into = t - acc;
         return { big: sg.up ? fmt(Math.ceil(into)) : fmt(Math.ceil(sg.secs - into)), label: sg.label, // Nov 18: count-up reads 0:01 right after GO
-                 sub: (sg.of ? sg.unit+' '+sg.round+' of '+sg.of : (sg.part||'')) + ' · ' + fmt(Math.ceil(t)) + ' total', kind: sg.kind };
+                 sub: (sg.of ? sg.unit+' '+sg.round+' of '+sg.of : (sg.part||'')) + ' · ' + fmt(Math.ceil(t)) + ' in', kind: sg.kind };
       }
       acc += sg.secs;
     }
@@ -1592,11 +1592,16 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const inp = (k, lab) => '<label>'+lab+'<input inputmode="numeric" data-lf="'+k+'" value="'+f[k]+'"></label>';
     box.innerHTML = M==='fortime' ? inp('cap','Time cap (min, 0 = none)') : M==='amrap' ? inp('amrap','Minutes') : M==='emom' ? inp('every','Every (sec)')+inp('emr','Rounds')
       : M==='intervals' ? inp('work','Work (sec)')+inp('rest','Rest (sec)')+inp('ir','Rounds') : M==='tabata' ? '<label>20 on / 10 off · 8 rounds</label>' : '<label>Today\'s timer from your program</label>';
-    box.querySelectorAll('[data-lf]').forEach(i => i.oninput = () => { f[i.dataset.lf] = Math.max(0, parseInt(i.value,10) || 0); lvSegs(); });
+    // Nov 18: tapping a box selects the old number so typing replaces it (a 25-min AMRAP had become 125), and every field has a sane range
+    const LIM = { cap:[0,60], amrap:[1,60], every:[5,600], emr:[1,60], work:[5,600], rest:[0,600], ir:[1,50] };
+    box.querySelectorAll('[data-lf]').forEach(i => { const k = i.dataset.lf, [lo, hi] = LIM[k] || [0, 600];
+      i.onfocus = () => { try{ i.select(); }catch(e){} };
+      i.oninput = () => { const n = parseInt(i.value,10); f[k] = isNaN(n) ? lo : Math.min(hi, Math.max(lo, n)); lvSegs(); lvChip(); };
+      i.onblur = () => { i.value = f[k]; }; });
     $('vcLModes').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.lm === M));
-    const lab = (LVM.find(x => x[0]===M) || [0, (D.programs[M.slice(2)]||{}).short || 'Timer'])[1]; $('vcLChip').textContent = lab;
-    lvSegs();
+    lvSegs(); lvChip();
   }
+  function lvChip(){ const M = LV.mode, lab = (LVM.find(x => x[0]===M) || [0, (D.programs[M.slice(2)]||{}).short || 'Timer'])[1]; $('vcLChip').textContent = lab + (VC.total ? ' · ' + fmt(VC.total) : ''); }
   function lvModeBtns(){
     const opts = LVM.slice(); try{ ORDER.forEach(k => { const p = D.programs[k], e = (D.days[day]||{})[k]; if(p && e && e.timer && !(p.type==='class' && !isCoach())) opts.push(['t:'+k, 'Today · '+p.short]); }); }catch(e){}
     $('vcLModes').innerHTML = opts.map(o => '<button type="button" data-lm="'+esc(o[0])+'">'+esc(o[1])+'</button>').join('');
@@ -1628,7 +1633,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function lvLoop(){
     const v = LV.vid, cv = $('vcLCv'); if(!v) return;
     if(v.videoWidth){
-      if(!LV.rec){ const sc = Math.min(1, 1280/Math.max(v.videoWidth, v.videoHeight)); const W = Math.round(v.videoWidth*sc/2)*2, H = Math.round(v.videoHeight*sc/2)*2;
+      if(!LV.rec){ const sc = Math.min(1, 1920/Math.max(v.videoWidth, v.videoHeight)); const W = Math.round(v.videoWidth*sc/2)*2, H = Math.round(v.videoHeight*sc/2)*2;
         if(W !== LV.W || H !== LV.H){ LV.W = W; LV.H = H; cv.width = W; cv.height = H; } }
       const c = cv.getContext('2d'), W = cv.width, H = cv.height, mirror = LV.facing === 'user';
       if(mirror){ c.save(); c.translate(W, 0); c.scale(-1, 1); }
@@ -1642,12 +1647,12 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   async function lvStart(){
     lvStopCam(); $('vcLRec').disabled = true; $('vcLMsg').textContent = 'Starting the camera…';
     let st = null;
-    try{ st = await navigator.mediaDevices.getUserMedia({ video:{ facingMode: LV.facing, width:{ ideal:1280 }, height:{ ideal:720 } }, audio:true }); }
+    try{ st = await navigator.mediaDevices.getUserMedia({ video:{ facingMode: LV.facing, width:{ ideal:1920 }, height:{ ideal:1080 } }, audio:true }); }
     catch(e){ try{ st = await navigator.mediaDevices.getUserMedia({ video:{ facingMode: LV.facing }, audio:false }); }catch(e2){ st = null; } }
     if(!st){ $('vcLMsg').textContent = 'The camera didn\'t open. Allow camera access for this site in your phone settings, then try again.'; return; }
     LV.stream = st; const v = document.createElement('video'); v.playsInline = true; v.setAttribute('playsinline',''); v.muted = true; v.srcObject = st; LV.vid = v;
     try{ await v.play(); }catch(e){}
-    $('vcLMsg').textContent = 'Pick your timer, prop your phone, then hit the red button. You get 10 seconds to get set.'; $('vcLRec').disabled = false;
+    $('vcLMsg').textContent = 'Pick your timer and check the time on the chip. Stand the phone up tall for Reels and Shorts, then hit the red button. You get 10 seconds to get set.'; $('vcLRec').disabled = false;
     lvLoop();
   }
   function lvUi(rec){ $('vcLRec').classList.toggle('on', rec); $('vcLSet').hidden = rec; $('vcLRounds').hidden = !rec; $('vcLFlip').style.visibility = rec ? 'hidden' : ''; $('vcLBack').style.visibility = rec ? 'hidden' : ''; }
@@ -1667,7 +1672,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const cs = $('vcLCv').captureStream(30);
       if(LV.stream) LV.stream.getAudioTracks().forEach(t => cs.addTrack(t));
       const [mime, ext] = pickMime(); LV.mime = mime; LV.ext = ext; LV.chunks = [];
-      let rec; try{ rec = new MediaRecorder(cs, mime ? { mimeType:mime, videoBitsPerSecond: 5_000_000 } : { videoBitsPerSecond: 5_000_000 }); }catch(e){ $('vcLMsg').textContent = 'Recording isn\'t supported in this browser. Try Safari or Chrome.'; return; }
+      let rec; try{ rec = new MediaRecorder(cs, mime ? { mimeType:mime, videoBitsPerSecond: 10_000_000 } : { videoBitsPerSecond: 10_000_000 }); }catch(e){ $('vcLMsg').textContent = 'Recording isn\'t supported in this browser. Try Safari or Chrome.'; return; }
       rec.ondataavailable = e => { if(e.data && e.data.size) LV.chunks.push(e.data); };
       rec.onstop = () => {
         VC.out = new Blob(LV.chunks, { type: LV.mime || ('video/'+LV.ext) }); VC.outExt = LV.ext; if(LV.rounds) YT.title += ' · '+LV.rounds+' rounds'; LV.rec = null; LV.t0 = null; LV.beeps = {}; LV.lastSeg = -1; lock(false); lvStopCam(); lvUi(false);
