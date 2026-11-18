@@ -77,7 +77,12 @@ main{padding-block:18px 40px}
 .part .rx li.lrest{color:var(--muted);font-size:14px}
 .part .rx li.lhead{font-weight:700;font-size:15px;letter-spacing:.02em;text-transform:uppercase;color:var(--chalk);margin:16px 0 2px;padding:12px 0 2px;border-top:1px solid var(--line)}
 .part .rx li.lhead:first-child{margin-top:0;padding-top:0;border-top:0}
-.part .rx li.lhead ~ li:not(.lhead):not(.lscore):not(.lsec):not(.ltip){padding-left:12px;border-left:2px solid var(--line)}
+.part .rx li.lhead ~ li:not(.lhead):not(.lscore):not(.lsec):not(.ltip):not(.lask){padding-left:12px;border-left:2px solid var(--line)}
+.part .rx li.lask{list-style:none;margin:12px 0 4px;padding:12px;border:1px solid var(--blue);border-radius:12px;display:grid;gap:8px}
+.lask-q{font-weight:700}.lask-o{display:flex;flex-wrap:wrap;gap:6px}
+.lask-o button{border:1px solid var(--line);background:transparent;color:inherit;border-radius:999px;padding:8px 14px;font:600 14px var(--body);cursor:pointer}
+.lask-o button[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:var(--ink)}
+.lask-s{font-size:12px;color:var(--muted)}
 .part .rx li.ltip{font-size:14px;color:var(--muted);font-style:italic;margin-top:10px;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:8px}
 .part .rx li.lscore{display:grid;gap:2px;margin:14px 0 2px;padding:10px 12px;border-left:3px solid #C8102E;background:rgba(200,16,46,.08);border-radius:0 8px 8px 0;font-size:15px}
 .lscore-n{font:700 11px var(--body);letter-spacing:.12em;text-transform:uppercase;color:#FF5A64}
@@ -1017,6 +1022,15 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     for(const k of keys){ const nm = LIFTS[k].toLowerCase().replace(/^push \/ split /,''); if(low.includes(nm)) return k; }
     return null;
   }
+  function qaKey(q){ return ((typeof memDay !== 'undefined' && memDay) || todayStr())+'|'+q.slice(0, 80); }
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-qa]'); if(!b) return;
+    const key = b.dataset.qa, v = b.dataset.qv, q = b.dataset.qq; A.qa = A.qa || {}; if((A.qa[key]||{}).a === v) return;
+    A.qa[key] = { a: v, t: Date.now() }; saveA();
+    const li = b.closest('.lask'); li.querySelectorAll('[data-qa]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); li.querySelector('.lask-s').textContent = 'Sending…';
+    const d = key.split('|')[0], dl = parse(d).toLocaleDateString([], { weekday:'short', month:'short', day:'numeric' });
+    Promise.resolve(window.__bbAsk ? window.__bbAsk('Check-in ('+dl+'): '+q+' '+v) : null).then(() => { li.querySelector('.lask-s').textContent = 'Sent to Coach Reef. Tap another to change.'; })
+      .catch(() => { li.querySelector('.lask-s').textContent = 'Saved. It will show for Coach Reef, but the message didn\'t send. Check your connection.'; });
+  });
   function lineHtml(l, lift, noSwap){
     const bold = l.trim().startsWith('!');
     let t = esc(bold ? l.trim().slice(1) : l);
@@ -1038,6 +1052,10 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const pp = /^\s*(P\d)\s*:\s*/.exec(l);
     if(pp && !bold) return '<li class="lpp"><span class="lpp-n">'+pp[1]+'</span><span>'+t.replace(/^\s*P\d\s*:\s*/,'')+'</span>'+(noSwap ? '' : swapPills(l))+'</li>';
     const raw = l.trim();
+    // Nov 18: "?Question?|Answer 1|Answer 2" = a question with answer bubbles. The tap goes to Coach Reef's messages.
+    if(/^\?/.test(raw)){ const qp = raw.slice(1).split('|').map(x => x.trim()).filter(Boolean), q = qp[0] || '', opts = qp.length > 1 ? qp.slice(1) : ['Good','A little off','Not good'];
+      const key = qaKey(q), cur = ((A.qa||{})[key]||{}).a;
+      return '<li class="lask"><span class="lask-q">'+esc(q)+'</span><span class="lask-o">'+opts.map(o => '<button type="button" data-qa="'+esc(key)+'" data-qv="'+esc(o)+'" data-qq="'+esc(q)+'" aria-pressed="'+(cur===o)+'">'+esc(o)+'</button>').join('')+'</span><span class="lask-s">'+(cur ? 'Sent to Coach Reef. Tap another to change.' : 'Tap one. It goes straight to Coach Reef.')+'</span></li>'; }
     if(!bold && /^score\s*[:\-–]/i.test(raw)) return '<li class="lscore"><span class="lscore-n">Score</span><span>'+t.replace(/^\s*score\s*[:\-–]\s*/i,'')+'</span></li>';
     if(!bold && /^(rest\b|then rest\b)/i.test(raw)) return '<li class="lrest">'+t+'</li>';
     // Nov 18: cleaner cards. Movement/round headers ("Depth Jump to Box Jump:", "Then 2 rounds:", "3 Sets of:") get their own bold line with space above; "*" lines read as a coach tip.
@@ -5467,6 +5485,7 @@ const payMonth = b => { const ds = (b && b.paidThrough && b.paidThrough >= today
 const payLink = (P, b, first) => { const v = payCfg(P).venmo; if(!v) return ''; const amt = b && +b.rate > 0 ? +b.rate : 0; return 'https://venmo.com/?txn=pay&recipients='+encodeURIComponent(v)+(amt ? '&amount='+amt : '')+'&note='+encodeURIComponent('BODYBOX '+payMonth(b)+(first ? ' - '+first : '')); };
 const payBlock = (P, b, first) => { const c = payCfg(P), l = payLink(P, b, first); return (l ? '\nPay with Venmo (@'+c.venmo+'): '+l : '') + (c.other ? '\n'+c.other : ''); };
 const priceMsg = (P, txt) => { const c = payCfg(P); return (txt + (c.venmo ? '\nVenmo: https://venmo.com/u/'+c.venmo : '') + (c.other ? '\n'+c.other : '')).slice(0, 600); };
+window.__bbAsk = text => auth.currentUser ? sendDm(auth.currentUser.uid, text) : Promise.reject(new Error('signed out'));
 async function sendDm(uid, text){ await addDoc(collection(fs, 'dms', uid, 'msgs'), { uid: auth.currentUser.uid, name: myNameF(), badge: window.__bbBadge || '', text: String(text).slice(0, 600), at: Date.now() }); }
 
 const dateDone = (inp, fn) => { const ok = v => !v || (/^\d{4}-\d{2}-\d{2}$/.test(v) && +v.slice(0,4) >= 2020 && +v.slice(0,4) <= 2100); let last = inp.value;

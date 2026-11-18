@@ -123,6 +123,9 @@ h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color
 #adSide{position:sticky;top:8px;max-height:calc(100vh - 24px);overflow-y:auto;border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--panel)}
 #adSide .ad-h{margin:0 0 4px;font-size:18px}#adSide .ad-ath{padding:12px;background:transparent}#adSide .ad-ath>h3{font-size:17px}
 @media (max-width:1000px){.cal-split{grid-template-columns:1fr}#adSide{position:static;max-height:none;order:2}}
+.ad-part .ln.ask{margin-top:6px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
+.ad-part .ln.ask .ans{display:inline-block;margin-left:6px;padding:2px 10px;border-radius:999px;background:var(--gold);color:#111;font-weight:700}
+.ad-part .ln.ask .noans{margin-left:6px;color:var(--muted);font-style:italic}
 .ad-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 14px}
 .ad-bar .chips{display:flex;gap:6px;flex-wrap:wrap}
 .ad-bar .chips button{border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:999px;padding:6px 12px;font:600 13px var(--body);cursor:pointer}
@@ -321,14 +324,16 @@ const PNAME = { class:'RT Movement', comp:'Athlete Comp', build:'Building', card
 async function athPlan(r){
   if(AD.cache[r.id] !== undefined) return AD.cache[r.id];
   let out = { me: null, items: [] };
-  try{ const s = await getDoc(doc(fs, 'data', 'users', r.id, 'bodybox')); if(s.exists()){ const j = JSON.parse(s.data().json || '{}'); out.me = j.me || null;
+  try{ const s = await getDoc(doc(fs, 'data', 'users', r.id, 'bodybox')); if(s.exists()){ const j = JSON.parse(s.data().json || '{}'); out.me = j.me || null; out.qa = (j.A && j.A.qa) || {};
       const I = CAL.ind, ka = j.ka; if(I && out.me && ka && I.ath && I.ath[out.me]){
         const k = await crypto.subtle.importKey('raw', b64d(ka), 'AES-GCM', false, ['decrypt']); const box = I.ath[out.me].d;
         const p = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name:'AES-GCM', iv: b64d(box.iv) }, k, b64d(box.ct))));
         out.items = (p.items || []).filter(it => !it.who || it.who.includes(out.me)); } } }catch(e){}
   AD.cache[r.id] = out; return out;
 }
-const adLine = l => { const t = String(l); if(/^\*/.test(t.trim())) return '<span class="ln tip">'+esc(t.trim().replace(/^\*\s*/,''))+'</span>';
+const adLine = l => { const t = String(l);
+  if(/^\?/.test(t.trim())){ const qp = t.trim().slice(1).split('|').map(x => x.trim()), q = qp[0] || '', ans = ((AD.qa||{})[AD.ds+'|'+q.slice(0, 80)]||{}).a;
+    return '<span class="ln ask"><b>Asked:</b> '+esc(q)+' <span class="'+(ans ? 'ans' : 'noans')+'">'+(ans ? esc(ans) : 'No answer yet')+'</span></span>'; } if(/^\*/.test(t.trim())) return '<span class="ln tip">'+esc(t.trim().replace(/^\*\s*/,''))+'</span>';
   return '<span class="ln '+(/:\s*$/.test(t.trim()) && t.trim().length <= 60 ? 'h' : lineCls(t))+'">'+esc(lineTxt(t))+'</span>'; };
 function adPart(tag, title, lines, note, mine){
   return '<div class="ad-part'+(mine ? ' mine' : '')+'"><span class="tg">'+esc(mine ? (tag ? tag+' · just for them' : 'Just for them') : (tag || ''))+'</span>'+(title ? '<span class="ti">'+esc(title)+'</span>' : '')+(lines||[]).map(adLine).join('')+(note ? '<span class="nt">'+esc(note)+'</span>' : '')+'</div>';
@@ -370,7 +375,7 @@ async function renderDays(side){
   box.querySelectorAll('[data-ad]').forEach(b => b.onclick = () => { const n = +b.dataset.ad; AD.date = n === 0 ? today() : addDays(AD.date, n); renderDays(side); });
   box.querySelectorAll('[data-adw]').forEach(b => b.onclick = () => { AD.who = b.dataset.adw; renderDays(side); });
   const ds = AD.date, html = [];
-  for(const r of show){ const plan = await athPlan(r);
+  for(const r of show){ const plan = await athPlan(r); AD.qa = plan.qa; AD.ds = ds;
     const tags = (r.progs||[]).map(p => p === 'personal' ? 'Personal' : PNAME[PROGMAP[p]] || p).join(' · ');
     html.push('<div class="ad-ath"><h3>'+esc(r.name||'')+'</h3><p class="sub">'+esc(tags)+(plan.items.length || !(r.progs||[]).includes('personal') ? '' : ' · personal plan not readable yet (they need to open the app once)')+'</p>'+adDayHtml(r, plan, ds)+'</div>'); }
   const L = box.isConnected && box.querySelector('.adList');
