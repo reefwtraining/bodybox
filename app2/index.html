@@ -3238,6 +3238,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function memberHtml2(){
     const progs = memProgs();
     if(!progs.length || memAdding){
+      if(window.__bbFire && window.__bbAdmin) return '<section class="unlock"><span class="label">Admin</span><h2>Staff account</h2><p class="how">No training programs on this account. Use <b>Members</b> and <b>Team</b> at the bottom right, the chat bubble for messages, or the full <a href="https://reefwtraining.github.io/bodybox/admin/" target="_blank" rel="noopener">admin website ↗</a>.</p></section>';
       if(window.__bbFire) return '<section class="unlock"><span class="label">Members</span><h2>Your programs are on the way</h2><p class="how">Coach Reef turns on your programs from his side. Once he does, close and reopen the app and your training shows here.</p></section>';
       return '<section class="unlock"><span class="label">Members</span><h2>'+(memAdding?'Add a program code':'Unlock your programming')+'</h2>'+
         '<p>Enter the program code you got when you signed up. Your code stays on this phone.</p>'+
@@ -5452,7 +5453,7 @@ function payState(b){
   if(late < 5) return { k:'due', t:'Due '+fmtD(pt)+(late ? ' · '+late+' day'+(late>1?'s':'')+' late' : ' · today') };
   return { k:'late', t:'Not paid since '+fmtD(pt)+' · past the 5th' };
 }
-const PRICE_DEFAULT = 'BODYBOX prices (per month)\n- One program (Athlete Comp, Body Box Building or Cardio): $35\n- All 3 programs: $69\n- All 3 programs + personal programming from Coach Reef: $129\n- Garage Box: $25\nPayment is due on the 1st of every month. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back.\nPayments and account questions: message Jameson in the app chat or email teambodybox@gmail.com';
+const PRICE_DEFAULT = 'BODYBOX prices (per month)\n- One program (Athlete Comp, Body Box Building or Cardio): $35\n- All 3 programs: $69\n- All 3 programs + personal programming from Coach Reef: $129\n- Garage Box: $25\nPayment is due on the 1st of every month. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back.\nPayments and account questions: message Jameson in the app chat or email jayteambodybox@gmail.com';
 // Nov 17: how athletes pay. Venmo link opens Venmo with Team BodyBox, their amount and a note filled in.
 const payCfg = P => ({ venmo: String(P && P.venmo != null ? P.venmo : 'teambodybox').replace(/^@/, '').trim(), other: P && P.other != null ? P.other : 'Also: Cash App $bodybox, Apple Pay or cash' });
 const payMonth = b => { const ds = (b && b.paidThrough && b.paidThrough >= todayStr()) ? b.paidThrough : todayStr(); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+ds.slice(5,7)-1]; };
@@ -5504,7 +5505,7 @@ async function openPay(){
       if(await save(id, { paidThrough: nx, lastPaid: todayStr() })){ if(!r.approved || !(r.progs||[]).length) alert('Saved. Their programs are off. Turn them back on in Members.'); } draw(); });
     box.querySelectorAll('[data-price]').forEach(b => b.onclick = async () => { const r = rows.find(x => x.id === b.dataset.price); if(!confirm('Send the price sheet to '+(r.name||'them')+' in the app chat?')) return; b.disabled = true; try{ await sendDm(r.id, priceMsg(BILL._prices, prices)); b.textContent = 'Sent'; }catch(e){ b.textContent = 'Couldn\'t send'; b.disabled = false; } });
     box.querySelectorAll('[data-remind]').forEach(b => b.onclick = async () => { const r = rows.find(x => x.id === b.dataset.remind), s = payState(BILL[r.id]), first = (r.name||'').split(' ')[0];
-      const t = 'Hey '+first+', quick reminder: your BODYBOX payment '+(s.k === 'ok' ? 'is due '+fmtD(BILL[r.id].paidThrough) : 'is due')+'. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back. Questions? Message Jameson in the app chat or email teambodybox@gmail.com' + payBlock(BILL._prices, BILL[r.id], first);
+      const t = 'Hey '+first+', quick reminder: your BODYBOX payment '+(s.k === 'ok' ? 'is due '+fmtD(BILL[r.id].paidThrough) : 'is due')+'. If it isn\'t in by 7:59 PM on the 1st, your programming pauses. Pay by the 5th and it comes right back. Questions? Message Jameson in the app chat or email jayteambodybox@gmail.com' + payBlock(BILL._prices, BILL[r.id], first);
       const msg = prompt('Reminder to '+(r.name||'them')+' (edit if you want):', t); if(!msg) return; b.disabled = true; try{ await sendDm(r.id, msg); b.textContent = 'Sent'; }catch(e){ b.textContent = 'Couldn\'t send'; b.disabled = false; } });
   };
   draw();
