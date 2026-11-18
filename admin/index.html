@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>BODYBOX Admin</title>
-<link rel="icon" href="../icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#111111">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="BB Admin">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Barlow:wght@400;500;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
 <style>
 :root{--bg:#111111;--panel:#1B1B1B;--panel2:#151515;--line:#2A2A2A;--chalk:#F4F2EE;--muted:#8F8B84;--red:#C8102E;--red2:#FF5A64;--gold:#E8B44C;--green:#6FBF73;
@@ -605,6 +612,23 @@ function renderPrices(){
   $('#prSave').onclick = async () => { const C = cur();
     try{ await setDoc(doc(fs,'billing','_prices'), { text: C.text.slice(0,600), venmo: C.venmo, other: C.other.slice(0,120), by: ME.name, at: serverTimestamp() }); toast('Saved'); }catch(e){ alert('Couldn\'t save.'); } };
 }
+</script>
+<div id="instBar" hidden style="position:fixed;left:12px;right:12px;bottom:12px;z-index:60;background:#1B1B1B;border:1px solid #2A2A2A;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 8px 30px rgba(0,0,0,.5)"><span id="instTxt" style="font-size:14px"></span><span style="display:flex;gap:8px;flex:none"><button class="btn sm" type="button" id="instGo" hidden>Install</button><button class="btn ghost sm" type="button" id="instX">Not now</button></span></div>
+<script>
+// Nov 18: install the admin page as its own phone/computer app
+(function(){
+  try{ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); }catch(e){}
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  let seen = false; try{ seen = localStorage.getItem('bbAdminInstX') === '1'; }catch(e){}
+  if(standalone || seen) return;
+  const bar = document.getElementById('instBar'), txt = document.getElementById('instTxt'), go = document.getElementById('instGo');
+  document.getElementById('instX').onclick = () => { bar.hidden = true; try{ localStorage.setItem('bbAdminInstX', '1'); }catch(e){} };
+  let ev = null;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); ev = e; txt.textContent = 'Put BODYBOX Admin on your home screen as an app.'; go.hidden = false; bar.hidden = false; });
+  go.onclick = async () => { if(!ev) return; ev.prompt(); try{ await ev.userChoice; }catch(e){} ev = null; bar.hidden = true; };
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if(ios) setTimeout(() => { txt.innerHTML = 'Make this an app: tap <b>Share</b>, then <b>Add to Home Screen</b>.'; bar.hidden = false; }, 1500);
+})();
 </script>
 </body>
 </html>
