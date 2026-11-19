@@ -527,7 +527,7 @@ textarea.notein{width:100%;min-height:84px;font:inherit;font-size:16px;backgroun
 .vc-top h2{font-family:var(--display);font-weight:900;font-size:clamp(28px,7vw,40px);text-transform:uppercase;line-height:.95;margin:4px 0 0;text-wrap:balance}
 .vc .t-close{color:var(--chalk)}
 .vc p{margin:0;color:var(--muted)}
-.camplan{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)}.camplan summary{cursor:pointer;font-weight:700;color:var(--gold)}.camplan svg{display:block;width:100%;height:auto;margin-top:10px}.camplan p{margin:10px 0 2px;color:var(--chalk);font-size:14px}.cp-tabs{display:flex;gap:8px;margin-top:10px}.cp-tabs button{flex:1;border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:999px;padding:7px 10px;font:inherit;font-weight:700;cursor:pointer}.cp-tabs button.on{background:var(--gold);border-color:var(--gold);color:var(--ink)}.cp-t{fill:var(--muted);font:700 11px system-ui,sans-serif;letter-spacing:.08em}.cp-s{fill:var(--muted);font:12px system-ui,sans-serif}.cp-g{fill:var(--gold);font:700 12px system-ui,sans-serif}.cp-k{fill:var(--ink);font:700 12px system-ui,sans-serif}.vc-steps{margin:0;padding-left:20px;display:grid;gap:6px;color:var(--chalk)}
+.camplan{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)}.camplan summary{cursor:pointer;font-weight:700;color:var(--gold)}.camplan svg,.camplan img{display:block;width:100%;height:auto;margin-top:10px;border-radius:8px}.camplan p{margin:10px 0 2px;color:var(--chalk);font-size:14px}.cp-tabs{display:flex;gap:8px;margin-top:10px}.cp-tabs button{flex:1;border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:999px;padding:7px 10px;font:inherit;font-weight:700;cursor:pointer}.cp-tabs button.on{background:var(--gold);border-color:var(--gold);color:var(--ink)}.cp-t{fill:var(--muted);font:700 11px system-ui,sans-serif;letter-spacing:.08em}.cp-s{fill:var(--muted);font:12px system-ui,sans-serif}.cp-g{fill:var(--gold);font:700 12px system-ui,sans-serif}.cp-k{fill:var(--ink);font:700 12px system-ui,sans-serif}.vc-steps{margin:0;padding-left:20px;display:grid;gap:6px;color:var(--chalk)}
 .vc-stage{position:relative;margin:0 auto;max-width:100%;background:#000;border-radius:8px;overflow:hidden}
 .vc-stage video,.vc-done video{display:block;width:100%;height:100%;background:#000}
 .vc-stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
@@ -925,49 +925,7 @@ Rest 2:00"></textarea></label>
     <label class="btn">Add the clock to a video I already have<input id="vcLib" type="file" accept="video/*" hidden=""></label>
     <input id="vcCam" type="file" accept="video/*" capture="environment" hidden="">
    </div>
-   <details class="camplan" id="vcPlan"><summary>Where to put the camera</summary><div class="cp-tabs" role="tablist"><button type="button" class="on" data-cp="lift" role="tab" aria-selected="true">Lift</button><button type="button" data-cp="wod" role="tab" aria-selected="false">Workout</button></div><div class="cp-pane" data-cpp="lift"><svg viewBox="0 0 320 200" role="img" aria-label="Top view: phone straight out to the side of the lifter, about 8 to 10 feet away, in line with the bar">
-<rect x="1" y="1" width="318" height="198" rx="10" fill="none" stroke="var(--line)" stroke-width="2"/>
-<text x="12" y="20" class="cp-t">TOP VIEW</text>
-<line x1="196" y1="100" x2="300" y2="100" stroke="var(--chalk)" stroke-width="5" stroke-linecap="round"/>
-<rect x="200" y="84" width="9" height="32" rx="2" fill="var(--chalk)"/><rect x="287" y="84" width="9" height="32" rx="2" fill="var(--chalk)"/>
-<circle cx="248" cy="124" r="13" fill="var(--panel)" stroke="var(--chalk)" stroke-width="2"/>
-<path d="M248 156 L248 140 M242 146 L248 140 L254 146" stroke="var(--muted)" stroke-width="2" fill="none"/>
-<text x="200" y="176" class="cp-s">you face this way</text>
-<path d="M58 100 L196 84 L196 116 Z" fill="var(--gold)" opacity=".16"/>
-<line x1="70" y1="100" x2="190" y2="100" stroke="var(--gold)" stroke-width="2" stroke-dasharray="6 5"/>
-<rect x="34" y="86" width="22" height="28" rx="4" fill="var(--gold)"/><circle cx="56" cy="100" r="3" fill="var(--ink)"/>
-<text x="20" y="134" class="cp-g">PHONE</text>
-<text x="96" y="92" class="cp-g">8-10 ft</text>
-<path d="M150 100 L150 112 L162 112" stroke="var(--gold)" stroke-width="2" fill="none"/>
-<text x="104" y="130" class="cp-s">90 degrees</text>
-</svg><svg viewBox="0 0 320 170" role="img" aria-label="Side view: phone propped at hip height, level with the bar, whole body and bar overhead in the shot">
-<rect x="1" y="1" width="318" height="168" rx="10" fill="none" stroke="var(--line)" stroke-width="2"/>
-<text x="12" y="20" class="cp-t">SIDE VIEW</text>
-<line x1="10" y1="150" x2="310" y2="150" stroke="var(--line)" stroke-width="2"/>
-<path d="M60 92 L230 22 L230 150 Z" fill="var(--gold)" opacity=".14"/>
-<line x1="40" y1="96" x2="40" y2="150" stroke="var(--muted)" stroke-width="3"/><line x1="28" y1="150" x2="52" y2="150" stroke="var(--muted)" stroke-width="3"/>
-<rect x="34" y="80" width="14" height="22" rx="3" fill="var(--gold)"/>
-<circle cx="250" cy="61" r="7" fill="none" stroke="var(--chalk)" stroke-width="2.5"/>
-<path d="M250 68 L250 108 M250 108 L240 150 M250 108 L260 150 M250 76 L242 42 M250 76 L258 42" stroke="var(--chalk)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-<line x1="226" y1="30" x2="274" y2="30" stroke="var(--chalk)" stroke-width="3"/><circle cx="250" cy="30" r="12" fill="none" stroke="var(--chalk)" stroke-width="3"/>
-<text x="64" y="124" class="cp-g">hip height</text>
-<text x="64" y="142" class="cp-s">whole body + bar in the shot</text>
-</svg><p>Phone straight out to your side, level with the bar, about 8-10 feet away. <b>Prop the phone up. Don't hold it.</b></p></div><div class="cp-pane" data-cpp="wod" hidden><svg viewBox="0 0 320 200" role="img" aria-label="Top view for a workout: phone far back in a corner so every station and the clock are in the shot">
-<rect x="1" y="1" width="318" height="198" rx="10" fill="none" stroke="var(--line)" stroke-width="2"/>
-<text x="12" y="20" class="cp-t">TOP VIEW · WORKOUT</text>
-<path d="M44 176 L300 36 L300 190 L170 190 Z" fill="var(--gold)" opacity=".14"/>
-<rect x="30" y="160" width="22" height="28" rx="4" fill="var(--gold)" transform="rotate(-35 41 174)"/>
-<text x="14" y="150" class="cp-g">PHONE</text>
-<line x1="170" y1="70" x2="250" y2="70" stroke="var(--chalk)" stroke-width="5" stroke-linecap="round"/>
-<rect x="172" y="58" width="8" height="24" rx="2" fill="var(--chalk)"/><rect x="240" y="58" width="8" height="24" rx="2" fill="var(--chalk)"/>
-<text x="186" y="98" class="cp-s">bar</text>
-<rect x="240" y="120" width="40" height="34" rx="4" fill="none" stroke="var(--chalk)" stroke-width="2.5"/>
-<text x="247" y="174" class="cp-s">box</text>
-<rect x="150" y="128" width="54" height="18" rx="4" fill="none" stroke="var(--chalk)" stroke-width="2.5"/>
-<text x="150" y="166" class="cp-s">machine</text>
-<rect x="276" y="30" width="34" height="20" rx="3" fill="var(--gold)"/><text x="281" y="44" class="cp-k">0:00</text>
-<text x="226" y="22" class="cp-g">CLOCK</text>
-</svg><p>Back far enough that every station and the clock stay in the shot the whole time. <b>Prop the phone up. Don't hold it.</b></p></div></details>
+   <details class="camplan" id="vcPlan"><summary>Where to put the camera</summary><div class="cp-tabs" role="tablist"><button type="button" class="on" data-cp="lift" role="tab" aria-selected="true">Lift</button><button type="button" data-cp="wod" role="tab" aria-selected="false">Workout</button></div><div class="cp-pane" data-cpp="lift"><img src="img/cam1.webp" width="1200" height="800" alt="Top view: phone on a tripod straight out to the lifter's side, in line with the bar, 8-10 feet away, at 90 degrees" loading="lazy"><img src="img/cam2.webp" width="1200" height="800" alt="Side view: phone on a tripod at hip height, whole body and the bar overhead in the shot" loading="lazy"><p>Phone straight out to your side, level with the bar, about 8-10 feet away. <b>Prop the phone up. Don't hold it.</b></p></div><div class="cp-pane" data-cpp="wod" hidden><img src="img/cam3.webp" width="1200" height="800" alt="Top view of a workout: phone on a tripod in a corner, every station and the clock in the shot" loading="lazy"><p>Back far enough that every station and the clock stay in the shot the whole time. <b>Prop the phone up. Don't hold it.</b></p></div></details>
    <ol class="vc-steps">
     <li>Prop your phone so your whole body and the equipment stay in frame.</li>
     <li>Pick your clock, tap Record, and use the 10 seconds to get set. You'll hear 3, 2, 1, GO.</li>
