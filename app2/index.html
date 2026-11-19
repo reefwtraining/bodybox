@@ -3384,7 +3384,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       while((m = re.exec(String(l)))){ const n = +m[1], r = +m[2]; if(n >= 1 && n <= 12 && r >= 1 && r <= 30) for(let i = 0; i < n; i++) out.push({ reps: r, pct: m[3] ? +m[3] : 0 }); } });
     if(!out.length){ for(const l of L){ const m = l.match(/(\d{1,2})\s+sets?\s+of\s+(\d{1,2})(?!\d)/i); if(m && +m[1] <= 12 && +m[2] >= 1 && +m[2] <= 30){ for(let i = 0; i < +m[1]; i++) out.push({ reps: +m[2], pct: 0 }); break; } } }
     if(!out.length){ for(const l of L){ const m = l.match(/(?:^|\s)(\d{1,2}(?:\s*-\s*\d{1,2}){2,})(?:\s|$)/); if(m){ m[1].split('-').map(x => +x.trim()).forEach(r => { if(r >= 1 && r <= 30) out.push({ reps: r, pct: 0 }); }); break; } } }
-    return out.slice(0, 15);
+    if(!out.length){ const all = L.join(' '); const m = all.match(/EMOM\s*(?:for\s*)?(\d{1,2})(?!\d)(?!:\d)(?!\s*(?:sec|s\b))/i); if(m && +m[1] >= 2 && +m[1] <= 30 && /jerk|clean|snatch|press|squat|deadlift|thruster/i.test(all)) for(let i = 0; i < +m[1]; i++) out.push({ reps: 1, pct: 0 }); }
+    return out.slice(0, 30);
   }
   function setRowHtml(i, reps, ph){
     return '<div class="setrow"><span class="sn">Set '+(i+1)+'</span><label class="field swf"><span class="label">Weight ('+A.unit+')</span><input type="number" inputmode="decimal" min="0" step="any" class="sw" placeholder="'+esc(ph||'')+'"></label><label class="field"><span class="label">Reps</span><input type="number" inputmode="numeric" min="1" max="50" class="sr" value="'+(reps||'')+'"></label><button type="button" class="sx" aria-label="Remove set">×</button></div>';
@@ -3430,7 +3431,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   }
   function partLogBar(pt, entry, date){
     if(!date || /warm|cool|mobil|stretch|recover/i.test(pt.tag || '')) return '';
-    const pname = partName(pt), lk = (pt.lift && LIFTS[pt.lift]) ? pt.lift : liftByName(pname), hdr = String((pt.lines||[]).find(l => /^!/.test(String(l))) || ''), noWt = /jump|bound|\bhops?\b|toss|throw|sprint|\brun|carry|medley|superset|tri-?set|core|accessory|lower leg|workout|wod|amrap|emom|for time|interval|aerobic|\bmin\b|threshold|engine|cardio|miles|team of|station|express|class timer|\d+ blocks|grit|midline|plyo|sculpt|burnout|finisher|ladder|activate|integration|holds|reset|cues|brick|\d+:\d\d/i.test(pt.tag || '') || /for time|amrap|emom|rounds? for|team of|max (rounds|reps)|\bmin\b|minutes?|\d+:\d\d/i.test(hdr);
+    const pname = partName(pt), lk = (pt.lift && LIFTS[pt.lift]) ? pt.lift : liftByName(pname), hdr = String((pt.lines||[]).find(l => /^!/.test(String(l))) || ''), emomLift = /emom/i.test((pt.tag||'')+' '+hdr) && /jerk|clean|snatch|press|squat|deadlift|thruster/i.test((pt.tag||'')+' '+hdr), noWt = !emomLift && (/jump|bound|\bhops?\b|toss|throw|sprint|\brun|carry|medley|superset|tri-?set|core|accessory|lower leg|workout|wod|amrap|emom|for time|interval|aerobic|\bmin\b|threshold|engine|cardio|miles|team of|station|express|class timer|\d+ blocks|grit|midline|plyo|sculpt|burnout|finisher|ladder|activate|integration|holds|reset|cues|brick|\d+:\d\d/i.test(pt.tag || '') || /for time|amrap|emom|rounds? for|team of|max (rounds|reps)|\bmin\b|minutes?|\d+:\d\d/i.test(hdr));
     let plan = noWt ? [] : setPlan(pt.lines); if(!noWt && !plan.length) plan = setPlan([pt.tag || '']);
     if(lk || plan.length){
       const done = lk ? (A.log||[]).filter(e => e.lift === lk && e.date === date && !String(e.src||'').startsWith('est')) : [];
