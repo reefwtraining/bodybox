@@ -28,7 +28,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--red2);outline-of
 .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--chalk)}
 .btn.sm{padding:5px 11px;font-size:13px}
 .btn[disabled]{opacity:.5;cursor:default}
-.label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.label{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .muted{color:var(--muted)}
 .wrap{max-width:1400px;margin:0 auto;padding:0 20px}
 /* gate */
@@ -68,7 +68,7 @@ th{position:sticky;top:0;background:var(--panel);z-index:2;font:700 12px var(--c
 th.sort{cursor:pointer}th.sort:hover{color:var(--chalk)}th .ar{color:var(--red2)}
 tr:hover td{background:#161616}
 td.nm b{display:block;font-size:15px}td.nm small{color:var(--muted);font-size:12px;display:block;word-break:break-all}
-.tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--line);color:var(--gold);margin-top:3px}
+.tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--line);color:var(--gold);margin-top:3px}
 .acc{font-weight:600;font-size:13px}.acc.on{color:var(--green)}.acc.wait{color:var(--gold)}.acc.off{color:var(--red2)}
 .progs{display:flex;flex-wrap:wrap;gap:4px;max-width:440px}
 .progs button{border:1px solid var(--line);background:none;border-radius:999px;padding:3px 9px;font-size:12px;color:var(--muted)}
@@ -526,7 +526,7 @@ function renderMembers(){
   const c = k => rowsFor(k).length, B = r => D.bill[r.id] || {};
   const owe = rowsFor('owe'), owed = owe.reduce((t,r) => t + (+B(r).rate || 0), 0);
   const nx = addMonth(firstOfMonth(today())), nextUp = rowsFor('paid').filter(r => B(r).paidThrough === nx);
-  const monthly = people().filter(r => r.approved && !isStaff(r)).reduce((t,r) => t + (+B(r).rate || 0), 0);
+  const monthly = people().filter(r => r.approved && !isStaff(r) && B(r).plan !== 'sessions').reduce((t,r) => t + (+B(r).rate || 0), 0);
   let rows = rowsFor(F.show);
   if(F.q){ const q = F.q.toLowerCase(); rows = people().filter(r => ((r.name||'')+' '+(r.email||'')+' '+(B(r).note||'')).toLowerCase().includes(q)); }
   rows = sorted(rows); SEL = new Set([...SEL].filter(id => rows.some(r => r.id === id)));
@@ -542,8 +542,8 @@ function renderMembers(){
       (inviteFor(r) ? '<small style="font-size:12px;display:block;margin-top:4px;color:var(--gold)">Invited by '+esc(inviteFor(r).byName||'')+': '+esc(inviteFor(r).progs.map(progLabel).join(', '))+'</small>' : '')+
       ((r.wants||[]).length ? '<small class="muted" style="font-size:12px;display:block;margin-top:4px">Picked: '+esc(r.wants.map(w => PLANS[w] || w).join(' + '))+'</small>' : '')+
       (IS_COACH && !isStaff(r) && r.approved ? '<button class="btn ghost sm" style="margin-top:4px" data-adm="'+r.id+'">'+(r.admin ? 'Admin ✓' : 'Make admin')+'</button>' : ''); };
-  const body = rows.map(r => { const b = B(r), s = payState(b), staff = isStaff(r), pay = !staff;
-    return '<tr data-id="'+r.id+'"><td><input type="checkbox" data-sel="'+r.id+'"'+(SEL.has(r.id)?' checked':'')+(staff?' disabled':'')+' aria-label="Select '+esc(r.name)+'"></td>'+
+  const body = rows.map(r => { const b = B(r), s = payState(b), staff = isStaff(r), sess = !staff && b.plan === 'sessions', pay = !staff && !sess;
+    return '<tr data-id="'+r.id+'"><td><input type="checkbox" data-sel="'+r.id+'"'+(SEL.has(r.id)?' checked':'')+((staff||sess)?' disabled':'')+' aria-label="Select '+esc(r.name)+'"></td>'+
       '<td class="nm"><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small>'+(r.admin ? '<span class="tag">Admin</span>' : '')+(staff ? '<span class="tag">'+esc(r.coachBadge || 'Coach')+'</span>' : '')+'</td>'+
       '<td>'+accCell(r)+'</td><td>'+progCell(r)+'</td>'+
       (pay ? '<td><span class="pst '+s.k+'">'+esc(s.t)+'</span>'+(b.lastPaid ? '<small class="muted" style="display:block;font-size:12px">Last paid '+esc(fmtD(b.lastPaid))+'</small>' : '')+'</td>'+
@@ -551,6 +551,7 @@ function renderMembers(){
         '<td><input class="pt" type="date" data-pt="'+r.id+'" value="'+esc(b.paidThrough||'')+'" aria-label="Paid through"></td>'+
         '<td><input class="note" maxlength="140" data-note="'+r.id+'" value="'+esc(b.note||'')+'" placeholder="Note" aria-label="Note"></td>'+
         '<td class="act">'+(s.k === 'free' ? '' : '<button class="btn sm" data-paid="'+r.id+'">Paid 1 month</button>')+'<button class="btn ghost sm" data-remind="'+r.id+'">'+(s.k === 'free' ? 'Message' : 'Reminder')+'</button><button class="btn ghost sm" data-price="'+r.id+'">Prices</button>'+(s.k === 'free' ? '' : '<button class="btn ghost sm" data-copy="'+r.id+'" title="Copy their Venmo link with their amount filled in">Copy pay link</button>')+'</td>'
+      : sess ? '<td colspan="5" class="muted" style="font-size:13px">Paid with Coach Reef sessions. Coach Reef handles this payment.</td>'
       : '<td colspan="5" class="muted" style="font-size:13px">Coach. No payments. '+(IS_COACH ? '' : 'Coach Reef handles coaches.')+'</td>')+'</tr>'; }).join('');
   $('#view').innerHTML = '<h2>Athletes &amp; payments</h2><p class="note">Due the 1st. Not in by 7:59 PM on the 1st, pause their access. Paid by the 5th, turn it back on. $0 = no charge. Changes save as you go and show in the app right away.</p>'+
     '<div class="stats"><button class="stat" data-show="owe"><b style="color:var(--red2)">'+owe.length+'</b><span>Need to pay now</span></button><div class="stat"><b>$'+owed+'</b><span>Owed now</span></div><button class="stat" data-show="paid"><b>'+nextUp.length+'</b><span>Due '+esc(fmtD(nx))+'</span></button><button class="stat" data-show="wait"><b style="color:var(--gold)">'+c('wait')+'</b><span>Waiting for approval</span></button><button class="stat" data-show="unset"><b>'+c('unset')+'</b><span>Payment not set up</span></button><div class="stat"><b>$'+monthly+'</b><span>Monthly (everyone on)</span></div></div>'+
@@ -584,7 +585,7 @@ function wireMembers(rows){
   V.querySelectorAll('[data-sort]').forEach(t => t.onclick = () => { const k = t.dataset.sort; if(F.sort === k) F.dir *= -1; else { F.sort = k; F.dir = 1; } renderMembers(); });
   const sq = V.querySelector('.search'); sq.oninput = () => { F.q = sq.value; renderMembers(); const s2 = $('#view .search'); s2.focus(); s2.setSelectionRange(s2.value.length, s2.value.length); };
   V.querySelector('#csv').onclick = () => downloadCsv();
-  const sa = V.querySelector('#selAll'); const selectable = rows.filter(r => !isStaff(r)); sa.checked = selectable.length && selectable.every(r => SEL.has(r.id));
+  const sa = V.querySelector('#selAll'); const selectable = rows.filter(r => !isStaff(r) && (D.bill[r.id]||{}).plan !== 'sessions'); sa.checked = selectable.length && selectable.every(r => SEL.has(r.id));
   sa.onchange = () => { selectable.forEach(r => sa.checked ? SEL.add(r.id) : SEL.delete(r.id)); renderMembers(); };
   V.querySelectorAll('[data-sel]').forEach(c => c.onchange = () => { c.checked ? SEL.add(c.dataset.sel) : SEL.delete(c.dataset.sel); renderMembers(); });
   const flash = el => { const s = document.createElement('span'); s.className = 'saved'; s.textContent = ' Saved'; el.after(s); setTimeout(() => s.remove(), 1400); };
@@ -617,7 +618,7 @@ function downloadCsv(){
   const q = v => '"'+String(v == null ? '' : v).replace(/"/g, '""')+'"';
   const lines = [['Name','Email','Access','Programs','Payment status','Rate per month','Paid through','Last paid','Note','Admin','Coach'].map(q).join(',')];
   people().sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(r => { const b = D.bill[r.id] || {}, s = isStaff(r) ? { t:'Coach' } : payState(b);
-    lines.push([r.name, r.email, { on:'Approved', off:'Paused', wait:'Waiting' }[access(r)], (r.progs||[]).join(' '), s.t, b.rate, b.paidThrough, b.lastPaid, b.note, r.admin ? 'yes' : '', isStaff(r) ? 'yes' : ''].map(q).join(',')); });
+    lines.push([r.name, r.email, { on:'Approved', off:'Paused', wait:'Waiting' }[access(r)], (r.progs||[]).join(' '), s.t, b.plan === 'sessions' ? '' : b.rate, b.paidThrough, b.lastPaid, b.note, r.admin ? 'yes' : '', isStaff(r) ? 'yes' : ''].map(q).join(',')); });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })); a.download = 'bodybox-members-'+today()+'.csv'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
 }
 
