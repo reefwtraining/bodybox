@@ -3890,10 +3890,14 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(IK.coach){
       try{ IK.cb = await decJ(IK.coach, I.cb); }catch(e){ IK.cb = { notes:{}, items:[], reports:{} }; }
       IK.cb.notes = IK.cb.notes || {}; IK.cb.items = IK.cb.items || []; IK.cb.reports = IK.cb.reports || {};
+      try{ const p = await decJ(IK.coach, I.priv); IK.priv = await crypto.subtle.importKey('pkcs8', b64d(p.k), { name:'RSA-OAEP', hash:'SHA-256' }, false, ['decrypt']); }catch(e){}
+      for(const id of Object.keys(I.ath||{})){ // plans made with the public key (wp) get a coach wrap the first time a coach opens the app
+        const a = I.ath[id]; if(a.wc || !a.wp || !IK.priv) continue;
+        try{ const raw = new Uint8Array(await crypto.subtle.decrypt({ name:'RSA-OAEP' }, IK.priv, b64d(a.wp))); a.wc = await encJ(IK.coach, { k:b64e(raw) }); delete a.wp; markDirty(); }catch(e){}
+      }
       for(const id of Object.keys(I.ath||{})){
         try{ const w = await decJ(IK.coach, I.ath[id].wc); IK.ka[id] = await rawKey(b64d(w.k)); IK.data[id] = normPay(await decJ(IK.ka[id], I.ath[id].d)); }catch(e){}
       }
-      try{ const p = await decJ(IK.coach, I.priv); IK.priv = await crypto.subtle.importKey('pkcs8', b64d(p.k), { name:'RSA-OAEP', hash:'SHA-256' }, false, ['decrypt']); }catch(e){}
     }
     if(IK.prog){ try{ IK.pb = await decJ(IK.prog, I.pb); }catch(e){ IK.pb = { items:[] }; } IK.pb.items = IK.pb.items || []; }
   }
