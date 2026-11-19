@@ -442,6 +442,10 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
 .aimbtn{background:var(--red);color:#fff;border:0}
 .aimbtn[aria-expanded="true"]{background:var(--chalk);color:var(--ink)}
 .aimpill.sc{background:var(--panel);color:var(--chalk);border:1px solid var(--line)}
+.aimpill.gpill{background:var(--panel);color:var(--chalk);border:1px solid var(--line);cursor:pointer;flex:.8 1 0}
+.aimrow:has(.gpill){gap:6px}.aimrow:has(.gpill) .aimpill{font-size:12px;letter-spacing:.03em;padding:8px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aimrow:has(.gpill) .aimpill.aimbtn,.aimrow:has(.gpill) .aimpill.off{flex:1.5 1 0}
+.aimpill.gpill[aria-expanded="true"]{border-color:#C8102E}
 .aimpill.off{background:var(--panel);color:var(--muted);border:1px dashed var(--line);cursor:default}
 .news .aimbody{background:#fff;color:#111;border:2px solid var(--red);border-radius:12px;padding:16px;display:grid;gap:10px}
 
@@ -1201,7 +1205,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const v = document.getElementById('view');
     const un = meId && IK.mine ? unreadCount() : 0;
     const realMem = memProgs().length && !(memSlots.size && [...memSlots].every(x => x === 'sample'));
-    let h = (un ? '<div class="msgban"><span><b>'+un+' new message'+(un>1?'s':'')+'</b> from your coach</span><button class="btn solid" type="button" data-goinbox="1" style="padding:7px 12px">Read</button></div>' : '') + (isCoachKey() ? '<div class="row" style="margin:0 0 10px"><button class="linkbtn" type="button" data-hub="1">Coach hub →</button></div>' : '') + feedbackHtml() + newsHtml() + memberHtml2() + (window.__bbPostsHtml ? window.__bbPostsHtml() : ''); const memOnly = h; h += '<p class="label ex-h">'+(memProgs().length?'Example days from every program':'Free preview · one example day from each program')+'</p><div class="progs" id="progs2" role="group" aria-label="Pick a program" style="margin-bottom:10px"></div><div class="head"><span class="sched">'+esc(p.sched)+'</span><h1>'+esc(p.name)+'</h1>';
+    let h = (un ? '<div class="msgban"><span><b>'+un+' new message'+(un>1?'s':'')+'</b> from your coach</span><button class="btn solid" type="button" data-goinbox="1" style="padding:7px 12px">Read</button></div>' : '') + (isCoachKey() ? '<div class="row" style="margin:0 0 10px"><button class="linkbtn" type="button" data-hub="1">Coach hub →</button></div>' : '') + feedbackHtml() + newsHtml() + (window.__bbPostsHtml ? window.__bbPostsHtml() : '') + memberHtml2(); const memOnly = h; h += '<p class="label ex-h">'+(memProgs().length?'Example days from every program':'Free preview · one example day from each program')+'</p><div class="progs" id="progs2" role="group" aria-label="Pick a program" style="margin-bottom:10px"></div><div class="head"><span class="sched">'+esc(p.sched)+'</span><h1>'+esc(p.name)+'</h1>';
     if(p.type==='full'){
       h += '</div><p class="about">'+esc(p.about)+'</p>';
       if(entry){
@@ -3123,7 +3127,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function newsHtml(){
     const today = todayStr(); const n = newsFor(today);
     let h = '<section class="news'+(newsEdit && canEditLB ? '' : ' compact')+'" aria-label="Daily announcement">';
-    const scBtn = LB.scaling ? '<a class="aimpill sc" href="'+esc(LB.scaling)+'" target="_blank" rel="noopener">Scaling options ↗</a>' : '';
+    const scBtn = (LB.scaling ? '<a class="aimpill sc" href="'+esc(LB.scaling)+'" target="_blank" rel="noopener">Scaling ↗</a>' : '') + (window.__bbPostsPill ? window.__bbPostsPill() : '');
     if(newsEdit && canEditLB){
       const cur = (LB.news||[]).find(x => x.date === today) || { title:'', body:'' };
       h += '<span class="label">Coach tools · today\'s announcement</span>'+
@@ -5640,8 +5644,8 @@ function initPosts(u){
     const O = window.__bbGOpen = window.__bbGOpen || new Set(), all = O.has('all');
     const det = x => [x.heat ? 'Heat '+x.heat : '', x.team ? (/^team\b/i.test(x.team) ? x.team : 'Team '+x.team) : '', x.partner ? 'with '+x.partner : '', x.gym].filter(Boolean).join(' · ');
     const nxt = evs[0];
-    let h = '<section class="gnews" aria-label="Gym news and events"><button type="button" class="gtoggle" data-gopen="all" aria-expanded="'+all+'"><span><b>Gym news & events</b><small>'+(notes.length + evs.length)+' up'+(nxt ? ' · next: '+esc(new Date(nxt.date+'T12:00').toLocaleDateString([], { month:'short', day:'numeric' }))+' '+esc(nxt.title) : '')+'</small></span><i aria-hidden="true">'+(all ? '−' : '+')+'</i></button>';
-    if(!all) return h + '</section>';
+    if(!all) return '';
+    let h = '<section class="gnews" aria-label="Gym news and events">';
     h += '<div class="glist">';
     notes.forEach(p => { const op = O.has(p.id);
       h += '<div class="gn"><button type="button" class="grow" data-gopen="'+esc(p.id)+'" aria-expanded="'+op+'"><span class="gdate sm"><b>i</b></span><span class="gt"><b>'+esc(p.title)+'</b><small>'+esc(p.byName||'')+'</small></span><i aria-hidden="true">'+(op ? '−' : '+')+'</i></button>'+
@@ -5653,6 +5657,13 @@ function initPosts(u){
         '<div class="grow2"><button type="button" class="gin'+(on?' on':'')+'" data-going="'+esc(p.id)+'" aria-pressed="'+on+'">'+(on ? 'I\'m in ✓' : 'I\'m in')+'</button>'+(on ? '<button type="button" class="gedit" data-goedit="'+esc(p.id)+'">Edit my heat, team and gym</button>' : '<small>'+(g.length ? '' : 'Be the first')+'</small>')+'</div></div>';
       h += '</div>'; });
     return h + '</div></section>';
+  };
+  window.__bbPostsPill = () => {
+    const td = todayStr(), P = window.__bbPosts || [], G = window.__bbGoing || {};
+    const n = P.filter(p => (p.type === 'note' && p.date <= td && (p.until || p.date) >= td) || (p.type === 'event' && p.date >= td)).length;
+    if(!n) return '';
+    const all = (window.__bbGOpen || new Set()).has('all'), nx = P.filter(p => p.type === 'event' && p.date >= td).sort((a,b) => a.date < b.date ? -1 : 1)[0];
+    return '<button type="button" class="aimpill gpill" data-gopen="all" aria-expanded="'+all+'">Events · '+n+'<small>'+(nx ? 'Next: '+esc(new Date(nx.date+'T12:00').toLocaleDateString([], { month:'short', day:'numeric' })) : 'Gym news')+'</small></button>';
   };
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-gopen]'); if(!b) return; e.preventDefault(); const O = window.__bbGOpen = window.__bbGOpen || new Set(), k = b.dataset.gopen; O.has(k) ? O.delete(k) : O.add(k); re(); });
   document.addEventListener('click', async e => { const b = e.target.closest && e.target.closest('[data-going]'); if(!b) return; e.preventDefault();
