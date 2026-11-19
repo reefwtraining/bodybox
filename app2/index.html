@@ -3110,6 +3110,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   }
   const AIMOPEN = new Set();
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-aimbtn]'); if(!b) return; const d = b.dataset.aimbtn, body = b.closest('.news').querySelector('.aimbody'); if(!body) return; body.hidden = !body.hidden; b.setAttribute('aria-expanded', String(!body.hidden)); if(body.hidden) AIMOPEN.delete(d); else AIMOPEN.add(d); });
+  function myAim(d){ const P = IK.mine; const a = P && P.aims && P.aims[d]; return a && a.body ? a : null; }
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-teamaim]'); if(!b) return; const t = b.closest('.aimbody').querySelector('.teamaim'); if(!t) return; t.hidden = !t.hidden; b.textContent = (t.hidden ? 'See' : 'Hide')+' the team announcement'; });
   function newsHtml(){
     const today = todayStr(); const n = newsFor(today);
     let h = '<section class="news'+(newsEdit && canEditLB ? '' : ' compact')+'" aria-label="Daily announcement">';
@@ -3121,6 +3123,11 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         '<input id="nwTitle" maxlength="70" placeholder="Title, e.g. Aim of the day" value="'+esc(cur.title)+'" style="font:inherit;font-size:16px;background:var(--bg);color:var(--chalk);border:1px solid var(--line);border-radius:6px;padding:9px 10px;width:100%"></div>'+
         '<textarea id="nwBody" placeholder="Write the announcement. Blank line = new paragraph. ## for a heading, - for a bullet, **bold**.">'+esc(cur.body)+'</textarea>'+
         '<p class="err" id="nwErr"></p><div class="row"><button class="btn solid" type="button" id="nwSave">Save announcement</button><button class="btn" type="button" id="nwCancel">Cancel</button></div>';
+    } else if(myAim(today)){
+      const a = myAim(today), open = AIMOPEN.has('me-'+today), topen = AIMOPEN.has('team-'+(n ? n.date : ''));
+      h += '<div class="aimrow"><button class="aimpill aimbtn" type="button" data-aimbtn="me-'+esc(today)+'" aria-expanded="'+open+'">'+esc(a.title || 'Your aim of the day')+'<small>'+esc(longDate(today))+' · just for you</small></button>'+scBtn+'</div>'+
+        '<div class="aimbody"'+(open?'':' hidden')+'><div class="bd">'+mdLite(a.body)+'</div>'+
+        (n ? '<p class="stale"><button class="linkbtn" type="button" data-teamaim="1">'+(topen ? 'Hide' : 'See')+' the team announcement</button></p><div class="bd teamaim"'+(topen?'':' hidden')+'>'+mdLite(n.body)+'</div>' : '')+'</div>';
     } else if(n){
       const open = AIMOPEN.has(n.date);
       h += '<div class="aimrow"><button class="aimpill aimbtn" type="button" data-aimbtn="'+esc(n.date)+'" aria-expanded="'+open+'">'+esc(n.title || 'Aim of the day')+'<small>'+esc(longDate(n.date === today ? today : n.date))+'</small></button>'+scBtn+'</div>'+
