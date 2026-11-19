@@ -526,7 +526,7 @@ function renderMembers(){
   const c = k => rowsFor(k).length, B = r => D.bill[r.id] || {};
   const owe = rowsFor('owe'), owed = owe.reduce((t,r) => t + (+B(r).rate || 0), 0);
   const nx = addMonth(firstOfMonth(today())), nextUp = rowsFor('paid').filter(r => B(r).paidThrough === nx);
-  const monthly = people().filter(r => r.approved && !isStaff(r)).reduce((t,r) => t + (+B(r).rate || 0), 0);
+  const monthly = people().filter(r => r.approved && !isStaff(r)).reduce((t,r) => t + (+((DAYS_OK && B(r).ptRate) || B(r).rate) || 0), 0); // Reef + Team BodyBox: 1:1 clients count their full 1:1 amount (it includes the program price); Jameson sees the program price only
   let rows = rowsFor(F.show);
   if(F.q){ const q = F.q.toLowerCase(); rows = people().filter(r => ((r.name||'')+' '+(r.email||'')+' '+(B(r).note||'')).toLowerCase().includes(q)); }
   rows = sorted(rows); SEL = new Set([...SEL].filter(id => rows.some(r => r.id === id)));
@@ -546,7 +546,7 @@ function renderMembers(){
     return '<tr data-id="'+r.id+'"><td><input type="checkbox" data-sel="'+r.id+'"'+(SEL.has(r.id)?' checked':'')+(staff?' disabled':'')+' aria-label="Select '+esc(r.name)+'"></td>'+
       '<td class="nm"><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small>'+(r.admin ? '<span class="tag">Admin</span>' : '')+(staff ? '<span class="tag">'+esc(r.coachBadge || 'Coach')+'</span>' : '')+'</td>'+
       '<td>'+accCell(r)+'</td><td>'+progCell(r)+'</td>'+
-      (pay ? '<td><span class="pst '+s.k+'">'+esc(s.t)+'</span>'+(b.lastPaid ? '<small class="muted" style="display:block;font-size:12px">Last paid '+esc(fmtD(b.lastPaid))+'</small>' : '')+'</td>'+
+      (pay ? '<td><span class="pst '+s.k+'">'+esc(s.t)+'</span>'+(DAYS_OK && b.ptRate ? '<small style="display:block;font-size:12px;color:var(--gold)">1:1 with Coach Reef: $'+esc(b.ptRate)+' (includes the $'+esc(b.rate||0)+' program)</small>' : '')+(b.lastPaid ? '<small class="muted" style="display:block;font-size:12px">Last paid '+esc(fmtD(b.lastPaid))+'</small>' : '')+'</td>'+
         '<td><input class="rate" type="number" min="0" step="1" inputmode="numeric" data-rate="'+r.id+'" value="'+esc(b.rate||'')+'" placeholder="$" aria-label="Monthly rate"></td>'+
         '<td><input class="pt" type="date" data-pt="'+r.id+'" value="'+esc(b.paidThrough||'')+'" aria-label="Paid through"></td>'+
         '<td><input class="note" maxlength="140" data-note="'+r.id+'" value="'+esc(b.note||'')+'" placeholder="Note" aria-label="Note"></td>'+
