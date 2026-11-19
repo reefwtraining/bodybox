@@ -1201,7 +1201,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const v = document.getElementById('view');
     const un = meId && IK.mine ? unreadCount() : 0;
     const realMem = memProgs().length && !(memSlots.size && [...memSlots].every(x => x === 'sample'));
-    let h = (un ? '<div class="msgban"><span><b>'+un+' new message'+(un>1?'s':'')+'</b> from your coach</span><button class="btn solid" type="button" data-goinbox="1" style="padding:7px 12px">Read</button></div>' : '') + (isCoachKey() ? '<div class="row" style="margin:0 0 10px"><button class="linkbtn" type="button" data-hub="1">Coach hub →</button></div>' : '') + feedbackHtml() + newsHtml() + (window.__bbPostsHtml ? window.__bbPostsHtml() : '') + memberHtml2(); const memOnly = h; h += '<p class="label ex-h">'+(memProgs().length?'Example days from every program':'Free preview · one example day from each program')+'</p><div class="progs" id="progs2" role="group" aria-label="Pick a program" style="margin-bottom:10px"></div><div class="head"><span class="sched">'+esc(p.sched)+'</span><h1>'+esc(p.name)+'</h1>';
+    let h = (un ? '<div class="msgban"><span><b>'+un+' new message'+(un>1?'s':'')+'</b> from your coach</span><button class="btn solid" type="button" data-goinbox="1" style="padding:7px 12px">Read</button></div>' : '') + (isCoachKey() ? '<div class="row" style="margin:0 0 10px"><button class="linkbtn" type="button" data-hub="1">Coach hub →</button></div>' : '') + feedbackHtml() + newsHtml() + memberHtml2() + (window.__bbPostsHtml ? window.__bbPostsHtml() : ''); const memOnly = h; h += '<p class="label ex-h">'+(memProgs().length?'Example days from every program':'Free preview · one example day from each program')+'</p><div class="progs" id="progs2" role="group" aria-label="Pick a program" style="margin-bottom:10px"></div><div class="head"><span class="sched">'+esc(p.sched)+'</span><h1>'+esc(p.name)+'</h1>';
     if(p.type==='full'){
       h += '</div><p class="about">'+esc(p.about)+'</p>';
       if(entry){
@@ -4929,12 +4929,20 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 #bbMembers .pdet[open]{display:grid}#bbMembers .pdet small{color:#8F8B84;font-size:12px}
 #bbMembers .pform{display:grid;gap:10px;border:1px solid #2A2A2A;border-radius:12px;padding:12px;background:#151515}
 #bbMembers .seg2{display:flex;gap:6px}#bbMembers .seg2 button{background:transparent;border:1px solid #2A2A2A;color:#F4F2EE}#bbMembers .seg2 button[aria-pressed="true"]{background:#C8102E;border-color:#C8102E}
-.gnews{display:grid;gap:10px;margin:0 0 18px}
-.gnews .gn{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:4px}
+.gnews{display:grid;gap:8px;margin:18px 0}
+.gnews .gn{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;display:grid;gap:0;overflow:hidden}
 .gnews .gn b{font-size:17px}.gnews .gn p{margin:2px 0 0;line-height:1.5}.gnews .gn small{color:var(--muted);font-size:13px}
-.gnews .gn.ev{grid-template-columns:auto 1fr;gap:14px;align-items:start}
-.gnews .gdate{display:grid;justify-items:center;min-width:52px;border:1px solid var(--line);border-radius:10px;padding:6px 4px;line-height:1.1}
-.gnews .gdate span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.gnews .gdate b{font-size:24px}
+.gnews .gtoggle,.gnews .grow{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:inherit;text-align:left;font:inherit;cursor:pointer}
+.gnews .gtoggle{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.gnews .gtoggle span,.gnews .grow .gt{display:grid;gap:2px;flex:1;min-width:0}
+.gnews .gtoggle b{font-size:16px}.gnews .gtoggle small,.gnews .grow small{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gnews .gtoggle i,.gnews .grow i{font-style:normal;font-size:22px;color:var(--muted);line-height:1}
+.gnews .grow{padding:10px 12px}.gnews .grow .gt b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gnews .glist{display:grid;gap:8px}
+.gnews .gmore{padding:0 14px 14px;display:grid;gap:4px;border-top:1px solid var(--line);padding-top:10px}
+.gnews .gdate.sm{min-width:40px;padding:6px 4px}.gnews .gdate.sm b{font-size:16px}
+.gnews .gdate{display:grid;justify-items:center;min-width:44px;border:1px solid var(--line);border-radius:10px;padding:4px;line-height:1.1}
+.gnews .gdate span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.gnews .gdate b{font-size:20px}
 .gnews .gbody{display:grid;gap:4px;min-width:0}
 .gnews .grow2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
 .gnews .gin{border:1px solid var(--line);background:none;color:inherit;border-radius:999px;padding:7px 16px;font:700 14px var(--body);cursor:pointer}
@@ -5629,16 +5637,24 @@ function initPosts(u){
     const evs = P.filter(p => p.type === 'event' && p.date >= td).sort((a,b) => a.date < b.date ? -1 : 1).slice(0, 3);
     if(!notes.length && !evs.length) return '';
     const body = t => esc(t||'').replace(/\n/g, '<br>');
-    let h = '<section class="gnews" aria-label="Gym news"><span class="label">Gym news</span>';
-    notes.forEach(p => { h += '<div class="gn"><b>'+esc(p.title)+'</b>'+(p.body ? '<p>'+body(p.body)+'</p>' : '')+'<small>'+esc(p.byName||'')+'</small></div>'; });
-    evs.forEach(p => { const g = G[p.id] || [], on = g.some(x => x.uid === me), [y,m,d] = p.date.split('-').map(Number), dt = new Date(y, m-1, d);
-      h += '<div class="gn ev"><div class="gdate"><span>'+dt.toLocaleDateString([], { month:'short' })+'</span><b>'+d+'</b><span>'+dt.toLocaleDateString([], { weekday:'short' })+'</span></div><div class="gbody"><b>'+esc(p.title)+'</b>'+
-        ((p.time || p.place) ? '<small>'+esc([p.time, p.place].filter(Boolean).join(' · '))+'</small>' : '')+(p.body ? '<p>'+body(p.body)+'</p>' : '')+
-        '<div class="grow2"><button type="button" class="gin'+(on?' on':'')+'" data-going="'+esc(p.id)+'" aria-pressed="'+on+'">'+(on ? 'I\'m in ✓' : 'I\'m in')+'</button><small>'+(g.length ? g.length+' going' : 'Be the first')+'</small></div>'+
-        (g.length ? '<ul class="gwho">'+g.slice().sort((a,b) => (a.at||0)-(b.at||0)).map(x => '<li><b>'+esc(x.name||'')+'</b>'+([x.heat ? 'Heat '+x.heat : '', x.team ? (/^team\b/i.test(x.team) ? x.team : 'Team '+x.team) : '', x.partner ? 'with '+x.partner : '', x.gym].filter(Boolean).length ? ' · '+esc([x.heat ? 'Heat '+x.heat : '', x.team ? (/^team\b/i.test(x.team) ? x.team : 'Team '+x.team) : '', x.partner ? 'with '+x.partner : '', x.gym].filter(Boolean).join(' · ')) : '')+'</li>').join('')+'</ul>' : '')+
-        (on ? '<button type="button" class="gedit" data-goedit="'+esc(p.id)+'">Edit my heat, team and gym</button>' : '')+'</div></div>'; });
-    return h + '</section>';
+    const O = window.__bbGOpen = window.__bbGOpen || new Set(), all = O.has('all');
+    const det = x => [x.heat ? 'Heat '+x.heat : '', x.team ? (/^team\b/i.test(x.team) ? x.team : 'Team '+x.team) : '', x.partner ? 'with '+x.partner : '', x.gym].filter(Boolean).join(' · ');
+    const nxt = evs[0];
+    let h = '<section class="gnews" aria-label="Gym news and events"><button type="button" class="gtoggle" data-gopen="all" aria-expanded="'+all+'"><span><b>Gym news & events</b><small>'+(notes.length + evs.length)+' up'+(nxt ? ' · next: '+esc(new Date(nxt.date+'T12:00').toLocaleDateString([], { month:'short', day:'numeric' }))+' '+esc(nxt.title) : '')+'</small></span><i aria-hidden="true">'+(all ? '−' : '+')+'</i></button>';
+    if(!all) return h + '</section>';
+    h += '<div class="glist">';
+    notes.forEach(p => { const op = O.has(p.id);
+      h += '<div class="gn"><button type="button" class="grow" data-gopen="'+esc(p.id)+'" aria-expanded="'+op+'"><span class="gdate sm"><b>i</b></span><span class="gt"><b>'+esc(p.title)+'</b><small>'+esc(p.byName||'')+'</small></span><i aria-hidden="true">'+(op ? '−' : '+')+'</i></button>'+
+        (op && p.body ? '<div class="gmore"><p>'+body(p.body)+'</p></div>' : '')+'</div>'; });
+    evs.forEach(p => { const g = (G[p.id] || []).slice().sort((a,b) => (a.at||0)-(b.at||0)), on = g.some(x => x.uid === me), op = O.has(p.id), [y,m,d] = p.date.split('-').map(Number), dt = new Date(y, m-1, d);
+      h += '<div class="gn ev"><button type="button" class="grow" data-gopen="'+esc(p.id)+'" aria-expanded="'+op+'"><span class="gdate"><span>'+dt.toLocaleDateString([], { month:'short' })+'</span><b>'+d+'</b></span><span class="gt"><b>'+esc(p.title)+'</b><small>'+esc([dt.toLocaleDateString([], { weekday:'short' })+(y !== new Date().getFullYear() ? ' '+y : ''), g.length ? g.length+' going' : '', on ? 'you\'re in' : ''].filter(Boolean).join(' · '))+'</small></span><i aria-hidden="true">'+(op ? '−' : '+')+'</i></button>';
+      if(op) h += '<div class="gmore">'+((p.time || p.place) ? '<small>'+esc([p.time, p.place].filter(Boolean).join(' · '))+'</small>' : '')+(p.body ? '<p>'+body(p.body)+'</p>' : '')+
+        (g.length ? '<ul class="gwho">'+g.map(x => '<li><b>'+esc(x.name||'')+'</b>'+(det(x) ? ' · '+esc(det(x)) : '')+'</li>').join('')+'</ul>' : '')+
+        '<div class="grow2"><button type="button" class="gin'+(on?' on':'')+'" data-going="'+esc(p.id)+'" aria-pressed="'+on+'">'+(on ? 'I\'m in ✓' : 'I\'m in')+'</button>'+(on ? '<button type="button" class="gedit" data-goedit="'+esc(p.id)+'">Edit my heat, team and gym</button>' : '<small>'+(g.length ? '' : 'Be the first')+'</small>')+'</div></div>';
+      h += '</div>'; });
+    return h + '</div></section>';
   };
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-gopen]'); if(!b) return; e.preventDefault(); const O = window.__bbGOpen = window.__bbGOpen || new Set(), k = b.dataset.gopen; O.has(k) ? O.delete(k) : O.add(k); re(); });
   document.addEventListener('click', async e => { const b = e.target.closest && e.target.closest('[data-going]'); if(!b) return; e.preventDefault();
     const id = b.dataset.going, ref = doc(fs, 'posts', id, 'going', u.uid), on = ((window.__bbGoing||{})[id]||[]).some(x => x.uid === u.uid);
     if(on){ if(!confirm('Take yourself off this event?')) return; b.disabled = true; try{ await deleteDoc(ref); }catch(x){ alert('Couldn\'t save. Check your internet and try again.'); } b.disabled = false; return; }
