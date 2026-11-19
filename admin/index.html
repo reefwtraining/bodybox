@@ -497,6 +497,7 @@ const isStaff = r => (r.wants||[]).includes('staff') || (r.staffProgs||[]).lengt
 const access = r => r.approved ? 'on' : (r.approvedAt || (r.progs||[]).length) ? 'off' : 'wait';
 const locked = r => !IS_COACH && (isStaff(r) || r.admin);
 let F = { show: 'owe', q: '', sort: 'status', dir: 1 }, SEL = new Set();
+function goDet(x){ return [x.heat ? 'Heat '+x.heat : '', x.team ? (/^team\b/i.test(x.team) ? x.team : 'Team '+x.team) : '', x.partner ? 'with '+x.partner : '', x.gym].filter(Boolean).join(' · '); }
 function people(){ return D.members.filter(r => !COACHES.includes((r.email||'').toLowerCase())); }
 function rowsFor(show){
   const all = people();
@@ -688,7 +689,12 @@ function renderEvents(){
   const item = p => { const g = D.going[p.id] || [];
     return '<div class="item"><b>'+esc(p.title)+'</b><small>'+(p.type === 'event' ? 'Event · '+esc(fmtD(p.date))+(p.time ? ' · '+esc(p.time) : '')+(p.place ? ' · '+esc(p.place) : '') : 'Announcement · '+esc(fmtD(p.date))+' to '+esc(fmtD(p.until||p.date)))+' · by '+esc(p.byName||'')+'</small>'+
       (p.body ? '<div style="white-space:pre-wrap;font-size:14px">'+esc(p.body)+'</div>' : '')+
-      (p.type === 'event' ? '<small>'+(g.length ? g.length+' in: '+esc(g.map(x => x.name).join(', ')) : 'Nobody in yet')+'</small>' : '')+
+      (p.type === 'event' ? '<small>'+(g.length ? g.length+' in' : 'Nobody in yet')+'</small>'+
+        (g.length ? '<ul style="margin:0;padding-left:18px;font-size:14px;display:grid;gap:3px">'+g.slice().sort((a,b) => (a.at||0)-(b.at||0)).map(x => '<li><b>'+esc(x.name||'')+'</b>'+(goDet(x) ? ' · '+esc(goDet(x)) : '')+' <button class="btn ghost sm" style="padding:2px 8px" data-goedit="'+p.id+'|'+x.uid+'">Edit</button> <button class="btn ghost sm" style="padding:2px 8px" data-gorm="'+p.id+'|'+x.uid+'">Remove</button></li>').join('')+'</ul>' : '')+
+        '<details><summary class="muted" style="cursor:pointer;font-size:14px">Add an athlete</summary><div style="display:grid;gap:6px;margin-top:6px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">'+
+        '<select data-goadd-who="'+p.id+'"><option value="">Pick an athlete</option>'+D.members.filter(r => r.approved).slice().sort((a,b) => (a.name||'').localeCompare(b.name||'')).map(r => '<option value="'+r.id+'">'+esc(r.name||r.email)+'</option>').join('')+'</select>'+
+        ['heat|Heat time','team|Team name','partner|Partner(s)','gym|Gym'].map(s => { const [k,l] = s.split('|'); return '<input data-goadd-'+k+'="'+p.id+'" maxlength="40" placeholder="'+l+'">'; }).join('')+
+        '<button class="btn sm" data-goadd="'+p.id+'">Add</button></div></details>' : '')+
       '<div class="acts"><button class="btn ghost sm" data-pedit="'+p.id+'">Edit</button><button class="btn ghost sm" data-pdel="'+p.id+'">Delete</button></div></div>'; };
   $('#view').innerHTML = '<h2>Events &amp; news</h2><p class="note">Athletes see these at the top of their day in the app. Events stay up through the event day and athletes can tap I\'m in. Announcements show between the dates you pick.</p>'+
     '<div class="grid2" style="margin-top:16px"><form class="panel form" id="pForm"><b>'+(EV.edit ? 'Edit post' : 'New post')+'</b><div class="seg"><button type="button" data-pt2="event">Event</button><button type="button" data-pt2="note">Announcement</button></div>'+
@@ -709,6 +715,14 @@ function renderEvents(){
     const b = e.target.querySelector('[type=submit]'); b.disabled = true;
     try{ if(EV.edit) await setDoc(doc(fs,'posts',EV.edit), d); else await addDoc(collection(fs,'posts'), d); toast(EV.edit ? 'Saved' : 'Posted. Athletes see it now.'); EV.edit = null; renderEvents(); }catch(x){ b.disabled = false; $('#pErr').textContent = 'Couldn\'t save. Try again.'; } };
   document.querySelectorAll('[data-pedit]').forEach(b => b.onclick = () => { EV.edit = b.dataset.pedit; renderEvents(); window.scrollTo(0,0); });
+  document.querySelectorAll('[data-goadd]').forEach(b => b.onclick = async () => { const id = b.dataset.goadd, uid = document.querySelector('[data-goadd-who="'+id+'"]').value; if(!uid){ toast('Pick an athlete'); return; }
+    const r = D.members.find(x => x.id === uid) || {}, d = { name: String(r.name || r.email || '').slice(0,60), at: Date.now() };
+    ['heat','team','partner','gym'].forEach(k => { const v = document.querySelector('[data-goadd-'+k+'="'+id+'"]').value.trim().slice(0,40); if(v) d[k] = v; });
+    b.disabled = true; try{ await setDoc(doc(fs,'posts',id,'going',uid), d); toast(d.name+' added'); }catch(e){ b.disabled = false; alert('Couldn\'t save.'); } });
+  document.querySelectorAll('[data-gorm]').forEach(b => b.onclick = async () => { const [id,uid] = b.dataset.gorm.split('|'), x = (D.going[id]||[]).find(y => y.uid === uid) || {}; if(!confirm('Take '+(x.name||'this athlete')+' off this event?')) return; try{ await deleteDoc(doc(fs,'posts',id,'going',uid)); toast('Removed'); }catch(e){ alert('Couldn\'t remove.'); } });
+  document.querySelectorAll('[data-goedit]').forEach(b => b.onclick = async () => { const [id,uid] = b.dataset.goedit.split('|'), x = Object.assign({}, (D.going[id]||[]).find(y => y.uid === uid) || {}); delete x.uid;
+    for(const [k,l] of [['heat','Heat time'],['team','Team name'],['partner','Partner(s)'],['gym','Gym']]){ const v = prompt(l+' for '+(x.name||'')+' (leave blank to clear)', x[k]||''); if(v === null) return; if(v.trim()) x[k] = v.trim().slice(0,40); else delete x[k]; }
+    try{ await setDoc(doc(fs,'posts',id,'going',uid), x); toast('Saved'); }catch(e){ alert('Couldn\'t save.'); } });
   document.querySelectorAll('[data-pdel]').forEach(b => b.onclick = async () => { const p = D.posts.find(x => x.id === b.dataset.pdel); if(!confirm('Delete "'+p.title+'"? Athletes stop seeing it.')) return; try{ await deleteDoc(doc(fs,'posts',p.id)); toast('Deleted'); }catch(e){ alert('Couldn\'t delete.'); } });
 }
 

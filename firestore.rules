@@ -141,8 +141,8 @@ service cloud.firestore {
       allow write: if staff();
       match /going/{uid} {
         allow read: if staff() || approved();
-        allow write: if isMe(uid) && (approved() || isCoach())
-          && (request.resource == null || request.resource.data.keys().hasOnly(['name', 'at']));
+        allow write: if staff() || (isMe(uid) && (approved() || isCoach())
+          && (request.resource == null || request.resource.data.keys().hasOnly(['name', 'at', 'heat', 'team', 'partner', 'gym'])));
       }
     }
     match /{path=**}/going/{uid} {

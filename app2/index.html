@@ -4939,6 +4939,17 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 .gnews .grow2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
 .gnews .gin{border:1px solid var(--line);background:none;color:inherit;border-radius:999px;padding:7px 16px;font:700 14px var(--body);cursor:pointer}
 .gnews .gin.on{background:#C8102E;border-color:#C8102E;color:#fff}
+.gnews .gwho{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px;font-size:14px;color:var(--muted)}
+.gnews .gwho b{color:var(--chalk);font-weight:700}
+.gnews .gedit{margin-top:8px;background:none;border:0;padding:0;color:#E8394F;font:600 14px var(--body);text-decoration:underline;cursor:pointer}
+.gosheet{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}
+.gocard{background:var(--panel);color:var(--chalk);width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));display:grid;gap:10px}
+.gocard p{margin:0;color:var(--muted);font-size:14px}
+.gocard label{display:grid;gap:4px;font-size:13px;font-weight:600;color:var(--muted)}
+.gocard input{font:16px var(--body);padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:inherit}
+.goacts{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+.goacts button{border-radius:999px;padding:10px 18px;font:700 15px var(--body);border:1px solid var(--line);background:none;color:inherit;cursor:pointer}
+.goacts .gosave{background:#C8102E;border-color:#C8102E;color:#fff}
 #bbMembers .mprogs{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 6px}
 #bbMembers .mprogs button{padding:6px 10px;font-size:12px}
 #bbMembers button.ghost{background:transparent;border:1px solid #2A2A2A;color:#F4F2EE}
@@ -5623,13 +5634,33 @@ function initPosts(u){
     evs.forEach(p => { const g = G[p.id] || [], on = g.some(x => x.uid === me), [y,m,d] = p.date.split('-').map(Number), dt = new Date(y, m-1, d);
       h += '<div class="gn ev"><div class="gdate"><span>'+dt.toLocaleDateString([], { month:'short' })+'</span><b>'+d+'</b><span>'+dt.toLocaleDateString([], { weekday:'short' })+'</span></div><div class="gbody"><b>'+esc(p.title)+'</b>'+
         ((p.time || p.place) ? '<small>'+esc([p.time, p.place].filter(Boolean).join(' · '))+'</small>' : '')+(p.body ? '<p>'+body(p.body)+'</p>' : '')+
-        '<div class="grow2"><button type="button" class="gin'+(on?' on':'')+'" data-going="'+esc(p.id)+'" aria-pressed="'+on+'">'+(on ? 'I\'m in ✓' : 'I\'m in')+'</button><small>'+(g.length ? g.length+' going'+(g.length <= 4 ? ': '+esc(g.map(x => String(x.name||'').split(' ')[0]).join(', ')) : '') : 'Be the first')+'</small></div></div></div>'; });
+        '<div class="grow2"><button type="button" class="gin'+(on?' on':'')+'" data-going="'+esc(p.id)+'" aria-pressed="'+on+'">'+(on ? 'I\'m in ✓' : 'I\'m in')+'</button><small>'+(g.length ? g.length+' going' : 'Be the first')+'</small></div>'+
+        (g.length ? '<ul class="gwho">'+g.slice().sort((a,b) => (a.at||0)-(b.at||0)).map(x => '<li><b>'+esc(x.name||'')+'</b>'+([x.heat ? 'Heat '+x.heat : '', x.team ? (/^team\b/i.test(x.team) ? x.team : 'Team '+x.team) : '', x.partner ? 'with '+x.partner : '', x.gym].filter(Boolean).length ? ' · '+esc([x.heat ? 'Heat '+x.heat : '', x.team ? (/^team\b/i.test(x.team) ? x.team : 'Team '+x.team) : '', x.partner ? 'with '+x.partner : '', x.gym].filter(Boolean).join(' · ')) : '')+'</li>').join('')+'</ul>' : '')+
+        (on ? '<button type="button" class="gedit" data-goedit="'+esc(p.id)+'">Edit my heat, team and gym</button>' : '')+'</div></div>'; });
     return h + '</section>';
   };
   document.addEventListener('click', async e => { const b = e.target.closest && e.target.closest('[data-going]'); if(!b) return; e.preventDefault();
-    const id = b.dataset.going, ref = doc(fs, 'posts', id, 'going', u.uid), on = ((window.__bbGoing||{})[id]||[]).some(x => x.uid === u.uid); b.disabled = true;
-    try{ if(on) await deleteDoc(ref); else await setDoc(ref, { name: myNameF().slice(0,60), at: Date.now() }); }catch(x){ alert('Couldn\'t save. Check your internet and try again.'); }
-    b.disabled = false; });
+    const id = b.dataset.going, ref = doc(fs, 'posts', id, 'going', u.uid), on = ((window.__bbGoing||{})[id]||[]).some(x => x.uid === u.uid);
+    if(on){ if(!confirm('Take yourself off this event?')) return; b.disabled = true; try{ await deleteDoc(ref); }catch(x){ alert('Couldn\'t save. Check your internet and try again.'); } b.disabled = false; return; }
+    goSheet(id, ref, null); });
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-goedit]'); if(!b) return; e.preventDefault();
+    const id = b.dataset.goedit, mine = ((window.__bbGoing||{})[id]||[]).find(x => x.uid === u.uid); goSheet(id, doc(fs, 'posts', id, 'going', u.uid), mine || null); });
+  // I'm in: optional heat time, team name, partner and gym (for teams with someone on or off the app)
+  function goSheet(id, ref, cur){
+    const p = (window.__bbPosts||[]).find(x => x.id === id) || {}; cur = cur || {};
+    const w = document.createElement('div'); w.className = 'gosheet'; w.setAttribute('role','dialog'); w.setAttribute('aria-modal','true');
+    const f = (k, l, ph) => '<label>'+l+'<input data-gf="'+k+'" maxlength="40" value="'+esc(cur[k]||'')+'" placeholder="'+ph+'"></label>';
+    w.innerHTML = '<div class="gocard"><b>'+esc(p.title||'Event')+'</b><p>All optional. Fill in what you know, you can change it later.</p>'+
+      f('heat','Heat time','e.g. 8:30 AM')+f('team','Team name','If you\'re on a team')+f('partner','Partner(s)','Names, on the app or not')+f('gym','Gym','e.g. Rebuilt Training')+
+      '<div class="goacts"><button type="button" class="gocancel">Cancel</button><button type="button" class="gosave">'+(cur.name ? 'Save' : 'I\'m in')+'</button></div></div>';
+    document.body.appendChild(w); const close = () => w.remove();
+    w.addEventListener('click', e => { if(e.target === w) close(); });
+    w.querySelector('.gocancel').onclick = close;
+    w.querySelector('.gosave').onclick = async ev => { const d = { name: myNameF().slice(0,60), at: cur.at || Date.now() };
+      w.querySelectorAll('[data-gf]').forEach(i => { const v = i.value.trim().slice(0,40); if(v) d[i.dataset.gf] = v; });
+      ev.target.disabled = true; try{ await setDoc(ref, d); close(); }catch(x){ ev.target.disabled = false; alert('Couldn\'t save. Check your internet and try again.'); } };
+    const first = w.querySelector('input'); if(first) setTimeout(() => first.focus(), 50);
+  }
 }
 
 /* -- Set up a head-to-head challenge between two athletes -- */
