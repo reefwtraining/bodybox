@@ -526,7 +526,7 @@ function renderMembers(){
   const c = k => rowsFor(k).length, B = r => D.bill[r.id] || {};
   const owe = rowsFor('owe'), owed = owe.reduce((t,r) => t + (+B(r).rate || 0), 0);
   const nx = addMonth(firstOfMonth(today())), nextUp = rowsFor('paid').filter(r => B(r).paidThrough === nx);
-  const monthly = people().filter(r => r.approved && !isStaff(r)).reduce((t,r) => t + (+B(r).rate || 0), 0);
+  const monthly = people().filter(r => r.approved && !isStaff(r) && (DAYS_OK || B(r).plan !== 'sessions')).reduce((t,r) => t + (+B(r).rate || 0), 0);
   let rows = rowsFor(F.show);
   if(F.q){ const q = F.q.toLowerCase(); rows = people().filter(r => ((r.name||'')+' '+(r.email||'')+' '+(B(r).note||'')).toLowerCase().includes(q)); }
   rows = sorted(rows); SEL = new Set([...SEL].filter(id => rows.some(r => r.id === id)));
