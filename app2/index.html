@@ -3440,6 +3440,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     m = t.match(/EMOM\s*(?:for\s*)?(\d{1,2})(?!\d)(?!:\d)(?!\s*(?:sec|s\b))/i) || t.match(/every minute (?:on the minute )?for\s*(\d{1,2})\b/i) || t.match(/E(\d)MOM\s*(?:x|for)?\s*(\d{1,2})/i);
     if(m){ const n = m[2] ? Math.floor(+m[2] / 1) : +m[1]; if(n >= 2 && n <= 40) return { n, lab: m[2] ? 'Round' : 'Minute' }; }
     if(/for time|amrap|max (?:rounds|reps)|emom|rounds? for|cues|plan\b/i.test(top)) return null;
+    const nl = L.filter(l => /^\s*(?:#\s*\d+|set\s*\d+)\b/i.test(l)).length; if(ok(nl)) return { n: nl, lab: 'Set' }; // '#1: 150ft' lines = one box each
     m = top.match(/(\d{1,2})\s*sets?\b/i) || L.slice(0,3).join(' ').match(/(\d{1,2})\s*sets?\b/i); if(m && ok(+m[1])) return { n: +m[1], lab: 'Set' };
     m = top.match(/(\d{1,2})\s*rounds?\b/i); if(m && ok(+m[1])) return { n: +m[1], lab: 'Round' };
     return null;
