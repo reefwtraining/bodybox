@@ -707,6 +707,7 @@ details.more{margin:14px 0}details.more summary{cursor:pointer;color:#FF5A64;fon
 .tabs{background:#0B0B0B;border-top-color:#262626}
 .tabs button[aria-current="page"]{color:#fff;border-top-color:var(--red)}
 .tabs button[aria-current="page"] svg{stroke:#FF5A64}
+.pwslots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-height:46vh;overflow-y:auto}.pwslots .field{margin:0}.pwslots input{width:100%;min-width:0}
 </style>
 
 <header class="top">
@@ -764,7 +765,8 @@ details.more{margin:14px 0}details.more summary{cursor:pointer;color:#FF5A64;fon
     <label class="field"><span class="label">Name</span><input id="pwTitle" type="text" maxlength="80" placeholder="Hotel workout, extra core, easy run"></label>
     <label class="field"><span class="label">Date</span><input id="pwDate" type="date" required=""></label>
     <label class="field"><span class="label">What you did</span><textarea id="pwWhat" class="notein" maxlength="1200" placeholder="3 rounds: 20 push-ups, 30 air squats, 400 m run"></textarea></label>
-    <label class="field"><span class="label">Score (optional)</span><input id="pwScore" type="text" maxlength="60" placeholder="14:20, 5 rounds, 225 × 5"></label>
+    <div id="pwSlots" class="pwslots" hidden=""></div>
+    <label class="field"><span class="label" id="pwScoreLab">Score (optional)</span><input id="pwScore" type="text" maxlength="60" placeholder="14:20, 5 rounds, 225 × 5"></label>
     <span class="label">How did it feel?</span><div class="feelrow" id="pwFeel" role="group" aria-label="How did it feel"></div>
     <label class="field"><span class="label">Notes (optional)</span><textarea id="pwNote" class="notein" maxlength="600"></textarea></label>
     <label class="field"><span class="label">Video link for review (optional)</span><input id="pwVid" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="300" placeholder="Paste your YouTube link"><small class="vidhint">Film it, post it to YouTube (unlisted is fine) and paste the link. Coach Reef reviews it.</small></label><details class="vidhow"><summary>How to film it</summary><ul><li>Camera at a 90 degree angle: straight out to your side, level with the bar.</li><li>Whole body and the bar in the frame the entire time, plates visible.</li><li>No fisheye or wide-angle lens. Hold the phone steady or prop it up.</li><li>Uncut: every rep, start to finish.</li><li>Workout videos: keep the clock in the shot the whole time.</li></ul></details>
@@ -3376,7 +3378,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   // read the scheme: "5x5", "3 × 2 @ 60%", "4 x 6-8" -> one row per set with reps (and % if given)
   function setPlan(lines){
     const L = [].concat(...(lines||[]).map(l => String(l).split(/\s*·\s*(?=(?:set|#)\s*\d)/i)));
-    const per = []; let wOnly = false; L.forEach(l => { const m = l.match(/^\s*(?:[a-z][a-z ]{0,20}:\s*)?(?:set\s*|#\s*)\d+\s*[·:\-–.]?\s*(\d+)(?!\d)(?!\s*(?:lb|kg))(?:\s*(?:\/\s*\d+)?\s*(?:reps?)?\s*@\s*(\d{2,3})\s*%)?/i); if(m){ if(!m[2] && +m[1] > 30){ wOnly = true; per.push({ reps: 0, pct: 0, w: +m[1] }); } else per.push({ reps: +m[1], pct: m[2] ? +m[2] : 0 }); } });
+    const per = []; let wOnly = false; L.forEach(l => { const m = l.match(/^\s*(?:[a-z][a-z ]{0,20}:\s*)?(?:set\s*|#\s*)\d+\s*[·:\-–.]?\s*(\d+)(?!\d)(?!\s*(?:lb|kg))(?:\s*(?:\/\s*\d+)?\s*(?:reps?)?\s*@\s*(\d{2,3})(?:\.\d+)?\s*(%)?)?/i); if(m){ if(!m[2] && +m[1] > 30){ wOnly = true; per.push({ reps: 0, pct: 0, w: +m[1] }); } else if(m[2] && !m[3]) per.push({ reps: +m[1], pct: 0, w: +m[2] }); else per.push({ reps: +m[1], pct: m[2] ? +m[2] : 0 }); } });
     if(per.length && wOnly){ const sch = setPlan(L.filter(l => !/^\s*(?:[a-z][a-z ]{0,20}:\s*)?(?:set\s*|#\s*)\d+/i.test(l))); const r = sch.length ? sch[0].reps : 0; per.forEach(p => { if(!p.reps) p.reps = r; }); }
     if(per.length) return per.slice(0, 15);
     const out = [];
@@ -3429,6 +3431,19 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       toastShare = null; render();
     };
   }
+  // Nov 20: a result card with sets, rounds or intervals gets one score box per set/interval (3 x 10 min = 3 boxes, 4 Sets = 4 boxes). For time / AMRAP keep one score.
+  function resSlots(pt){
+    const L = (pt.lines||[]).map(String), hdr = L.find(l => /^!/.test(l)) || '', top = (pt.tag||'')+' '+hdr, t = top+' '+L.slice(0,3).join(' ');
+    const ok = n => n >= 2 && n <= 12;
+    let m = t.match(/(\d{1,2})\s*[x×]\s*(?:\d{1,2}(?::\d\d)?\s*(?:min|minutes|sec|seconds)\b|:\d\d|\d{1,2}:\d\d|\d{2,4}\s*m\b|\d{1,2}\s*(?:cal|calories)\b)/i) || t.match(/every\s*:?\d{1,2}(?::\d\d)?\s*(?:min(?:utes)?)?\s*(?:x|for)\s*(\d{1,2})\b/i) || t.match(/(\d{1,2})\s*intervals?\b/i);
+    if(m && ok(+m[1])) return { n: +m[1], lab: 'Interval' };
+    m = t.match(/EMOM\s*(?:for\s*)?(\d{1,2})(?!\d)(?!:\d)(?!\s*(?:sec|s\b))/i) || t.match(/every minute (?:on the minute )?for\s*(\d{1,2})\b/i) || t.match(/E(\d)MOM\s*(?:x|for)?\s*(\d{1,2})/i);
+    if(m){ const n = m[2] ? Math.floor(+m[2] / 1) : +m[1]; if(n >= 2 && n <= 40) return { n, lab: m[2] ? 'Round' : 'Minute' }; }
+    if(/for time|amrap|max (?:rounds|reps)|emom|rounds? for|cues|plan\b/i.test(top)) return null;
+    m = top.match(/(\d{1,2})\s*sets?\b/i) || L.slice(0,3).join(' ').match(/(\d{1,2})\s*sets?\b/i); if(m && ok(+m[1])) return { n: +m[1], lab: 'Set' };
+    m = top.match(/(\d{1,2})\s*rounds?\b/i); if(m && ok(+m[1])) return { n: +m[1], lab: 'Round' };
+    return null;
+  }
   function partLogBar(pt, entry, date){
     if(!date || /warm|cool|mobil|stretch|recover/i.test(pt.tag || '')) return '';
     const pname = partName(pt), lk = (pt.lift && LIFTS[pt.lift]) ? pt.lift : liftByName(pname), hdr = String((pt.lines||[]).find(l => /^!/.test(String(l))) || ''), emomLift = /emom/i.test((pt.tag||'')+' '+hdr) && /jerk|clean|snatch|press|squat|deadlift|thruster/i.test((pt.tag||'')+' '+hdr), noWt = !emomLift && (/jump|bound|\bhops?\b|toss|throw|sprint|\brun|carry|medley|superset|tri-?set|core|accessory|lower leg|workout|wod|amrap|emom|for time|interval|aerobic|\bmin\b|threshold|engine|cardio|miles|team of|station|express|class timer|\d+ blocks|grit|midline|plyo|sculpt|burnout|finisher|ladder|activate|integration|holds|reset|cues|brick|\d+:\d\d/i.test(pt.tag || '') || /for time|amrap|emom|rounds? for|team of|max (rounds|reps)|\bmin\b|minutes?|\d+:\d\d/i.test(hdr));
@@ -3442,8 +3457,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     }
     const src = partSrc(pt, date), r = (A.personal||[]).filter(x => x && x.src === src).slice(-1)[0];
     const title = pt.tag || (entry && entry.title) || 'Workout';
-    if(r) return '<div class="logbar"><span>Logged: <b>'+esc(r.s||'Done')+'</b>'+(r.feel?' · felt '+esc(r.feel):'')+'</span><button class="linkbtn" type="button" data-pres="'+esc(src)+'" data-ptitle="'+esc(title)+'" data-pdate="'+esc(date)+'">Log again</button></div>';
-    return '<div class="logbar"><span>Log your result and the weights you used</span><button class="btn solid" type="button" data-pres="'+esc(src)+'" data-ptitle="'+esc(title)+'" data-pdate="'+esc(date)+'" style="padding:7px 12px">Log my result</button></div>';
+    const sl = resSlots(pt), sa = sl ? ' data-pslots="'+sl.n+'" data-plab="'+sl.lab+'"' : '';
+    if(r) return '<div class="logbar"><span>Logged: <b>'+esc(r.s||'Done')+'</b>'+(r.feel?' · felt '+esc(r.feel):'')+'</span><button class="linkbtn" type="button" data-pres="'+esc(src)+'" data-ptitle="'+esc(title)+'" data-pdate="'+esc(date)+'"'+sa+'>Log again</button></div>';
+    return '<div class="logbar"><span>Log your result and the weights you used</span><button class="btn solid" type="button" data-pres="'+esc(src)+'" data-ptitle="'+esc(title)+'" data-pdate="'+esc(date)+'"'+sa+' style="padding:7px 12px">Log my result</button></div>';
   }
   // Athlete Comp parts link to that day's Board event (Board scores Athlete Comp, Nov 14): the day's Workout/Interval/Aerobic to the scored event, a main lift to its load event.
   function boardEvFor(pt, date){
@@ -3480,7 +3496,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const cc = $('codeCancel'); if(cc) cc.onclick = () => { memAdding = false; memMsg = ''; render(); };
     v.querySelectorAll('[data-mday]').forEach(b => b.onclick = () => { memDay = b.dataset.mday; render(); });
     v.querySelectorAll('[data-psets]').forEach(b => b.onclick = () => openSets(b.dataset.psets));
-    v.querySelectorAll('[data-pres]').forEach(b => b.onclick = () => { const sec = b.closest('.part'); const what = sec ? [...sec.querySelectorAll('.rx li')].map(li => li.textContent.trim()).join('\n') : ''; openPersonal({ title: b.dataset.ptitle, date: b.dataset.pdate, src: b.dataset.pres, what }); });
+    v.querySelectorAll('[data-pres]').forEach(b => b.onclick = () => { const sec = b.closest('.part'); const what = sec ? [...sec.querySelectorAll('.rx li')].map(li => li.textContent.trim()).join('\n') : ''; openPersonal({ title: b.dataset.ptitle, date: b.dataset.pdate, src: b.dataset.pres, what, slots: +b.dataset.pslots || 0, lab: b.dataset.plab || '' }); });
     wireReady(); wireCal();
     wireViewAs(); const vo = $('viewAsOff'); if(vo) vo.onclick = () => { viewAs = ''; render(); };
     v.querySelectorAll('[data-wk]').forEach(b => b.onclick = () => {
@@ -4085,12 +4101,15 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   }
 
   // ---- athlete: my own workouts ----
-  let pwFeel = '', pwSrc = '';
+  let pwFeel = '', pwSrc = '', pwLab = '';
   function openPersonal(pre){
     pre = pre && pre.title ? pre : null;
     $('pwDate').value = (pre && pre.date) || todayStr(); ['pwTitle','pwWhat','pwScore','pwNote','pwVid'].forEach(id => $(id).value = ''); pwFeel = ''; paintPwFeel(); $('pwErr').textContent = '';
     pwSrc = pre ? (pre.src || '') : '';
     if(pre){ $('pwTitle').value = pre.title.slice(0,80); $('pwWhat').value = (pre.what || '').slice(0,1200); }
+    const ps = $('pwSlots'), n = pre && pre.slots >= 2 ? Math.min(pre.slots, 40) : 0; pwLab = n ? (pre.lab || 'Set') : '';
+    ps.innerHTML = n ? Array.from({ length: n }, (_, i) => '<label class="field"><span class="label">'+pwLab+' '+(i+1)+'</span><input data-pwslot="'+i+'" type="text" maxlength="40" placeholder="'+(pwLab === 'Interval' ? 'Time, distance or cals' : 'Reps and weight')+'"></label>').join('') : '';
+    ps.hidden = !n; $('pwScoreLab').textContent = n ? 'Total or best (optional)' : 'Score (optional)';
     $('pwSheet').hidden = false; setTimeout(() => $(pre ? 'pwScore' : 'pwTitle').focus(), 40);
   }
   function paintPwFeel(){ document.querySelectorAll('#pwFeel [data-pwf]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pwf === pwFeel))); }
@@ -4104,6 +4123,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       if(!title){ $('pwErr').textContent = 'Give it a name, like "Extra core" or "Hotel workout".'; return; }
       if(!date){ $('pwErr').textContent = 'Pick the date.'; return; }
       const rec = { id: uid(), kind:'own', date, t: Date.now(), title, what: $('pwWhat').value.trim().slice(0,1200), s: $('pwScore').value.trim().slice(0,60) };
+      const spl = [...document.querySelectorAll('#pwSlots [data-pwslot]')].map(i => i.value.trim().slice(0,40));
+      if(spl.some(Boolean)){ rec.splits = spl; rec.s = ((rec.s ? rec.s+' · ' : '') + spl.map((v,i) => v ? pwLab+' '+(i+1)+': '+v : '').filter(Boolean).join(' · ')).slice(0,300); }
       if(pwFeel) rec.feel = (FEELS.find(x => x[0] === pwFeel)||['',''])[1].toLowerCase();
       const note = $('pwNote').value.trim().slice(0,600); if(note) rec.note = note;
       const pv = cleanVid($('pwVid').value); if(pv === null){ $('pwErr').textContent = 'That video link doesn\'t look right. Copy it from YouTube and paste it again.'; return; } if(pv) rec.vid = pv;
