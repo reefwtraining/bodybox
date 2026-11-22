@@ -127,6 +127,22 @@ nav a:hover{color:var(--gold)}
 .throw .wrap{padding-block:64px;display:grid;grid-template-columns:minmax(0,1fr);gap:32px}
 .throw h2{font-size:clamp(48px,8vw,104px);text-transform:uppercase;font-weight:900}
 .throw h2 span{color:var(--gold);display:block}
+.upc{background:#0b0b0b;border-top:1px solid var(--line)}
+.upc .wrap{display:grid;gap:22px;padding-block:64px}
+.upc h2{font-size:clamp(40px,7vw,88px);text-transform:uppercase;font-weight:900;margin:8px 0 0;line-height:.95}
+.upc h2 span{display:block;color:var(--gold)}
+.upc .lead{font-size:19px;max-width:62ch;margin:0}
+.upc ol{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.upc li{display:grid;grid-template-columns:84px minmax(0,1fr);gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.upc .d{text-align:center;border-right:1px solid var(--line);padding-right:12px}
+.upc .d b{display:block;color:#FF5A64;font-size:14px;letter-spacing:.1em;text-transform:uppercase}
+.upc .d span{display:block;font-size:30px;font-weight:900;line-height:1.1}
+.upc .d small{display:block;font-size:12px;opacity:.7}
+.upc h3{margin:0 0 4px;font-size:20px;text-transform:uppercase}
+.upc p{margin:0 0 6px;font-size:15px;line-height:1.5}
+.upc .where{opacity:.75;font-size:14px}
+.upc a{color:#FF5A64;font-weight:700}
+@media(max-width:560px){.upc li{grid-template-columns:64px minmax(0,1fr);gap:12px}.upc .d span{font-size:24px}}
 .comp{background:#0b0b0b;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .comp .wrap{display:grid;gap:22px;padding-block:64px}
 .comp h2{font-size:clamp(40px,7vw,88px);text-transform:uppercase;font-weight:900;margin:8px 0 0;line-height:.95}
@@ -730,6 +746,7 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
 
 <div class="pagetabs" data-page="comps"><div class="wrap" role="tablist" aria-label="Competitions">
   <a href="#comp" class="ptab" data-ptab="comp">In-House</a>
+  <a href="#upcoming" class="ptab" data-ptab="upcoming">Coming Up</a>
   <a href="#throwdown" class="ptab" data-ptab="throwdown">Online</a>
 </div></div>
 <section class="comp" id="comp" data-page="comps">
@@ -768,6 +785,27 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
       </div>
     </div>
     <div class="cta" style="margin-top:0"><a class="btn" href="https://comp.streamfit.com/competition/view/569" target="_blank" rel="noopener">Register on StreamFit ↗</a><a class="btn ghost" href="#class">Not a member? Book a class</a></div>
+  </div>
+</section>
+
+<section class="upc" id="upcoming" data-page="comps">
+  <div class="wrap">
+    <div>
+      <span class="label">On the calendar</span>
+      <h2>Comps<span>Coming Up</span></h2>
+    </div>
+    <p class="lead">The comps Team BodyBox is training for. In the BODYBOX app, tap I'm in on any of these and add your partner and division, so we can build it into your training.</p>
+    <ol>
+      <li><div class="d"><b>Dec</b><span>12</span><small>2026</small></div><div><h3>Heavy Weights &amp; Light Plates</h3><p class="where">Sat · 8:30 AM check-in · Rebuilt Training, Kenilworth, NJ</p><p>Our in-house partner comp: 1 RX + 1 Scaled or Scaled+ partner, 3 workouts. Free for Rebuilt members. Register by Fri, Dec 4. <a href="#comp">Details</a></p></div></li>
+      <li><div class="d"><b>Feb</b><span>6</span><small>2027</small></div><div><h3>VDM 2027</h3><p class="where">Sat · 8 AM to 4 PM · Surge gym, Burlington, NJ</p><p>Teams of 2 on one global leaderboard: host gyms around the world do the same 4 workouts on the same day. Male, female and co-ed teams, RX to Scaled, plus Masters 40+. <a href="https://app.conquestevents.net/events/vdm-philadelphia/details" target="_blank" rel="noopener">Sign up ↗</a></p></div></li>
+      <li><div class="d"><b>Feb</b><span>17</span><small>2027</small></div><div><h3>The Open 2027</h3><p class="where">27.1 Feb 17 · 27.2 Feb 24 · 27.3 Mar 3 · Rebuilt Training</p><p>Three weeks, three workouts, RX or Scaled. Each workout drops Wednesday at 3 PM Eastern, scores due the next Monday by 8 PM. Registration opens in January. We do them together on Fridays.</p></div></li>
+      <li><div class="d"><b>Mar</b><span>20</span><small>2027</small></div><div><h3>True Fitness Race Simulation</h3><p class="where">Sat · 6:30 AM to 1 PM · True Fitness, Cherry Hill, NJ</p><p>A full race simulation with heats, judged stations and real transitions. Open singles and pairs, plus Sprint Pro pairs. Great practice before a race. Sign up on Conquest Events (search True Fitness).</p></div></li>
+      <li><div class="d"><b>Apr</b><span>24</span><small>2027</small></div><div><h3>TRU Challenge</h3><p class="where">Sat · 8 AM check-in · Unbreakable gym, Parsippany, NJ</p><p>One-day comp for individuals and same-sex teams of 3. Novice, Intermediate, RX, Masters and Adaptive divisions. Workouts come out early so you can practice. Register by Mar 20 for a free shirt; closes Apr 17. <a href="https://competitioncorner.net/events/22917" target="_blank" rel="noopener">Sign up ↗</a></p></div></li>
+      <li><div class="d"><b>May</b><span>27</span><small>2027</small></div><div><h3>HYROX New York</h3><p class="where">Race days May 27 to June 7 · Pier 76, New York (provisional)</p><p>One heat on one day for each athlete or team. Singles, Doubles and Relay teams of 4. Tickets aren't on sale yet. <a href="https://hyrox.com/event/hyrox-new-york/" target="_blank" rel="noopener">Official page ↗</a></p></div></li>
+      <li><div class="d"><b>Jun</b><span>12</span><small>2027</small></div><div><h3>Thieves &amp; Beggars 5</h3><p class="where">Sat · 8 AM to 3 PM · New Jersey, venue coming soon</p><p>One-day hybrid comp for same-sex teams of 2. RX, Scaled and Masters 35+. Registration is open. <a href="https://app.conquestevents.net/events/thieves-and-beggars-5/details" target="_blank" rel="noopener">Sign up ↗</a></p></div></li>
+      <li><div class="d"><b>Aug</b><span>28</span><small>2027</small></div><div><h3>ATHX New York</h3><p class="where">Heats 8 AM to 5:30 PM · Javits Center, New York</p><p>A 2.5-hour race in zones: Strength, Endurance, then MetCon X. Lite, standard and Pro levels, individual or pairs. Sign up at athxgames.com.</p></div></li>
+      <li><div class="d"><b>Oct</b><span>16</span><small>2027</small></div><div><h3>Fight For the Fittest 2027</h3><p class="where">Sat + Sun · Suffolk Credit Union Arena, Brentwood, NY</p><p>Two-day comp on Long Island: individuals both days, teams of 4 on Saturday, pairs on Sunday. RX, Scaled and Novice. Divisions are expected to sell out. <a href="https://app.conquestevents.net/events/fight-for-the-fittest-2027/details" target="_blank" rel="noopener">Sign up ↗</a></p></div></li>
+    </ol>
   </div>
 </section>
 
@@ -1212,17 +1250,17 @@ a.btn{min-height:56px;font-size:19px;padding:0 30px}
     var id=(location.hash||'#top').slice(1), el=id&&document.getElementById(id), host=el&&pageOf(el);
     var pg=host?host.dataset.page:'home';
     var comp=null;
-    if(pg==='comps'){ comp=(id==='throwdown'||(el&&document.getElementById('throwdown').contains(el)))?'throwdown':'comp'; }
+    if(pg==='comps'){ comp=(id==='throwdown'||(el&&document.getElementById('throwdown').contains(el)))?'throwdown':((id==='upcoming'||(el&&document.getElementById('upcoming').contains(el)))?'upcoming':'comp'); }
     document.querySelectorAll('[data-page]').forEach(function(x){
       var on=x.dataset.page===pg;
-      if(on&&comp&&(x.id==='comp'||x.id==='throwdown')) on=x.id===comp;
+      if(on&&comp&&(x.id==='comp'||x.id==='throwdown'||x.id==='upcoming')) on=x.id===comp;
       x.classList.toggle('on',on);
     });
     document.querySelectorAll('[data-ptab]').forEach(function(t){ t.setAttribute('aria-selected',String(t.dataset.ptab===comp)); });
     document.querySelectorAll('nav [data-nav]').forEach(function(a){ if(a.dataset.nav===pg) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
     var navA=document.querySelector('nav [data-nav="'+pg+'"]'); if(navA&&navA.scrollIntoView) try{navA.scrollIntoView({block:'nearest',inline:'center'});}catch(e){}
     if(scroll===false) return;
-    if(!el||id===PAGE_FIRST[pg]||id==='top'||id==='throwdown') window.scrollTo(0,0); else el.scrollIntoView();
+    if(!el||id===PAGE_FIRST[pg]||id==='top'||id==='throwdown'||id==='upcoming') window.scrollTo(0,0); else el.scrollIntoView();
   }
   window.addEventListener('hashchange',function(){route();});
   route(location.hash?undefined:false);
