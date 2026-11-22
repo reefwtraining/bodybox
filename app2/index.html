@@ -3437,6 +3437,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const ok = n => n >= 2 && n <= 12;
     let m = t.match(/(\d{1,2})\s*[x×]\s*(?:\d{1,2}(?::\d\d)?\s*(?:min|minutes|sec|seconds)\b|:\d\d|\d{1,2}:\d\d|\d{2,4}\s*m\b|\d{1,2}\s*(?:cal|calories)\b)/i) || t.match(/every\s*:?\d{1,2}(?::\d\d)?\s*(?:min(?:utes)?)?\s*(?:x|for)\s*(\d{1,2})\b/i) || t.match(/(\d{1,2})\s*intervals?\b/i);
     if(m && ok(+m[1])) return { n: +m[1], lab: 'Interval' };
+    m = hdr.match(/^!?\s*(\d{1,2})\s*(rounds?|sets?)\s*(?:x|×|of)\b/i); // '3 Rounds x EMOM 6', '3 Sets of 4 Min AMRAP' = one box per round/set
+    if(m && ok(+m[1])) return { n: +m[1], lab: /^r/i.test(m[2]) ? 'Round' : 'Set' };
     m = t.match(/EMOM\s*(?:for\s*)?(\d{1,2})(?!\d)(?!:\d)(?!\s*(?:sec|s\b))/i) || t.match(/every minute (?:on the minute )?for\s*(\d{1,2})\b/i) || t.match(/E(\d)MOM\s*(?:x|for)?\s*(\d{1,2})/i);
     if(m){ const n = m[2] ? Math.floor(+m[2] / 1) : +m[1]; if(n >= 2 && n <= 40) return { n, lab: m[2] ? 'Round' : 'Minute' }; }
     if(/for time|amrap|max (?:rounds|reps)|emom|rounds? for|cues|plan\b/i.test(top)) return null;
