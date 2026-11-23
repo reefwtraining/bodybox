@@ -4830,7 +4830,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       let n = 0; A.indr = A.indr || {};
       L.sort((a, b) => ((a.r||{}).t||0) - ((b.r||{}).t||0)).forEach(c => { if(c && c.yt && c.yt.url){ A.ytPosts = A.ytPosts || []; const k = c.yt.url.split('?')[0]; if(!A.ytPosts.some(x => x && String(x.url||'').split('?')[0] === k)){ A.ytPosts.push({ date: c.yt.date || '', title: c.yt.title || 'Video', url: c.yt.url }); n++; } return; }
         if(!c || !c.item || !c.r) return;
-        const cur = A.indr[c.item]; if(!cur || (c.r.t||0) > (cur.t||0)){ A.indr[c.item] = c.r; n++; }
+        if(c.part){ A.personal = A.personal || []; const ex = A.personal.filter(x => x && x.src === c.item).slice(-1)[0]; /* Nov 23: coach-entered result on a team card, shown on that card's log bar */
+          if(!ex || (ex.t||0) < (c.r.t||0)){ A.personal.push(Object.assign({ id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), kind:'own', src: c.item, date: c.r.date, t: c.r.t||Date.now(), title: c.r.title || 'Workout', s: c.r.s || 'Done' }, c.r.feel ? { feel: c.r.feel } : {}, c.r.note ? { note: c.r.note } : {}, c.r.vid ? { vid: c.r.vid } : {}, { by: c.r.by || 'Coach Reef' })); n++; } }
+        else { const cur = A.indr[c.item]; if(!cur || (c.r.t||0) > (cur.t||0)){ A.indr[c.item] = c.r; n++; } }
         if(c.move && c.move.k && c.move.n){ A.moves = A.moves || {}; if(!A.moves[c.move.k]){ A.moves[c.move.k] = c.move.n; if(!LIFTS[c.move.k]){ LIFTS[c.move.k] = c.move.n; LIFT_ORDER.push(c.move.k); } n++; } }
         const L2 = Array.isArray(c.logs) ? c.logs : (c.log && c.log.lift && c.log.w > 0 ? [c.log] : []);
         if(L2.length && !A.log.some(x => x.id === L2[0].id)){ const src = L2[0].src; const old = A.log.filter(x => x.src === src); if(!old.length || old.every(x => (x.t||0) < (L2[0].t||0))){ A.log = A.log.filter(x => x.src !== src).concat(L2); n++; } } });

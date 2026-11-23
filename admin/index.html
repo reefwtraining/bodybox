@@ -333,7 +333,7 @@ async function openDay(ds){
 
 
 /* ---------- athlete days (Coach Reef only): each athlete's day exactly as written for them ---------- */
-const AD = { date: null, who: 'all', cache: {}, busy: false };
+const AD = { date: null, who: 'all', cache: {}, busy: false, parts: {} };
 const PROGMAP = { rt:'class', comp:'comp', build:'build', cardio:'cardio', garage:'garage', shiit:'shiit', yoga:'yoga' };
 const PNAME = { class:'RT Movement', comp:'Athlete Comp', build:'Building', cardio:'Cardio', garage:'Garage Box', shiit:'S.H.I.I.T', yoga:'Yoga & Toning', own:'Their own work' };
 async function athPlan(r){
@@ -345,6 +345,7 @@ async function athPlan(r){
         const p = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name:'AES-GCM', iv: b64d(box.iv) }, k, b64d(box.ct))));
         out.items = (p.items || []).filter(it => !it.who || it.who.includes(out.me)); } } }catch(e){}
   out.res = Object.assign({}, (out.A && out.A.indr) || {});
+  ((out.A && out.A.personal) || []).forEach(x => { if(x && x.src && (!out.res[x.src] || (x.t||0) >= (out.res[x.src].t||0))) out.res[x.src] = x; });
   try{ const cs = await getDocs(collection(fs, 'data', 'users', r.id)); cs.docs.filter(d => d.id.startsWith('cl_')).map(d => { try{ return JSON.parse(d.data().json); }catch(e){ return null; } }).filter(Boolean).sort((a, b) => (a.r.t||0) - (b.r.t||0))
     .forEach(c => { const cur = out.res[c.item]; if(!cur || (c.r.t||0) >= (cur.t||0)) out.res[c.item] = Object.assign({ coach: true }, c.r); }); }catch(e){}
   AD.cache[r.id] = out; return out;
@@ -372,7 +373,7 @@ const adLine = (l, lift) => { const t = String(l);
   return '<span class="ln '+(/:\s*$/.test(t.trim()) && t.trim().length <= 60 ? 'h' : lineCls(t))+'">'+esc(lineTxt(t))+adWeights(t, lift)+'</span>'; };
 function adPart(tag, title, lines, note, mine, lift, itemId){
   const res = itemId ? (AD.res||{})[itemId] : null;
-  const logBox = mine && itemId && DAYS_OK ? '<div class="ad-res">'+(res ? '<span class="rv"><b>Result'+(res.coach ? ' (you entered)' : '')+':</b> '+esc(res.s || res.txt || 'Done')+(res.feel ? ' · felt '+esc(res.feel) : '')+(res.note ? ' · '+esc(res.note) : '')+'</span>' : '')+'<button type="button" class="btn ghost sm" data-adlog="'+esc(itemId)+'" data-aduid="'+esc(AD.uid)+'" data-adt="'+esc(title||tag||'')+'" data-adnm="'+esc(AD.nm||'')+'">'+(res ? 'Change result' : 'Enter result')+'</button></div>' : '';
+  const logBox = itemId && DAYS_OK ? '<div class="ad-res">'+(res ? '<span class="rv"><b>Result'+(res.coach ? ' (you entered)' : '')+':</b> '+esc(res.s || res.txt || 'Done')+(res.feel ? ' · felt '+esc(res.feel) : '')+(res.note ? ' · '+esc(res.note) : '')+'</span>' : '')+'<button type="button" class="btn ghost sm" data-adlog="'+esc(itemId)+'" data-aduid="'+esc(AD.uid)+'" data-adt="'+esc(title||tag||'')+'" data-adnm="'+esc(AD.nm||'')+'">'+(res ? 'Change result' : 'Enter result')+'</button></div>' : '';
   return '<div class="ad-part'+(mine ? ' mine' : '')+'"><span class="tg">'+esc(mine ? (tag ? tag+' · just for them' : 'Just for them') : (tag || ''))+'</span>'+(title ? '<span class="ti">'+esc(title)+'</span>' : '')+(lines||[]).map(l => adLine(l, lift)).join('')+(note ? '<span class="nt">'+esc(note)+'</span>' : '')+logBox+'</div>';
 }
 function adDayHtml(r, plan, ds){
@@ -388,7 +389,9 @@ function adDayHtml(r, plan, ds){
     parts.forEach((pt, i) => {
       const rep = mine.find(it => it.pos && it.pos.t === 'replace' && it.pos.i === i);
       if(rep){ if(!rep.skip) out += adPart(rep.tag || pt.tag, rep.title, rep.lines, rep.note, true, rep.lift || pt.lift, rep.id); }
-      else out += adPart(pt.tag, '', pt.lines, '', false, pt.lift);
+      else { const pk2 = /warm|cool|mobil|stretch|recover|rest day/i.test(pt.tag||'') || mine.some(it => it.tag === 'Your numbers' && it.pos && it.pos.t === 'after' && it.pos.i === i) ? null : 'part|'+ds+'|'+String(pt.tag||'')+'|'+String((pt.lines||[])[0]||'').slice(0,40);
+        if(pk2) AD.parts[AD.uid+'|'+pk2] = { lines: pt.lines || [], title: pt.tag || '' };
+        out += adPart(pt.tag, '', pt.lines, '', false, pt.lift, pk2); }
       mine.filter(it => it.pos && it.pos.t === 'after' && it.pos.i === i).forEach(it => { out += adPart(it.tag, it.title, it.lines, it.note, true, it.lift, it.id); });
     });
     mine.filter(it => !it.pos || it.pos.t === 'end' || (it.pos.t !== 'replace' && it.pos.i >= parts.length)).forEach(it => { out += adPart(it.tag, it.title, it.lines, it.note, true, it.lift, it.id); });
@@ -405,9 +408,12 @@ document.addEventListener('click', e => { const b = e.target.closest && e.target
 function adPlan(lines){
   const L = (lines||[]).map(x => String(x).replace(/^[!*?]/, '')); let per = [];
   const so = (() => { for(const l of L){ const m = l.match(/(\d+)\s*sets?\s+of\s+(\d+)/i) || l.match(/sets?\s+of\s+(\d+)/i); if(m) return m.length > 2 ? { n:+m[1], r:+m[2] } : { n:0, r:+m[1] }; } return null; })();
-  L.forEach(l => { let m = l.match(/^\s*set\s*(\d+)(?:\s*-\s*(\d+))?\s*[·:\-–.]\s*(\d+(?:\.\d+)?)/i);
-    if(m){ const k = m[2] ? (+m[2] - +m[1] + 1) : 1; for(let i = 0; i < k; i++) per.push({ w: +m[3], reps: so ? so.r : 0 }); return; }
-    m = l.match(/^\s*min\s*(\d+)\s*-\s*(\d+)\s*·\s*(\d+(?:\.\d+)?)/i); if(m){ for(let i = +m[1]; i <= +m[2]; i++) per.push({ w: +m[3], reps: 1 }); return; } });
+  L.forEach(l => { let m = l.match(/^\s*set\s*(\d+)(?:\s*-\s*(\d+))?\s*[·:\-–.]\s*(\d+(?:\.\d+)?)(?!\d)(?:\s*(?:\/\s*\d+)?\s*(?:reps?)?\s*@\s*(\d{2,3}(?:\.\d+)?)\s*(%)?)?/i);
+    if(m){ const k = m[2] ? (+m[2] - +m[1] + 1) : 1, n = +m[3]; /* Nov 23: same reading as the app: "3 @ 105" = 3 reps at 105, "6/6" or "5" = reps, a bare number over 30 = weight */
+      const set = m[4] ? { w: m[5] ? 0 : +m[4], reps: n } : n > 30 ? { w: n, reps: so ? so.r : 0 } : { w: 0, reps: n };
+      for(let i = 0; i < k; i++) per.push(Object.assign({}, set)); return; }
+    m = l.match(/^\s*min\s*(\d+)\s*-\s*(\d+)\s*·\s*(\d+(?:\.\d+)?)/i); if(m){ for(let i = +m[1]; i <= +m[2]; i++) per.push({ w: +m[3], reps: 1 }); return; }
+    m = l.match(/^\s*#\s*\d+\s*[:·.\-]?\s*(\d+)(?:\s*\/\s*\d+)?\s*(?:reps?)?(?:\s*@\s*(\d{2,3}(?:\.\d+)?))?\s*$/i); if(m && +m[1] <= 50){ per.push({ w: m[2] ? +m[2] : 0, reps: +m[1] }); return; } }); /* Nov 23: "#1 8 Reps", "#2 12/12 Reps" = one set each */
   if(per.length) return per.slice(0, 15);
   if(so && so.n){ const st = (L.join(' ').match(/start (?:at |with )?(\d+)/i)||[])[1]; for(let i = 0; i < Math.min(so.n, 12); i++) per.push({ w: st ? +st : 0, reps: so.r }); return per; }
   L.forEach(l => { const re = /(\d+)\s*[x×]\s*(\d+)/gi; let m; while((m = re.exec(l))){ const n = +m[1], r = +m[2]; if(n >= 1 && n <= 12 && r >= 1 && r <= 30) for(let i = 0; i < n; i++) per.push({ w: 0, reps: r }); } });
@@ -415,9 +421,9 @@ function adPlan(lines){
 }
 function adGuessLift(title){ const t = String(title||'').toLowerCase(); let best = '', len = 0; Object.keys(ADL).forEach(k => { const n = String(ADL[k]).toLowerCase().replace(/^push \/ split /,''); if(t.includes(n) && n.length > len){ best = k; len = n.length; } }); return best; }
 function adLogSheet(uid, item, title, nm){
-  const plan0 = (AD.cache[uid] && AD.cache[uid].items || []).find(x => x.id === item) || {};
+  const isPart = String(item).startsWith('part|'), plan0 = (AD.cache[uid] && AD.cache[uid].items || []).find(x => x.id === item) || AD.parts[uid+'|'+item] || {};
   const lines = plan0.lines || [], sets = adPlan(lines), isLift = sets.length > 0, guess = adGuessLift(title);
-  const nSets = (() => { const m = lines.join(' ').match(/(\d+)\s*sets?\s+of\s+a/i) || lines.join(' ').match(/^(\d+)\s*sets?\b/im); return m ? Math.min(+m[1], 10) : 0; })();
+  const nSets = (() => { const J = lines.map(x => String(x).replace(/^[!*]\s*/, '')).join('\n'); const m = J.match(/(\d+)\s*sets?\s+of\s+a/i) || J.match(/^(\d+)\s*(?:sets?|rounds?)\b/im) || J.match(/^(\d+)\s*(?:sets?|rounds?)\s*(?:x|×|of)\b/im); return m ? Math.min(+m[1], 12) : 0; })(); /* Nov 23: "!3 Sets:" headers count too */
   const isTime = /for time|time cap|cap \d/i.test(lines.join(' ')), FE = [['easy','Easy'],['solid','Solid'],['hard','Hard'],['allout','All-out']];
   const m = document.createElement('div'); m.className = 'modal'; let feel = '';
   const row = (i, r, w) => '<div class="al-row"><span class="sn">Set '+(i+1)+'</span><label>Weight (lb)<input type="number" inputmode="decimal" class="aw" placeholder="'+(w||'')+'"></label><label>Reps<input type="number" inputmode="numeric" class="ar" value="'+(r||'')+'"></label><button type="button" class="btn ghost sm ax" title="Remove set">×</button></div>';
@@ -425,10 +431,11 @@ function adLogSheet(uid, item, title, nm){
   m.innerHTML = '<div class="box al" style="display:grid;gap:12px;max-width:480px;max-height:90vh;overflow:auto"><div><span class="label">'+(isLift ? 'Log sets for ' : 'Log result for ')+esc(nm||'athlete')+'</span><h2 style="margin:4px 0 0">'+esc(title)+'</h2></div>'+
     '<label>Date<input id="alD" type="date" value="'+esc(AD.date || today())+'"></label>'+
     (isLift ? '<label>Lift<select id="alL">'+liftOpts+'</select></label><label class="al-chk"><input type="checkbox" id="alBw"> Bodyweight (no weight added)</label><div id="alRows">'+sets.map((x, i) => row(i, x.reps, x.w)).join('')+'</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost sm" type="button" id="alAdd">+ Add set</button><button class="btn ghost sm" type="button" id="alFill">Same weight all sets</button><button class="btn ghost sm" type="button" id="alPh">Use the card weights</button></div>'
-      : (nSets > 1 ? '<div id="alRows">'+Array.from({ length: nSets }, (_, i) => '<label>Set '+(i+1)+(isTime ? ' time (min:sec)' : ' score (reps)')+'<input class="as" '+(isTime ? 'placeholder="12:34"' : 'type="number" inputmode="numeric"')+'></label>').join('')+'</div><p class="muted" id="alTot" style="margin:0"></p>'
+      : (nSets > 1 ? '<div id="alRows">'+Array.from({ length: nSets }, (_, i) => '<label>Set '+(i+1)+(isTime ? ' time (min:sec)' : ' score')+'<input class="as" '+(isTime ? 'placeholder="12:34"' : 'placeholder="reps, or a time / distance"')+'></label>').join('')+'</div><p class="muted" id="alTot" style="margin:0"></p>'
         : (isTime ? '<label>Time (min:sec)<input id="alT" placeholder="12:34"></label><label class="al-chk"><input type="checkbox" id="alCap"> Hit the time cap</label><label id="alCapRF" hidden>Reps at the cap<input id="alCapR" type="number" inputmode="numeric"></label>' : '<label>Result<input id="alS" placeholder="e.g. 142 reps, done, or what she did"></label>')))+
     '<div><span class="label">How it felt</span><div class="al-feel">'+FE.map(([k, l]) => '<button type="button" data-fe="'+k+'" aria-pressed="false">'+l+'</button>').join('')+'</div></div>'+
     '<label>Notes (optional)<textarea id="alN" rows="2" placeholder="How it moved, what to work on next time"></textarea></label>'+
+    '<label>Video link (optional)<input id="alV" type="url" placeholder="Paste the YouTube or Drive link of the set you filmed"></label>'+
     '<p class="err" id="alE" style="margin:0"></p><div style="display:flex;gap:8px"><button class="btn" type="button" id="alSave">'+(isLift ? 'Save sets' : 'Save result')+'</button><button class="btn ghost" type="button" id="alX">Cancel</button></div></div>';
   document.body.appendChild(m); const Q = q => m.querySelector(q), QA = q => [...m.querySelectorAll(q)];
   m.onclick = ev => { if(ev.target === m) m.remove(); }; Q('#alX').onclick = () => m.remove();
@@ -458,13 +465,15 @@ function adLogSheet(uid, item, title, nm){
     } else if(Q('#alTot')){
       const vals = QA('.as').map(x => x.value.trim()); if(!vals.some(Boolean)) return err('Enter at least one set.');
       if(isTime){ const secs = vals.map(parseT); if(vals.some((v, i) => v && secs[i] == null)) return err('Times look like 12:34.'); rr.s = vals.map((v, i) => v ? 'Set '+(i+1)+' '+fmtT(secs[i]) : '').filter(Boolean).join(' · '); }
+      else if(vals.some(v => v && !/^\d+(\.\d+)?$/.test(v))) rr.s = vals.map((v, i) => v ? 'Set '+(i+1)+' '+v : '').filter(Boolean).join(' · ').slice(0, 300); /* Nov 23: interval times or distances */
       else { const nums = vals.map(v => parseFloat(v) || 0), tot = nums.reduce((a, b) => a + b, 0); rr.n = tot; rr.per = nums; rr.s = tot+' total ('+nums.join(' / ')+')'; }
     } else if(Q('#alT')){
       if(Q('#alCap').checked){ const n = parseInt(Q('#alCapR').value, 10); if(!(n >= 0)) return err('Enter her reps at the cap.'); rr.capped = true; rr.n = n; rr.s = 'Capped · '+n+' reps'; }
       else { const sec = parseT(Q('#alT').value); if(sec == null) return err('Enter the time like 12:34.'); rr.sec = sec; rr.s = fmtT(sec); }
     } else { const S = Q('#alS').value.trim().slice(0, 80); rr.txt = S; rr.s = S || 'Done'; }
     if(feel) rr.feel = (FE.find(x => x[0] === feel)||['',''])[1].toLowerCase(); if(N) rr.note = N;
-    const body = { kind: 'indr', item, r: rr }; if(logs.length) body.logs = logs; if(move) body.move = move;
+    const V = (Q('#alV').value || '').trim(); if(V){ if(!/^https:\/\/\S+$/i.test(V)) return err('That video link doesn\'t look right. Paste the full link that starts with https://'); rr.vid = V.slice(0, 300); } /* Nov 23: coach can attach the video he filmed */
+    const body = { kind: 'indr', item, r: rr }; if(isPart) body.part = true; if(logs.length) body.logs = logs; if(move) body.move = move;
     const b = Q('#alSave'); b.disabled = true; b.textContent = 'Saving…';
     try{ await setDoc(doc(fs, 'data', 'users', uid, 'cl_'+String(item).replace(/[^A-Za-z0-9_-]/g, '')+'_'+now.toString(36)), { json: JSON.stringify(body), at: serverTimestamp() });
       delete AD.cache[uid]; m.remove(); if($('#adSide')) renderDays(true); if(TAB === 'days') renderDays(); }
