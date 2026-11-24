@@ -379,7 +379,7 @@ function loadAndPlay(f){
   const id=++loadId;
   if(!unlocked){ audio.src=SILENT; audio.play().then(()=>{unlocked=true;}).catch(()=>{}); }
   npS.textContent=(qset?qset.name:"")+" · loading…";
-  getBlob(f).then(u=>{ if(id!==loadId) return; audio.src=u; npS.textContent=qset?qset.name:""; return audio.play(); })
+  getBlob(f).then(u=>{ if(id!==loadId) return; audio.src=u; npS.textContent=qset?qset.name:""; audio.play().catch(()=>{}); })
    .catch(()=>{ if(id!==loadId) return; npS.textContent="Couldn't load this song. Check your connection and tap it again."; });
 }
 function play(){
