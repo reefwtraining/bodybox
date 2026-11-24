@@ -834,8 +834,8 @@ async function renderMusic(){
     if(!MUSIC_SONGS) MUSIC_SONGS = await fetch('../music/songs.json').then(r => r.json());
     const { renderStats, renderAccess } = await import('../music/stats.js?v=4');
     const el = () => document.getElementById('musicStats');
-    const showA = () => { MUSIC_VIEW='access'; document.getElementById('muA').classList.add('solid'); document.getElementById('muS').classList.remove('solid'); el().innerHTML='<p class="note" style="margin-bottom:10px">Turn music on for the people you want. They sign in with their BODYBOX app login and it opens right away. People without an app account can create one on the music page, then show up here.</p><div id="muList"></div>'; renderAccess(fs, document.getElementById('muList'), false); };
-    const showS = () => { MUSIC_VIEW='stats'; document.getElementById('muS').classList.add('solid'); document.getElementById('muA').classList.remove('solid'); renderStats(fs, el(), MUSIC_SONGS); };
+    const showA = () => { MUSIC_VIEW='access'; document.getElementById('muA').classList.remove('ghost'); document.getElementById('muS').classList.add('ghost'); el().innerHTML='<p class="note" style="margin-bottom:10px">Turn music on for the people you want. They sign in with their BODYBOX app login and it opens right away. People without an app account can create one on the music page, then show up here.</p><div id="muList"></div>'; renderAccess(fs, document.getElementById('muList'), false); };
+    const showS = () => { MUSIC_VIEW='stats'; document.getElementById('muS').classList.remove('ghost'); document.getElementById('muA').classList.add('ghost'); renderStats(fs, el(), MUSIC_SONGS); };
     if(TAB !== 'music') return;
     document.getElementById('muA').onclick = showA; document.getElementById('muS').onclick = showS;
     (MUSIC_VIEW === 'stats' ? showS : showA)();
