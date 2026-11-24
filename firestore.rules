@@ -48,14 +48,6 @@ service cloud.firestore {
       allow write: if isCoach();
     }
 
-    // BODYBOX Music (Nov 24, 2026): the key that unlocks the song files.
-    // Coaches, plus anyone Coach Reef turned music on for (members/{uid}.music == true, set only by a coach).
-    match /music/{docId} {
-      allow read: if isCoach() || (signedIn()
-        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.get('music', false) == true);
-      allow write: if isCoach();
-    }
-
     // People list for challenges (name only). Each person writes their own entry.
     match /people/{uid} {
       allow read: if isCoach() || approved();
