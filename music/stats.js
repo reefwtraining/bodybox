@@ -53,3 +53,19 @@ export async function renderStats(fs, el, songs){
   }
   draw();
 }
+
+// Team top lists for the music Home page: most played and most liked (coach writes content/musicTop).
+export async function computeTop(fs){
+  const mem = await getDocs(collection(fs,'members'));
+  const docs = await Promise.all(mem.docs.map(d => getDoc(doc(fs,'data','users',d.id,'music')).then(x => x.exists() ? x.data() : null).catch(() => null)));
+  const c = {};
+  docs.filter(Boolean).forEach(m => {
+    Object.entries(m.plays||{}).forEach(([k,v]) => { const r = c[k] || (c[k] = { p:0, f:0, l:0, d:0 }); r.p += v.starts||0; r.f += v.completes||0; });
+    Object.entries(m.likes||{}).forEach(([k,v]) => { const r = c[k] || (c[k] = { p:0, f:0, l:0, d:0 }); if(v===1) r.l++; else if(v===-1) r.d++; });
+  });
+  const E = Object.entries(c);
+  const played = E.filter(([,r]) => r.p > 0).sort((a,b) => (b[1].p - a[1].p) || (b[1].f - a[1].f)).slice(0,12).map(x => x[0]);
+  const liked = E.filter(([,r]) => r.l > 0).sort((a,b) => (b[1].l - b[1].d) - (a[1].l - a[1].d) || (b[1].l - a[1].l)).slice(0,12).map(x => x[0]);
+  const counts = {}; [...new Set([...played, ...liked])].forEach(k => counts[k] = { p: c[k].p, l: c[k].l });
+  return { played, liked, counts };
+}

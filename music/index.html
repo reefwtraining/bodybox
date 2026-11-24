@@ -343,9 +343,9 @@ window.__bbmNavExtra = (isCoach,email) => {
 };
 
 function markNav(id){ document.querySelectorAll("#nav [data-id],#chips [data-id]").forEach(b=>b.classList.toggle("on",b.dataset.id===id)); const c=chips.querySelector('.on'); if(c) c.scrollIntoView({inline:"center",block:"nearest"}); }
-function home(){
+function home(){ setTimeout(()=>window.__bbmRenderTop&&window.__bbmRenderTop(),0);
   view=null; markNav("home");
-  main.innerHTML='<h1>Home</h1><div class="hero"><img src="banner.jpg" alt="BODYBOX Music boombox logo"></div>'+
+  main.innerHTML='<h1>Home</h1><div class="hero"><img src="banner.jpg" alt="BODYBOX Music boombox logo"></div><div id="topShelves"></div>'+
    GROUPS.map(g=>'<h3>'+esc(g.label)+'</h3><div class="shelf">'+g.sets.map(s=>'<button class="tile" data-id="'+s.id+'">'+art(s)+'<div class="t">'+esc(s.name)+'</div><div class="s">'+s.tracks.length+' songs</div></button>').join("")+'</div>').join("")+
    '<div class="inst"><b>Put it on your phone:</b> iPhone: tap Share, then <b>Add to Home Screen</b>. Android: tap the ⋮ menu, then <b>Install app</b> or <b>Add to Home screen</b>.</div><div class="about"><img src="headphones-lg.jpg" alt="BODYBOX Music headphones logo"><div><h3>About BODYBOX Music</h3><p>'+songCount+' original tracks made for Team BodyBox and Rebuilt Training: class sets, runs, recovery days and the story of the garage. Members only: this library is for the people Coach Reef invites.</p><p class="kdgt">Keep doing great things.</p></div></div>';
 }
@@ -421,6 +421,21 @@ function rateUI(){ const t=queue[qi]; const v = t && window.__bbmLikes ? window.
 window.__bbmRateUI = () => { rateUI(); mark(); };
 function rate(v){ const t=queue[qi]; if(!t||!window.__bbmLike) return; const k=songKey(t[1]); const cur=(window.__bbmLikes||{})[k]||0; window.__bbmLike(k, cur===v?0:v); rateUI(); mark(); }
 window.__bbmSongs = () => { const seen=new Map(); Object.values(S).forEach(t=>{ const k=songKey(t[1]); if(!seen.has(k)) seen.set(k,{k,title:t[0],file:t[1],secs:t[2]}); }); return [...seen.values()]; };
+const KEYMAP=(()=>{ const m={}; Object.values(S).forEach(t=>{ const k=songKey(t[1]); if(!m[k]) m[k]=t; }); return m; })();
+window.__bbmRenderTop = () => {
+  const el=document.getElementById("topShelves"); if(!el) return;
+  const top=window.__bbmTop||{}, mine=Object.keys(window.__bbmLikes||{}).filter(k=>(window.__bbmLikes||{})[k]===1);
+  const shelf=(id,label,keys,sub)=>{ const ts=keys.map(k=>KEYMAP[k]).filter(Boolean).slice(0,12); if(!ts.length) return "";
+    return '<h3>'+esc(label)+'</h3><div class="shelf">'+ts.map((t,i)=>'<button class="tile" data-top="'+id+'" data-i="'+i+'">'+(COVER[t[1]]?'<div class="art photo"><img src="'+COVER[t[1]]+'" alt=""></div>':'<div class="art" style="--g:'+grad(id==="liked"?"rnb":id==="mine"?"anthems":"run")+'"><img src="tape.png" alt=""></div>')+'<div class="t">'+esc(t[0])+'</div><div class="s">'+esc(sub(t))+'</div></button>').join("")+'</div>'; };
+  const cnt=top.counts||{};
+  el.innerHTML = shelf("played","Most played",top.played||[],t=>{ const c=cnt[songKey(t[1])]; return c&&c.p? c.p+" plays":""; })
+    + shelf("liked","Most liked",top.liked||[],t=>{ const c=cnt[songKey(t[1])]; return c&&c.l? c.l+" likes":""; })
+    + shelf("mine","Your likes",mine,()=> "You liked this");
+  el.onclick=e=>{ const b=e.target.closest("[data-top]"); if(!b) return; e.stopPropagation();
+    const id=b.dataset.top, keys=id==="played"?(top.played||[]):id==="liked"?(top.liked||[]):mine;
+    const list=keys.map(k=>KEYMAP[k]).filter(Boolean).slice(0,12);
+    start({id:"top-"+id,name:id==="played"?"Most played":id==="liked"?"Most liked":"Your likes",tracks:list},list,+b.dataset.i); };
+};
 function play(){
   finishTrack("skip");
   const t=queue[qi]; if(!t) return;
@@ -476,7 +491,7 @@ route();
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, sendEmailVerification, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, serverTimestamp, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { renderStats } from "./stats.js?v=2";
+import { renderStats, computeTop } from "./stats.js?v=3";
 const cfg = { apiKey:"AIzaSyAMHdGXPgAwPkbdGdcmA538JHBAF_QWAEU", authDomain:"teambodybox-app.firebaseapp.com", projectId:"teambodybox-app", storageBucket:"teambodybox-app.firebasestorage.app", messagingSenderId:"212485533701", appId:"1:212485533701:web:a42605f3fdf0ad6b60ec6c" };
 const COACHES = ['reefwtraining@gmail.com','reefwtraining+bodybox@gmail.com'];
 const fb = initializeApp(cfg), auth = getAuth(fb), fs = getFirestore(fb);
@@ -544,7 +559,7 @@ async function openMusic(u, coach){
     if(!d.exists()) throw new Error('nokey');
     const raw = Uint8Array.from(atob(d.data().k), c => c.charCodeAt(0));
     const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
-    window.__bbmKeyResolve(key); opened = true; initMine(u); G.hidden = true; G.innerHTML = '';
+    window.__bbmKeyResolve(key); opened = true; initMine(u); loadTop(coach); G.hidden = true; G.innerHTML = '';
     window.__bbmNavExtra && window.__bbmNavExtra(coach, u.email || '');
   }catch(e){
     if(coach) card('<h2>Almost ready</h2><p>The music key isn\'t set up yet. Claude finishes this step.</p><div class="grow"><button class="glink" id="gOut" type="button">Sign out</button></div>');
@@ -552,6 +567,15 @@ async function openMusic(u, coach){
     const o=document.getElementById('gOut'); if(o) o.onclick=()=>signOut(auth);
   }
 }
+async function loadTop(coach){
+  try{ const d = await getDoc(doc(fs,'content','musicTop')); if(d.exists()) window.__bbmTop = d.data(); }catch(e){}
+  window.__bbmRenderTop && window.__bbmRenderTop();
+  if(coach){ // the coach's open refreshes the team lists for everyone (at most every 10 minutes)
+    const at = window.__bbmTop && window.__bbmTop.at && window.__bbmTop.at.toMillis ? window.__bbmTop.at.toMillis() : 0;
+    if(Date.now() - at > 10*60*1000){ try{ const t = await computeTop(fs); await setDoc(doc(fs,'content','musicTop'), { ...t, at: serverTimestamp() }); window.__bbmTop = t; window.__bbmRenderTop && window.__bbmRenderTop(); }catch(e){} }
+  }
+}
+document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && opened){ getDoc(doc(fs,'content','musicTop')).then(d => { if(d.exists()){ window.__bbmTop = d.data(); window.__bbmRenderTop && window.__bbmRenderTop(); } }).catch(()=>{}); } });
 let myRef = null, myName = '';
 window.__bbmLikes = {};
 async function initMine(u){
@@ -564,7 +588,7 @@ window.__bbmTrack = (k, o) => { if(!myRef || !k) return; const p = { last: serve
   if(o.secs) p.secs = increment(o.secs);
   setDoc(myRef, { name: myName, at: serverTimestamp(), plays: { [k]: p } }, { merge:true }).catch(()=>{}); };
 window.__bbmLike = (k, v) => { if(!myRef) return; if(v) window.__bbmLikes[k]=v; else delete window.__bbmLikes[k];
-  setDoc(myRef, { name: myName, likes: { [k]: v ? v : deleteField() } }, { merge:true }).catch(()=>{}); };
+  setDoc(myRef, { name: myName, likes: { [k]: v ? v : deleteField() } }, { merge:true }).catch(()=>{}); window.__bbmRenderTop && window.__bbmRenderTop(); };
 window.__bbmStats = async main => { main.innerHTML = '<h1>Song stats</h1><div id="stx"></div>'; renderStats(fs, document.getElementById('stx'), window.__bbmSongs()); };
 window.__bbmSignOut = () => signOut(auth).then(() => location.reload());
 window.__bbmSetKey = async b64 => { await setDoc(doc(fs,'content','music'), { k:b64, at:serverTimestamp() }); return 'saved'; };
