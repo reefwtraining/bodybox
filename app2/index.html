@@ -3378,6 +3378,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   }
   function liftByName(n){ const t = String(n||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); if(!t) return null; return Object.keys(LIFTS).find(k => String(LIFTS[k]).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim() === t) || null; }
   function setKey(pt, date){ return (pt.lift||'')+'|'+date+'|'+String((pt.lines||[])[0]||'').slice(0,30); }
+  // sets saved from one card: entries tagged with that card's key, or (older entries with no key) every set of that lift on that day
+  function setsFor(lk, date, k){ if(!lk) return []; const all = (A.log||[]).filter(e => e && e.lift === lk && e.date === date && !String(e.src||'').startsWith('est') && !String(e.src||'').startsWith('ind-')); const mine = all.filter(e => e.ck === k); return (mine.length ? mine : all.filter(e => !e.ck)).sort((a, b) => (a.t||0) - (b.t||0)); }
   // read the scheme: "5x5", "3 × 2 @ 60%", "4 x 6-8" -> one row per set with reps (and % if given)
   function setPlan(lines){
     const L = [].concat(...(lines||[]).map(l => String(l).split(/\s*·\s*(?=(?:set|#)\s*\d)/i)));
@@ -3402,14 +3404,16 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function setBwMode(){ const b = $('setBw'); return !!(b && b.checked); }
   function paintBw(){ const on = setBwMode(); document.querySelectorAll('#setRows .swf').forEach(f => { f.hidden = on; }); $('setFill').hidden = on; }
   function openSets(k){
-    const c = SETCTX[k]; if(!c) return; setCur = c;
+    const c = SETCTX[k]; if(!c) return; setCur = c; c.key = k; const saved = setsFor(c.lift, c.date, k); c.editIds = saved.map(e => e.id);
     const b = c.lift ? bestOf(c.lift) : null, last = c.lift ? lastOf(c.lift) : null;
     let plan = setPlan(c.lines); if(!plan.length && c.tag) plan = setPlan([c.tag]); if(plan.some(p => !p.reps) && c.tag){ const t = setPlan([c.tag]); const r = t.length ? t[0].reps : 0; plan.forEach(p => { if(!p.reps) p.reps = r; }); } if(!plan.length) plan = [{ reps: 0, pct: 0 }, { reps: 0, pct: 0 }, { reps: 0, pct: 0 }];
     $('setTitle').textContent = (c.lift && LIFTS[c.lift]) || c.name || 'Log my sets'; $('setWhat').textContent = 'Log my sets';
-    $('setDate').value = c.date || todayStr(); $('setNote').value = ''; $('setVid').value = ''; $('setErr').textContent = '';
+    $('setDate').value = c.date || todayStr(); $('setNote').value = (saved.find(e => e.note)||{}).note || ''; $('setVid').value = (saved.find(e => e.vid)||{}).vid || ''; $('setErr').textContent = '';
+    $('setWhat').textContent = saved.length ? 'Edit score' : 'Log my sets';
     const bwable = !c.lift || !LIFTS[c.lift] || String(c.lift).startsWith('m_'); const bwTxt = String(c.tag||'')+' '+String(c.name||''); const bwDef = bwable && BWRE.test(bwTxt) && !/weighted/i.test(bwTxt);
-    $('setBwF').hidden = !bwable; $('setBw').checked = bwDef;
+    $('setBwF').hidden = !bwable; $('setBw').checked = saved.length ? saved.every(e => e.bw) : bwDef;
     $('setRows').innerHTML = plan.map((p, i) => { let ph = ''; if(p.w) ph = fmtW(p.w); else if(p.pct && b) ph = fmtW(gymW(c.lift, gymMax(c.lift, b.val) * p.pct / 100)); else if(last) ph = fmtW(conv(last.w, last.u, A.unit)); return setRowHtml(i, p.reps, ph); }).join('');
+    if(saved.length){ $('setRows').innerHTML = saved.map((e, i) => setRowHtml(i, e.reps || '', '')).join(''); [...document.querySelectorAll('#setRows .setrow')].forEach((r, i) => { if(!saved[i].bw) r.querySelector('.sw').value = fmtW(conv(saved[i].w, saved[i].u, A.unit)); }); }
     wireSetRows(); paintBw(); $('setSheet').hidden = false; setTimeout(() => { const f = document.querySelector(setBwMode() ? '#setRows .sr' : '#setRows .sw'); if(f) f.focus(); }, 50);
   }
   function wireSetSheet(){
@@ -3426,8 +3430,11 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       if(!rows.length){ $('setErr').textContent = bw ? 'Enter the reps for at least one set.' : 'Enter the weight for at least one set. Bodyweight? Tick the box above.'; return; }
       if(!setCur.lift){ setCur.lift = addMove(setCur.name || 'Lift'); if(!setCur.lift){ $('setErr').textContent = 'Couldn\'t save this movement.'; return; } }
       const svid = cleanVid($('setVid').value); if(svid === null){ $('setErr').textContent = 'That video link doesn\'t look right. Copy it from YouTube and paste it again.'; return; }
-      const note = $('setNote').value.trim().slice(0,600), before = bestOf(setCur.lift), base = Date.now();
-      rows.forEach((x, i) => A.log.push(Object.assign({ id: base.toString(36)+i+Math.random().toString(36).slice(2,5), lift: setCur.lift, w: x.w, u: A.unit, reps: Math.min(50, x.reps), date, t: base + i, set: i+1 }, bw ? { bw: true } : {}, (note && i === 0) ? { note } : {}, (svid && i === 0) ? { vid: svid } : {})));
+      const note = $('setNote').value.trim().slice(0,600), base = Date.now();
+      const old = new Set(setCur.editIds || []); if(old.size){ A.log = A.log.filter(x => !old.has(x.id)); A.gone = A.gone || []; old.forEach(id => { if(!A.gone.includes(id)) A.gone.push(id); }); } /* editing replaces the saved sets, no duplicates */
+      const before = bestOf(setCur.lift);
+      rows.forEach((x, i) => A.log.push(Object.assign({ id: base.toString(36)+i+Math.random().toString(36).slice(2,5), lift: setCur.lift, w: x.w, u: A.unit, reps: Math.min(50, x.reps), date, t: base + i, set: i+1, ck: setCur.key || '' }, bw ? { bw: true } : {}, (note && i === 0) ? { note } : {}, (svid && i === 0) ? { vid: svid } : {})));
+      setCur.editIds = [];
       saveA(); $('setSheet').hidden = true;
       const after = bestOf(setCur.lift);
       toastPR = !bw && before && after && after.val > before.val ? 'New '+LIFTS[setCur.lift]+' PR: '+fmtW(after.val)+' '+A.unit+' (+'+fmtW(Math.round((after.val-before.val)*10)/10)+')' : '';
@@ -3455,16 +3462,16 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const pname = partName(pt), lk = (pt.lift && LIFTS[pt.lift]) ? pt.lift : liftByName(pname), hdr = String((pt.lines||[]).find(l => /^!/.test(String(l))) || ''), emomLift = /emom/i.test((pt.tag||'')+' '+hdr) && /jerk|clean|snatch|press|squat|deadlift|thruster/i.test((pt.tag||'')+' '+hdr), noWt = !emomLift && (/jump|bound|\bhops?\b|toss|throw|sprint|\brun|carry|medley|superset|tri-?set|core|accessory|lower leg|workout|wod|amrap|emom|for time|interval|aerobic|\bmin\b|threshold|engine|cardio|miles|team of|station|express|class timer|\d+ blocks|grit|midline|plyo|sculpt|burnout|finisher|ladder|activate|integration|holds|reset|cues|brick|\d+:\d\d/i.test(pt.tag || '') || /for time|amrap|emom|rounds? for|team of|max (rounds|reps)|\bmin\b|minutes?|\d+:\d\d/i.test(hdr));
     let plan = noWt ? [] : setPlan(pt.lines); if(!noWt && !plan.length) plan = setPlan([pt.tag || '']);
     if(lk || plan.length){
-      const done = lk ? (A.log||[]).filter(e => e.lift === lk && e.date === date && !String(e.src||'').startsWith('est')) : [];
       const k = setKey(pt, date);
-      const btn = '<button class="btn solid" type="button" data-psets="'+esc(k)+'" style="padding:7px 12px">'+(done.length?'Add more sets':'Log my sets')+'</button>';
+      const done = setsFor(lk, date, k); /* Nov 23: like SugarWOD, a saved score shows here and the button edits it */
+      const btn = '<button class="'+(done.length?'linkbtn':'btn solid')+'" type="button" data-psets="'+esc(k)+'" style="padding:7px 12px">'+(done.length?'Edit score':'Log my sets')+'</button>';
       SETCTX[k] = { lift: lk || null, name: pname, tag: pt.tag || '', date, lines: pt.lines || [] };
       return '<div class="logbar"><span>'+(done.length ? 'Logged: <b>'+done.map(e => (e.bw ? 'BW' : fmtW(conv(e.w, e.u, A.unit)))+' × '+(e.reps||1)).join(', ')+'</b>' : 'Log every set: weight and reps')+'</span>'+btn+'</div>';
     }
     const src = partSrc(pt, date), r = (A.personal||[]).filter(x => x && x.src === src).slice(-1)[0];
     const title = pt.tag || (entry && entry.title) || 'Workout';
     const sl = resSlots(pt), sa = sl ? ' data-pslots="'+sl.n+'" data-plab="'+sl.lab+'"' : '';
-    if(r) return '<div class="logbar"><span>Logged: <b>'+esc(r.s||'Done')+'</b>'+(r.feel?' · felt '+esc(r.feel):'')+'</span><button class="linkbtn" type="button" data-pres="'+esc(src)+'" data-ptitle="'+esc(title)+'" data-pdate="'+esc(date)+'"'+sa+'>Log again</button></div>';
+    if(r) return '<div class="logbar"><span>Logged: <b>'+esc(r.s||'Done')+'</b>'+(r.feel?' · felt '+esc(r.feel):'')+'</span><button class="linkbtn" type="button" data-pres="'+esc(src)+'" data-ptitle="'+esc(title)+'" data-pdate="'+esc(date)+'"'+sa+'>Edit score</button></div>';
     return '<div class="logbar"><span>Log your result and the weights you used</span><button class="btn solid" type="button" data-pres="'+esc(src)+'" data-ptitle="'+esc(title)+'" data-pdate="'+esc(date)+'"'+sa+' style="padding:7px 12px">Log my result</button></div>';
   }
   // Athlete Comp parts link to that day's Board event (Board scores Athlete Comp, Nov 14): the day's Workout/Interval/Aerobic to the scored event, a main lift to its load event.
@@ -4011,9 +4018,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     h += notesTabs('it|'+(it.id||it.tag||''), athNotes(it.note, it.lines||[]), '');
     const sb = (it._src === 'mine' || !it._src) && it.date && !/^(your numbers|coach note)$/i.test(it.tag||'') ? partLogBar({ tag: it.title || it.tag || '', lines: it.lines || [], lift: it.lift }, null, it.date) : '';
     if(sb.indexOf('data-psets') >= 0){
-      h += sb + '<div class="row" style="justify-content:flex-end;margin-top:4px"><button class="linkbtn" type="button" data-ilog="'+esc(it.id)+'">'+(r ? 'Result: '+esc(r.s||'Done')+' · change' : 'Or log a result / note')+'</button></div>';
+      h += sb + '<div class="row" style="justify-content:flex-end;margin-top:4px"><button class="linkbtn" type="button" data-ilog="'+esc(it.id)+'">'+(r ? 'Result: '+esc(r.s||'Done')+' · edit' : 'Or log a result / note')+'</button></div>';
     } else if(it._src === 'mine' || (!it._src)){
-      if(r) h += '<div class="logbar"><span>Logged: <b>'+esc(r.s||'Done')+'</b>'+(r.feel?' · felt '+esc(r.feel):'')+'</span><button class="linkbtn" type="button" data-ilog="'+esc(it.id)+'">Change</button></div>';
+      if(r) h += '<div class="logbar"><span>Logged: <b>'+esc(r.s||'Done')+'</b>'+(r.feel?' · felt '+esc(r.feel):'')+'</span><button class="linkbtn" type="button" data-ilog="'+esc(it.id)+'">Edit score</button></div>';
       else h += '<div class="logbar"><span>'+(it.board?'Counts on the board':'Counts toward your own progress')+'</span><button class="btn solid" type="button" data-ilog="'+esc(it.id)+'" style="padding:7px 12px">Log my result</button></div>';
     }
     return h + '</section>';
@@ -4107,15 +4114,19 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   }
 
   // ---- athlete: my own workouts ----
-  let pwFeel = '', pwSrc = '', pwLab = '';
+  let pwFeel = '', pwSrc = '', pwLab = '', pwEdit = null;
   function openPersonal(pre){
     pre = pre && pre.title ? pre : null;
     $('pwDate').value = (pre && pre.date) || todayStr(); ['pwTitle','pwWhat','pwScore','pwNote','pwVid'].forEach(id => $(id).value = ''); pwFeel = ''; paintPwFeel(); $('pwErr').textContent = '';
     pwSrc = pre ? (pre.src || '') : '';
     if(pre){ $('pwTitle').value = pre.title.slice(0,80); $('pwWhat').value = (pre.what || '').slice(0,1200); }
+    pwEdit = pre && pre.src ? (A.personal||[]).filter(x => x && x.src === pre.src).slice(-1)[0] || null : null; /* Nov 23: reopening a scored card shows what was saved */
     const ps = $('pwSlots'), n = pre && pre.slots >= 2 ? Math.min(pre.slots, 40) : 0; pwLab = n ? (pre.lab || 'Set') : '';
     ps.innerHTML = n ? Array.from({ length: n }, (_, i) => '<label class="field"><span class="label">'+pwLab+' '+(i+1)+'</span><input data-pwslot="'+i+'" type="text" maxlength="40" placeholder="'+(pwLab === 'Interval' ? 'Time, distance or cals' : 'Reps and weight')+'"></label>').join('') : '';
     ps.hidden = !n; $('pwScoreLab').textContent = n ? 'Total or best (optional)' : 'Score (optional)';
+    if(pwEdit){ const E = pwEdit; if(E.what) $('pwWhat').value = E.what; $('pwNote').value = E.note || ''; $('pwVid').value = E.vid || ''; pwFeel = (FEELS.find(x => x[1].toLowerCase() === String(E.feel||'').toLowerCase())||[''])[0]; paintPwFeel();
+      if(Array.isArray(E.splits) && n){ E.splits.forEach((v, i) => { const inp = ps.querySelector('[data-pwslot="'+i+'"]'); if(inp) inp.value = v || ''; }); const base = String(E.s||'').split(' · ').filter(x => !new RegExp('^'+pwLab+' \\d+:').test(x)).join(' · '); $('pwScore').value = base; }
+      else $('pwScore').value = E.s && E.s !== 'Done' ? E.s : ''; }
     $('pwSheet').hidden = false; setTimeout(() => $(pre ? 'pwScore' : 'pwTitle').focus(), 40);
   }
   function paintPwFeel(){ document.querySelectorAll('#pwFeel [data-pwf]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pwf === pwFeel))); }
@@ -4135,7 +4146,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const note = $('pwNote').value.trim().slice(0,600); if(note) rec.note = note;
       const pv = cleanVid($('pwVid').value); if(pv === null){ $('pwErr').textContent = 'That video link doesn\'t look right. Copy it from YouTube and paste it again.'; return; } if(pv) rec.vid = pv;
       if(pwSrc){ rec.src = pwSrc; pwSrc = ''; }
-      A.personal = A.personal || []; A.personal.push(rec); saveA(); $('pwSheet').hidden = true; render();
+      A.personal = A.personal || []; if(pwEdit && pwEdit.id){ const oid = pwEdit.id; A.personal = A.personal.filter(x => !(x && x.id === oid)); A.gone = A.gone || []; if(!A.gone.includes(oid)) A.gone.push(oid); } pwEdit = null;
+      A.personal.push(rec); saveA(); $('pwSheet').hidden = true; render();
     };
   }
 
