@@ -511,7 +511,7 @@ window.__bbmSetKey = async b64 => { await setDoc(doc(fs,'content','music'), { k:
 window.__bbmListeners = async main => {
   main.innerHTML = '<h1>Who can listen</h1><p style="color:var(--sub);max-width:60ch">Turn music on for the people you want. They sign in here with their BODYBOX app login (or create an account on this page), and it opens for them right away.</p><div class="lst" id="lst"><div class="gspin"></div></div>';
   let snap; try{ snap = await getDocs(collection(fs,'members')); }catch(e){ document.getElementById('lst').textContent = "Couldn't load the member list."; return; }
-  const rows = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(m => m.email).sort((a,b) => (b.music===true)-(a.music===true) || String(a.name||a.email).localeCompare(String(b.name||b.email)));
+  const rows = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(m => m.email && !COACHES.includes(String(m.email).toLowerCase())).sort((a,b) => (b.music===true)-(a.music===true) || String(a.name||a.email).localeCompare(String(b.name||b.email)));
   const lst = document.getElementById('lst');
   lst.innerHTML = rows.map(m => '<div class="lrow"><div class="who"><b>'+esc(m.name||m.email)+'</b><small>'+esc(m.email)+(m.approved && !m.musicOnly ? ' · app member' : ' · music only')+'</small></div><button class="tg" role="switch" aria-checked="'+(m.music===true)+'" aria-label="Music for '+esc(m.name||m.email)+'" data-id="'+m.id+'"></button></div>').join('') || '<p>No accounts yet.</p>';
   lst.onclick = async e => { const t=e.target.closest('.tg'); if(!t) return; const on = t.getAttribute('aria-checked') !== 'true'; t.disabled=true;
