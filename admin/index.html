@@ -832,7 +832,7 @@ async function renderMusic(){
     '<div class="seg" role="tablist" style="margin-top:14px;display:flex;gap:8px"><button class="btn" id="muA" type="button">Who can listen</button><button class="btn" id="muS" type="button">Song stats</button></div><div id="musicStats" style="margin-top:14px"></div>';
   try{
     if(!MUSIC_SONGS) MUSIC_SONGS = await fetch('../music/songs.json').then(r => r.json());
-    const { renderStats, renderAccess } = await import('../music/stats.js?v=4');
+    const { renderStats, renderAccess } = await import('../music/stats.js?v=5');
     const el = () => document.getElementById('musicStats');
     const showA = () => { MUSIC_VIEW='access'; document.getElementById('muA').classList.remove('ghost'); document.getElementById('muS').classList.add('ghost'); el().innerHTML='<p class="note" style="margin-bottom:10px">Turn music on for the people you want. They sign in with their BODYBOX app login and it opens right away. People without an app account can create one on the music page, then show up here.</p><div id="muList"></div>'; renderAccess(fs, document.getElementById('muList'), false); };
     const showS = () => { MUSIC_VIEW='stats'; document.getElementById('muS').classList.remove('ghost'); document.getElementById('muA').classList.add('ghost'); renderStats(fs, el(), MUSIC_SONGS); };

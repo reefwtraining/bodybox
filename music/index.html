@@ -201,6 +201,9 @@ h1{font-size:clamp(30px,4.4vw,40px)}h3{font-size:22px}.head h2{font-size:clamp(2
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:6px 0 20px;max-width:900px}
 .card{background:var(--side);border:1px solid var(--line);border-radius:12px;padding:12px}.card b{display:block;font-family:var(--display);font-weight:400;font-size:28px}.card small{color:var(--sub)}
 .sx{overflow-x:auto}
+.full .dlrow{width:var(--w);display:flex;justify-content:center}
+.dlb{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:9px 16px;background:rgba(255,255,255,.12);color:#fff;font:600 14px var(--body)}
+.dlb svg{width:18px;height:18px;fill:#fff}.dlb[disabled]{opacity:.6}
 </style>
 </head>
 <body>
@@ -234,6 +237,7 @@ h1{font-size:clamp(30px,4.4vw,40px)}h3{font-size:22px}.head h2{font-size:clamp(2
   <div class="big-art"><img id="fArt" src="tape.png" alt=""></div>
   <div class="info"><div class="irow"><div class="itx"><div class="t" id="fT"></div><div class="s" id="fS"></div></div><div class="rate"><button class="rb" id="fDown" aria-label="Dislike this song" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M22 3h-4v12h4V3zM2 14a2 2 0 0 0 2 2h6.3l-1 4.6v.3c0 .4.2.8.4 1.1l1.1 1 6.6-6.6c.4-.4.6-.9.6-1.4V5a2 2 0 0 0-2-2H7c-.8 0-1.5.5-1.8 1.2l-3 7.1c-.1.2-.2.5-.2.7v2z"/></svg></button><button class="rb" id="fUp" aria-label="Like this song" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M2 21h4V9H2v12zm20-11a2 2 0 0 0-2-2h-6.3l1-4.6v-.3c0-.4-.2-.8-.4-1.1L13.2 1 6.6 7.6C6.2 8 6 8.5 6 9v10a2 2 0 0 0 2 2h9c.8 0 1.5-.5 1.8-1.2l3-7.1c.1-.2.2-.5.2-.7v-2z"/></svg></button></div></div></div>
   <div class="seek"><span id="fCur">0:00</span><input type="range" id="fBar" min="0" max="1000" value="0" aria-label="Seek"><span id="fLen">0:00</span></div>
+  <div class="dlrow"><button class="dlb" id="fDl" type="button"><svg viewBox="0 0 24 24"><path d="M11 3h2v9.6l3.3-3.3 1.4 1.4L12 16.4l-5.7-5.7 1.4-1.4 3.3 3.3V3zM5 18h14v2H5z"/></svg><span>Get 1:30 clip for social</span></button></div>
   <div class="ctl">
     <button id="fPrev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
     <button id="fPP" class="big" aria-label="Play or pause"><svg viewBox="0 0 24 24" id="fIcon"><path d="M7 4l13 8-13 8z"/></svg></button>
@@ -419,6 +423,27 @@ function finishTrack(kind){
 function rateUI(){ const t=queue[qi]; const v = t && window.__bbmLikes ? window.__bbmLikes[songKey(t[1])] : 0;
   const u=document.getElementById("fUp"), d=document.getElementById("fDown"); if(u){ u.setAttribute("aria-pressed", String(v===1)); d.setAttribute("aria-pressed", String(v===-1)); } }
 window.__bbmRateUI = () => { rateUI(); mark(); };
+const RAWS="https://raw.githubusercontent.com/reefwtraining/bodybox/music-files/s/";
+async function getClip(){
+  const t=queue[qi]; if(!t) return; const b=document.getElementById("fDl"), lab=b.querySelector("span"), old=lab.textContent;
+  b.disabled=true; lab.textContent="Getting your clip…";
+  try{
+    const key=await window.__bbmKeyP, k=songKey(t[1]);
+    const r=await fetch(RAWS+k+".mp3.enc"); if(!r.ok) throw new Error(r.status);
+    const buf=await r.arrayBuffer();
+    const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:new Uint8Array(buf,0,12)},key,new Uint8Array(buf,12));
+    const name=("TeamBodyBox Music - "+t[0]).replace(/[\\/:*?"<>|]/g,"")+".mp3";
+    const file=new File([pt],name,{type:"audio/mpeg"});
+    window.__bbmTrack && window.__bbmTrack(k,{ev:"download"});
+    if(navigator.canShare && navigator.canShare({files:[file]}) && /iPhone|iPad|Android/i.test(navigator.userAgent)){
+      try{ await navigator.share({files:[file],title:name.replace(/\.mp3$/,"")}); }catch(e){}
+    }else{
+      const u=URL.createObjectURL(file), a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000);
+    }
+    lab.textContent="Clip saved";
+  }catch(e){ lab.textContent="Couldn't get the clip. Try again."; }
+  setTimeout(()=>{ lab.textContent=old; b.disabled=false; },2500);
+}
 function rate(v){ const t=queue[qi]; if(!t||!window.__bbmLike) return; const k=songKey(t[1]); const cur=(window.__bbmLikes||{})[k]||0; window.__bbmLike(k, cur===v?0:v); rateUI(); mark(); }
 window.__bbmSongs = () => { const seen=new Map(); Object.values(S).forEach(t=>{ const k=songKey(t[1]); if(!seen.has(k)) seen.set(k,{k,title:t[0],file:t[1],secs:t[2]}); }); return [...seen.values()]; };
 const KEYMAP=(()=>{ const m={}; Object.values(S).forEach(t=>{ const k=songKey(t[1]); if(!m[k]) m[k]=t; }); return m; })();
@@ -461,7 +486,7 @@ audio.addEventListener("ended",()=>{ if(audio.src.startsWith("data:")) return; f
 audio.addEventListener("timeupdate",()=>{ if(!trk||audio.src.startsWith("data:")) return; const c=audio.currentTime; if(trk.last!=null && !seeking){ const d=c-trk.last; if(d>0 && d<2) trk.secs+=d; } trk.last=c; });
 audio.addEventListener("seeking",()=>{ if(trk) trk.last=null; });
 window.addEventListener("pagehide",()=>finishTrack("leave"));
-document.getElementById("fUp").onclick=()=>rate(1); document.getElementById("fDown").onclick=()=>rate(-1);
+document.getElementById("fDl").onclick=getClip; document.getElementById("fUp").onclick=()=>rate(1); document.getElementById("fDown").onclick=()=>rate(-1);
 audio.addEventListener("loadedmetadata",()=>{ len.textContent=fmt(audio.duration); });
 audio.addEventListener("timeupdate",()=>{ if(seeking||!audio.duration) return; bar.value=Math.round(audio.currentTime/audio.duration*1000); cur.textContent=fmt(audio.currentTime); });
 bar.addEventListener("input",()=>{ seeking=true; if(audio.duration) cur.textContent=fmt(bar.value/1000*audio.duration); });
@@ -491,7 +516,7 @@ route();
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, sendEmailVerification, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, serverTimestamp, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { renderStats, computeTop, renderAccess } from "./stats.js?v=4";
+import { renderStats, computeTop, renderAccess } from "./stats.js?v=5";
 const cfg = { apiKey:"AIzaSyAMHdGXPgAwPkbdGdcmA538JHBAF_QWAEU", authDomain:"teambodybox-app.firebaseapp.com", projectId:"teambodybox-app", storageBucket:"teambodybox-app.firebasestorage.app", messagingSenderId:"212485533701", appId:"1:212485533701:web:a42605f3fdf0ad6b60ec6c" };
 const COACHES = ['reefwtraining@gmail.com','reefwtraining+bodybox@gmail.com'];
 const fb = initializeApp(cfg), auth = getAuth(fb), fs = getFirestore(fb);
@@ -584,7 +609,7 @@ async function initMine(u){
   window.__bbmRateUI && window.__bbmRateUI();
 }
 window.__bbmTrack = (k, o) => { if(!myRef || !k) return; const p = { last: serverTimestamp() };
-  if(o.ev==='start') p.starts = increment(1); else if(o.ev==='complete') p.completes = increment(1); else if(o.ev==='skip') p.skips = increment(1);
+  if(o.ev==='download') p.downloads = increment(1); else if(o.ev==='start') p.starts = increment(1); else if(o.ev==='complete') p.completes = increment(1); else if(o.ev==='skip') p.skips = increment(1);
   if(o.secs) p.secs = increment(o.secs);
   setDoc(myRef, { name: myName, at: serverTimestamp(), plays: { [k]: p } }, { merge:true }).catch(()=>{}); };
 window.__bbmLike = (k, v) => { if(!myRef) return; if(v) window.__bbmLikes[k]=v; else delete window.__bbmLikes[k];
