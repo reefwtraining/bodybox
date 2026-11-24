@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#111111">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BODYBOX Music">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>BODYBOX Music</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<script>window.__bbmKeyP=new Promise(r=>{window.__bbmKeyResolve=r;});</script>
+<style>
+/* VOICE: a clean music app, calm chrome so the songs lead
+   IDEA: a streaming app's library: sidebar, album headers, track lists, mini player
+   PICTURE: square playlist artwork built from the cassette logo, one tint per playlist
+   COLOUR and TYPE: white or black ground, grey text, BODYBOX red accent; Inter, Anton on artwork only
+   LAYOUT: sidebar + content on wide screens; top tabs and bottom player on phones */
+:root{color-scheme:dark;--bg:#111111;--side:#161616;--ink:#F4F2EE;--sub:#8F8B84;--line:#2A2A2A;--hover:#1F1F1F;--acc:#FF5A64;--red:#C8102E;--bar:rgba(17,17,17,.92);--display:"Anton",Impact,"Arial Narrow",sans-serif;--body:"Barlow","Helvetica Neue",Arial,sans-serif;--cond:"Barlow Condensed","Arial Narrow",sans-serif}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.4 var(--body);overflow-x:clip;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,.row:focus-visible,.tile:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:8px}
+.app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100%}
+aside{background:var(--side);border-right:1px solid var(--line);padding:18px 12px 120px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 14px}
+.brand img{width:34px;height:34px;border-radius:8px}
+.brand b{font-size:17px;font-weight:700;letter-spacing:-.2px}
+.search{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font:15px var(--body);color:var(--ink);margin-bottom:14px}
+.nav h4{font-size:11px;font-weight:600;color:var(--sub);margin:16px 8px 4px}
+.nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:7px 8px;border-radius:8px;font-size:14px;min-height:36px}
+.nav button:hover{background:var(--hover)}
+.nav button.on{background:var(--hover);color:var(--acc);font-weight:600}
+.nav i{width:22px;height:22px;border-radius:5px;flex:none;background-size:cover}
+main{padding:28px clamp(16px,4vw,44px) 140px}
+.top{display:none}
+h1{font-size:clamp(28px,4vw,34px);font-weight:800;letter-spacing:-.6px;margin:0 0 18px}
+h3{font-size:20px;font-weight:700;letter-spacing:-.3px;margin:28px 0 12px}
+.hero{border-radius:14px;overflow:hidden;margin-bottom:6px;background:#0b0b0b}
+.hero img{display:block;width:100%;aspect-ratio:3/1;object-fit:cover}
+.shelf{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(150px,180px);gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}
+.tile{text-align:left;scroll-snap-align:start}
+.tile .art{width:100%;aspect-ratio:1;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.tile .t{font-size:14px;font-weight:500;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .s{font-size:13px;color:var(--sub)}
+.art{position:relative;overflow:hidden;background:#111;display:block}
+.art::before{content:"";position:absolute;inset:0;background:var(--g)}
+.art img{position:absolute;left:14%;top:12%;width:72%;height:auto;opacity:.9;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+.art span{position:absolute;left:9%;right:9%;bottom:8%;font-family:Anton,Impact,sans-serif;color:#fff;text-transform:uppercase;line-height:.95;font-size:clamp(16px,2.2vw,22px);text-shadow:0 2px 10px rgba(0,0,0,.35)}
+.art em{display:none}
+.head{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:28px;align-items:end;margin-bottom:22px}
+.head .art{width:100%;aspect-ratio:1;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.head .art span{font-size:clamp(22px,3vw,30px)}
+.head h2{font-size:clamp(26px,4vw,34px);font-weight:800;letter-spacing:-.6px;margin:0;line-height:1.1}
+.head .by{color:var(--acc);font-size:clamp(18px,2.4vw,22px);font-weight:500;margin:2px 0 6px}
+.head .meta{color:var(--sub);font-size:13px}
+.head .note{color:var(--sub);font-size:14px;margin:10px 0 16px;max-width:60ch}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:8px;background:var(--acc);color:#fff;border-radius:9px;padding:0 22px;min-height:40px;font-weight:600;font-size:15px}
+.pill.alt{background:var(--hover);color:var(--acc)}
+.pill svg{width:13px;height:13px;fill:currentColor}
+.jump{margin-top:12px;font-size:14px;color:var(--acc);font-weight:600;min-height:36px}
+.list{border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:28px 42px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 8px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:6px}
+.row:hover{background:var(--hover)}
+.row .n{color:var(--sub);font-size:14px;text-align:center;font-variant-numeric:tabular-nums}
+.row .tt{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .u{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .d{color:var(--sub);font-size:14px;font-variant-numeric:tabular-nums}
+.row.on .tt{color:var(--acc);font-weight:600}
+.th{width:42px;height:42px;border-radius:5px;flex:none}.th img{left:8%;top:22%;width:84%}.art.photo::before{display:none}.art.photo img{left:0;top:0;width:100%;height:100%;object-fit:cover;opacity:1;filter:none}.sec{font-size:12px;font-weight:600;color:var(--sub);padding:18px 8px 6px;border-bottom:1px solid var(--line)}
+.eq{display:inline-flex;gap:2px;height:14px;align-items:flex-end}
+.eq i{width:3px;background:var(--acc);border-radius:1px;animation:eq .9s infinite ease-in-out}
+.eq i:nth-child(2){animation-delay:.2s}.eq i:nth-child(3){animation-delay:.4s}
+.paused .eq i{animation-play-state:paused}
+@keyframes eq{0%,100%{height:4px}50%{height:14px}}
+@media (prefers-reduced-motion:reduce){.eq i{animation:none;height:10px}}
+.empty{color:var(--sub);padding:30px 8px}
+.about{display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:24px;align-items:center;margin-top:34px;padding:20px;border-radius:14px;background:var(--side)}.about img{width:100%;border-radius:12px}.about h3{margin:0 0 8px}.about p{margin:0 0 8px;color:var(--sub);max-width:60ch}.about .kdgt{color:var(--acc);font-weight:700}@media(max-width:600px){.about{grid-template-columns:minmax(0,1fr);text-align:center}.about img{max-width:180px;margin:0 auto}}.foot{color:var(--sub);font-size:12px;margin-top:30px;line-height:1.5;max-width:70ch}
+.player{position:fixed;left:240px;right:0;bottom:0;background:var(--bar);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:1px solid var(--line);padding:10px clamp(12px,3vw,28px);display:none;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center}
+.player.on{display:grid}
+.np{display:flex;gap:12px;align-items:center}
+.np .art{width:48px;height:48px;border-radius:6px;flex:none}
+.np .art span,.np .art em{display:none}.np .art img{left:8%;top:22%;width:84%}.np .art.photo img{left:0;top:0;width:100%;height:100%}
+.np .t{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.np .s{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctl{display:flex;align-items:center;gap:6px}
+.ctl button{width:44px;height:44px;display:grid;place-items:center;border-radius:50%}
+.ctl button:hover{background:var(--hover)}
+.ctl svg{width:20px;height:20px;fill:var(--ink)}
+.ctl .big svg{width:26px;height:26px}
+.seek{grid-column:1/-1;display:grid;grid-template-columns:40px minmax(0,1fr) 40px;gap:8px;align-items:center;font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums}
+.seek span:last-child{text-align:right}
+input[type=range]{width:100%;accent-color:var(--acc);height:20px;margin:0}
+@media (max-width:760px){
+ .app{grid-template-columns:minmax(0,1fr)}
+ aside{display:none}
+ .top{display:block;position:sticky;top:0;z-index:5;background:var(--bar);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--line);padding:10px 14px}
+ .top .row1{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+ .top .row1 img{width:30px;height:30px;border-radius:7px}
+ .top .search{margin:0}
+ .top .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+ .top .chips button{flex:none;border-radius:999px;background:var(--hover);padding:0 14px;min-height:34px;font-size:13px;font-weight:600}
+ .top .chips button.on{background:var(--acc);color:#fff}
+ main{padding-top:18px}
+ .head{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center}
+ .head .art{max-width:240px}
+ .btns{justify-content:center}
+ .player{left:0}
+ .shelf{grid-auto-columns:minmax(140px,44%)}
+}
+
+.np{cursor:pointer}
+.full{--w:min(86vw,58vh,560px);position:fixed;inset:0;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;gap:clamp(14px,2.5vh,24px);padding:max(18px,env(safe-area-inset-top)) clamp(18px,5vw,40px) max(22px,env(safe-area-inset-bottom));background:#111;color:#fff;overflow:hidden}
+.full.on{display:flex;animation:fup .28s ease-out}
+@keyframes fup{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.full .bg{position:absolute;inset:-60px;background-size:cover;background-position:center;filter:blur(60px) saturate(140%) brightness(.55);z-index:-1}
+.full .close{position:absolute;top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:56px;height:36px;display:grid;place-items:center;border-radius:18px}
+.full .close:hover{background:rgba(255,255,255,.12)}
+.full .close svg{width:26px;height:26px;fill:#fff}
+.full .big-art{width:var(--w);aspect-ratio:1;border-radius:14px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.55);transition:transform .35s cubic-bezier(.2,.8,.2,1);background:#222}
+.full .big-art img{width:100%;height:100%;object-fit:cover;display:block}
+.full.paused .big-art{transform:scale(.84)}
+.full .info{width:var(--w);text-align:left}
+.full .info .t{font-size:clamp(20px,2.6vh,26px);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.full .info .s{color:rgba(255,255,255,.7);font-size:15px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.full .seek{width:var(--w);color:rgba(255,255,255,.7)}
+.full .seek input{accent-color:#fff}
+.full .ctl{gap:clamp(18px,5vw,40px)}
+.full .ctl button{width:64px;height:64px}
+.full .ctl button:hover{background:rgba(255,255,255,.12)}
+.full .ctl svg{width:34px;height:34px;fill:#fff}
+.full .ctl .big svg{width:46px;height:46px}
+@media (prefers-reduced-motion:reduce){.full.on{animation:none}.full .big-art{transition:none}}
+h1,h3,.head h2{font-family:var(--display);font-weight:400;letter-spacing:.02em;text-transform:uppercase}
+h1{font-size:clamp(30px,4.4vw,40px)}h3{font-size:22px}.head h2{font-size:clamp(28px,4.4vw,40px)}
+.nav h4{font-family:var(--cond);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.pill{background:var(--red);border-radius:999px}.pill.alt{background:var(--hover);color:var(--ink)}
+.brand{flex-direction:column;align-items:flex-start;gap:2px}
+.logo{display:flex;align-items:center;gap:.3em;font-family:var(--display);font-size:24px;letter-spacing:.04em;line-height:1}
+.logo{flex:none}.logo .gw{display:inline-flex;align-items:center;flex:none}.logo img{flex:none}.logo img{height:30px;margin-right:1px;width:auto;border-radius:0}.logo .r{color:var(--acc)}
+.brand small{font-family:var(--cond);letter-spacing:.3em;font-size:13px;color:var(--sub);padding-left:2px}
+.top .row1 .logo{font-size:20px}.top .row1 .logo img{height:24px;width:auto;border-radius:0}
+#bbGate{position:fixed;inset:0;z-index:20000;background:#111111;color:#F4F2EE;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;font-family:var(--body)}
+#bbGate[hidden]{display:none}
+#bbGate .gcard{width:100%;max-width:380px;display:grid;gap:14px}
+#bbGate .glogo{display:flex;flex-direction:column;align-items:center;gap:8px}
+#bbGate .glogo .logo{font-size:34px}#bbGate .glogo .logo img{height:44px}
+#bbGate .glogo small{font-family:var(--cond);letter-spacing:.35em;color:#8F8B84;font-size:15px}
+#bbGate .ghp{width:84px;height:84px;border-radius:20px;margin:0 auto}
+#bbGate h2{font-family:var(--display);font-weight:400;font-size:26px;margin:4px 0 0;text-align:center;letter-spacing:.02em}
+#bbGate p{margin:0;color:#8F8B84;text-align:center;font-size:15px}
+#bbGate label{display:grid;gap:4px;font-family:var(--cond);font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#8F8B84}
+#bbGate input{background:#1B1B1B;border:1px solid #2A2A2A;border-radius:12px;color:#F4F2EE;font:16px var(--body);padding:12px 14px;width:100%}
+#bbGate input:focus{outline:2px solid #FF5A64;outline-offset:1px}
+#bbGate .gbtn{background:#C8102E;border:0;border-radius:999px;color:#fff;font:600 16px var(--body);padding:13px 18px;cursor:pointer;width:100%}
+#bbGate .gbtn[disabled]{opacity:.6}
+#bbGate .glink{background:none;border:0;color:#FF5A64;font:500 15px var(--body);cursor:pointer;padding:4px;text-decoration:underline}
+#bbGate .gerr{color:#ff8a7a;min-height:1.2em;text-align:center;font-size:14px}
+#bbGate .grow{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+#bbGate .gspin{width:34px;height:34px;border:3px solid #2A2A2A;border-top-color:#C8102E;border-radius:50%;margin:0 auto;animation:bbspin 1s linear infinite}
+@keyframes bbspin{to{transform:rotate(360deg)}}
+.lst{display:grid;gap:8px;max-width:640px}
+.lrow{display:flex;align-items:center;gap:12px;background:var(--side);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.lrow .who{flex:1;min-width:0}.lrow .who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lrow .who small{color:var(--sub)}
+.tg{width:52px;height:30px;border-radius:999px;background:#333;position:relative;flex:none}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .15s}
+.tg[aria-checked=true]{background:var(--red)}.tg[aria-checked=true]::after{left:25px}
+.acct{margin-top:18px;padding:0 8px;font-size:13px;color:var(--sub)}.acct button{color:var(--acc);text-decoration:underline;padding:4px 0}
+.inst{margin-top:26px;padding:16px;border-radius:14px;background:var(--side);border:1px solid var(--line);color:var(--sub);font-size:14px}.inst b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div id="bbGate"><div class="gcard"><div class="gspin"></div></div></div>
+<div class="app">
+  <aside>
+    <div class="brand"><span class="logo" aria-label="BODY BOX"><span class="gw"><img src="b-mark.png" alt="">ODY</span><span class="gw r"><img src="b-mark-red.png" alt="">OX</span></span><small>MUSIC</small></div>
+    <input class="search" id="q1" type="search" placeholder="Search" aria-label="Search every song">
+    <nav class="nav" id="nav"></nav>
+  </aside>
+  <div>
+    <div class="top">
+      <div class="row1"><span class="logo" aria-label="BODY BOX"><span class="gw"><img src="b-mark.png" alt="">ODY</span><span class="gw r"><img src="b-mark-red.png" alt="">OX</span></span><input class="search" id="q2" type="search" placeholder="Search" aria-label="Search every song"></div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <main id="main"></main>
+  </div>
+</div>
+<div class="player" id="player">
+  <div class="np"><div class="art" id="npArt"><img src="tape.png" alt=""></div><div><div class="t" id="npT"></div><div class="s" id="npS"></div></div></div>
+  <div class="ctl">
+    <button id="prev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+    <button id="pp" class="big" aria-label="Play or pause"><svg viewBox="0 0 24 24" id="ppIcon"><path d="M7 4l13 8-13 8z"/></svg></button>
+    <button id="next" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+  </div>
+  <div class="seek"><span id="cur">0:00</span><input type="range" id="bar" min="0" max="1000" value="0" aria-label="Seek"><span id="len">0:00</span></div>
+</div>
+<div class="full" id="full" role="dialog" aria-label="Now playing">
+  <div class="bg" id="fBg"></div>
+  <button class="close" id="fClose" aria-label="Close now playing"><svg viewBox="0 0 24 24"><path d="M5.3 8.3 12 15l6.7-6.7 1.4 1.4L12 17.8 3.9 9.7z"/></svg></button>
+  <div class="big-art"><img id="fArt" src="tape.png" alt=""></div>
+  <div class="info"><div class="t" id="fT"></div><div class="s" id="fS"></div></div>
+  <div class="seek"><span id="fCur">0:00</span><input type="range" id="fBar" min="0" max="1000" value="0" aria-label="Seek"><span id="fLen">0:00</span></div>
+  <div class="ctl">
+    <button id="fPrev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+    <button id="fPP" class="big" aria-label="Play or pause"><svg viewBox="0 0 24 24" id="fIcon"><path d="M7 4l13 8-13 8z"/></svg></button>
+    <button id="fNext" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+  </div>
+</div>
+<audio id="audio" preload="none"></audio>
+<script>
+{
+// key: [title, file, seconds]
+const M = (t,f,d)=>[t,"audio/"+f,d];
+const S = {
+  kdgt:M("Keep Doing Great Things","keep-doing-great-things.mp3",228),
+  calm:M("Stay Calm","stay-calm.mp3",182),
+  hype:M("BodyBox Hype","bodybox-hype.mp3",133),
+  groove:M("BodyBox Groove","bodybox-groove.mp3",192),
+  hwlp:M("Heavy Weights Light Plates","heavy-weights-light-plates.mp3",136),
+  y1:M("Yoga 1 – Arrive","yoga-1-arrive.mp3",290), y2:M("Yoga 2 – Settle","yoga-2-settle.mp3",359),
+  y3:M("Yoga 3 – Open Up","yoga-3-open-up.mp3",360), y4:M("Yoga 4 – Flow","yoga-4-flow.mp3",360),
+  y5:M("Yoga 5 – Hold Steady","yoga-5-hold-steady.mp3",303), y6:M("Yoga 6 – Let Go","yoga-6-let-go.mp3",294),
+  y7:M("Yoga 7 – Unwind","yoga-7-unwind.mp3",360), y8:M("Yoga 8 – Savasana","yoga-8-savasana.mp3",360),
+  h1:M("HIIT 1 – Warm Up","hiit-1-warm-up.mp3",294), h2:M("HIIT 2 – Lock In","hiit-2-lock-in.mp3",360),
+  h3:M("HIIT 3 – Push","hiit-3-push.mp3",360), h4:M("HIIT 4 – No Days Off","hiit-4-no-days-off.mp3",360),
+  h5:M("HIIT 5 – Last Round","hiit-5-last-round.mp3",359), h6:M("HIIT 6 – Cool Down","hiit-6-cool-down.mp3",289),
+  r1:M("Run Mix Pt. 1 – Warm Up","run-mix-pt-1-warm-up.mp4",240), r2:M("Run Mix Pt. 2 – Settle In","run-mix-pt-2-settle-in.mp4",240),
+  r3:M("Run Mix Pt. 3 – Find Your Pace","run-mix-pt-3-find-your-pace.mp4",240), r4:M("Run Mix Pt. 4 – Middle Miles","run-mix-pt-4-redo-middle-miles.mp4",183),
+  r5:M("Run Mix Pt. 5 – Second Wind","run-mix-pt-5-alt-second-wind.mp4",240), r6:M("Run Mix Pt. 6 – Push the Pace","run-mix-pt-6-push-the-pace.mp4",240),
+  r65:M("Run Mix Pt. 6.5 – Last Mile","run-mix-pt-6-5-alt-last-mile.mp4",181), r7:M("Run Mix Pt. 7 – Finish Strong","run-mix-pt-7-redo-finish-strong.mp4",239),
+  r8:M("Run Mix Pt. 8 – Cool Down","run-mix-pt-8-cool-down.mp4",240),
+  shiit:M("S.H.I.I.T","s-h-i-i-t.mp4",140), tabata:M("S.H.I.I.T: Tabata","s-h-i-i-t-tabata.mp4",110),
+  burnout:M("S.H.I.I.T: Burnout","s-h-i-i-t-burnout.mp4",135), grit:M("S.H.I.I.T (Grit House)","s-h-i-i-t-grit-house.mp4",182),
+  dstop:M("S.H.I.I.T: Don't Stop the Work","s-h-i-i-t-dont-stop-the-work.mp4",282), fire:M("S.H.I.I.T: Feel the Fire","s-h-i-i-t-feel-the-fire.mp4",202),
+  ilove:M("S.H.I.I.T: Interval Love","s-h-i-i-t-interval-love.mp4",248), rise:M("S.H.I.I.T: Rise Up","s-h-i-i-t-rise-up.mp4",201),
+  drum:M("S.H.I.I.T: Drum Circle","s-h-i-i-t-drum-circle.mp4",247), giveall:M("Give It All You Got","give-it-all-you-got.mp4",236),
+  tight:M("Tighten Up","tighten-up.mp4",122), arms:M("Arms Up","arms-up.mp4",137), burn:M("Feel the Burn","feel-the-burn.mp4",140),
+  plank:M("Hold That Plank","hold-that-plank.mp4",156), legday:M("Leg Day Lovin'","leg-day-lovin.mp4",150), glute:M("Glute Day","glute-day.mp4",146),
+  pulse:M("Pulse It","pulse-it.mp4",145), strsm:M("Strong & Smooth","strong-and-smooth.mp4",239), smooth:M("Smooth Moves","smooth-moves.mp4",204),
+  cool:M("Cool It Down","cool-it-down.mp4",207),
+  rest:M("Rest Day","rest-day.mp4",237), sunday:M("Rest Day: Sunday Slow","rest-day-sunday-slow.mp4",267),
+  easy:M("Rest Day: Take It Easy","rest-day-take-it-easy.mp4",232), slow:M("Slow Is Still Forward","slow-is-still-forward-coach-talk.mp4",142),
+  swingadl:M("Swing Set (Ad-Lib Mix)","swing-set-ad-lib-mix.mp4",180), swingit:M("Swing It (Body Box Class)","swing-it-body-box-class.mp4",190),
+  talkbed:M("Coach Talk Bed (Low Ad-Lib Mix)","coach-talk-bed-low-ad-lib-mix.mp4",126), pushed:M("I Pushed the Heart (Swing Set Remix)","i-pushed-the-heart-swing-set-remix.mp4",180),
+  garage:M("Started in a Garage","started-in-a-garage.mp4",180), team:M("Team BodyBox","team-bodybox.mp4",152),
+  grind:M("The Grind Don't Stop (Rebuilt)","the-grind-dont-stop-rebuilt.mp4",200), rebuilt:M("Rebuilt (Never Give Up)","rebuilt-never-give-up.mp4",192),
+  odds:M("The Odds Don't Get a Vote","the-odds-dont-get-a-vote.mp4",168), yest:M("Yesterday Don't Own Me","yesterday-dont-own-me.mp4",195),
+  serious:M("We Take This Serious","we-take-this-serious.mp4",216), boss:M("Boss of the Box","boss-of-the-box.mp4",173),
+  arm:M("Strong Arm","strong-arm.mp4",157), top:M("Top of the Board","top-of-the-board.mp4",135),
+  onemore:M("One More Rep (Remix)","one-more-rep-remix.mp4",223), nodays:M("No Days Off","no-days-off.mp4",144),
+  underbar:M("Under the Bar","under-the-bar.mp4",154), compete:M("Built to Compete","built-to-compete.mp4",160),
+  hwlpa:M("Heavy Weights, Light Plates (Comp Anthem)","heavy-weights-light-plates-comp-anthem.mp4",171),
+  everygoal:M("Built for Every Goal","built-for-every-goal.mp4",201), running:M("Keep Running","keep-running.mp4",212),
+  newera:M("New Era","new-era.mp4",211), together:M("Stronger Together","stronger-together.mp4",238), pr:M("PR Party","pr-party.mp4",247),
+  shine:M("Shine On","shine-on.mp4",235), never:M("Never Too Late","never-too-late.mp4",210), everyday:M("Stronger Every Day","stronger-every-day.mp4",246)
+};
+const P = (id,name,note,keys,extra={}) => Object.assign({id,name,note,tracks:keys.map(k=>Array.isArray(k)?[...S[k[0]],k[1],k[2]]:S[k])},extra);
+const GROUPS = [
+ {label:"Playlists", sets:[
+  P("run","BODYBOX Run Mix","33-minute run in 9 parts. Press play and let it run.",["r1","r2","r3","r4","r5","r6","r65","r7","r8"]),
+  P("shiit","S.H.I.I.T","Super High Intensity Interval Training. Work, rest, give it all you got.",["shiit","tabata","burnout","grit","dstop","fire","ilove","rise","drum","giveall"]),
+  P("toning","Stretch & Toning","Warm up, abs, arms, legs, glutes, core and cool down.",["tight","arms","burn","plank","legday","glute","pulse","strsm","smooth","cool"]),
+  P("rest","Rest Day & Recovery","Slow jams for Sunday recovery. Slow is still forward.",["rest","sunday","easy","slow"]),
+  P("grooves","Class Grooves","New jack swing and lo-fi soul for class, with room to talk.",["swingadl","swingit","talkbed","pushed"]),
+  P("anthems","Team BodyBox Anthems","The story, the grind and the crew.",["garage","team","grind","rebuilt","odds","yest","serious","boss","arm","top","onemore","nodays","underbar","compete","hwlpa","everygoal","running"]),
+  P("newera","New Era","80s funk-pop, 90s house and street soul. New day, same hunger.",["newera","together","pr","shine","never","everyday"]),
+  P("yoga","BODYBOX Yoga","A full yoga class in 8 parts, Arrive to Savasana.",["y1","y2","y3","y4","y5","y6","y7","y8"]),
+  P("hiit","BODYBOX HIIT","A full HIIT session in 6 parts.",["h1","h2","h3","h4","h5","h6"]),
+  P("originals","BODYBOX Originals","The first BODYBOX tracks.",["kdgt","hype","groove","calm","hwlp"])
+ ]},
+ {label:"Mixes", sets:[
+  P("chill","Chill Mix","Neo-soul, slow jams and smooth grooves.",["calm","groove","smooth","strsm","cool","rest","sunday","easy","slow","talkbed","r1","r8","y1","y2","y3","y4","y5","y6","y7","y8"]),
+  P("hype-mix","Hype Mix","Hard beats, big hooks and house drops.",["hype","nodays","team","shiit","tabata","burnout","grit","hwlpa","hwlp","compete","top","r7","giveall","rise","dstop","fire","kdgt","h3","h4","h5"]),
+  P("rnb","R&B Mix","Smooth R&B, new jack swing and grown soul.",["tight","arms","burn","plank","legday","glute","pulse","calm","smooth","easy","sunday","rest","giveall","swingit","everyday","onemore","r1","r8"]),
+  P("hiphop","Hip Hop Mix","Boom bap, G-funk and soulful hip hop with sung hooks.",["onemore","odds","everygoal","serious","grind","pushed","rebuilt","r2","r3","r4","r5","r65","running","groove"]),
+  P("rap","Rap Mix","Hard bars only.",["garage","team","nodays","boss","arm","top","yest","compete","hwlpa","shiit","tabata","burnout","grit","r6","r7"]),
+  P("instrumental","Instrumental Mix","Beats with little or no vocals. Background for class and talking videos.",["swingadl","talkbed","hype","groove","h1","h2","h3","h4","h5","h6","y1","y2","y3","y4","y5","y6","y7","y8"])
+ ]},
+ {label:"Class sets", sets:[
+  P("satclass","Sat Class","Intro, warm-up, then the workout.",[["calm","While the coach explains the workout","Intro"],["groove","Warm-up starts, easy head-nod","Warm-up · about 12 min"],["h1","Building energy","Warm-up · about 12 min"],["swingadl","Last few minutes of warm-up","Warm-up · about 12 min"],["kdgt","3, 2, 1, go","Workout · 31 min"],["hype","S.H.I.I.T track with the shouts","Workout · 31 min"],["h2","Steady, driving","Workout · 31 min"],["h3","Harder kick, bigger drops","Workout · 31 min"],["h4","Peak energy","Workout · 31 min"],["h5","Biggest builds for the last block","Workout · 31 min"],["h6","Scores, clean-up, stretch","After"]],{jumpTo:4}),
+  P("sunday-reset","Sunday Reset","Flush, skills, easy partner piece, mobility.",[["y2","Easy machine or jog, talking pace","Flush · 10 min"],["y3","Still easy, coaches set up stations","Flush · 10 min"],["groove","Rope, rig and overhead stations","Skill stations · about 25 min"],["talkbed","Easy to coach over","Skill stations · about 25 min"],["h1","Light, funky","Skill stations · about 25 min"],["h2","Steady","Skill stations · about 25 min"],["kdgt","Second time through the stations","Skill stations · about 25 min"],["swingadl","Last station","Skill stations · about 25 min"],["h6","Steady, talking pace","Easy partner piece · 15 min"],["y4","Steady groove","Easy partner piece · 15 min"],["y5","Finish the piece","Easy partner piece · 15 min"],["calm","Couch stretch, pigeon","Mobility · 10 min"],["y7","Half split, puppy dog, deep squat","Mobility · 10 min"],["y8","Wrap up","Mobility · 10 min"]],{jumpTo:2,jumpLabel:"Stations start → fade into "})
+ ]}
+];
+const ALL = GROUPS.flatMap(g=>g.sets);
+const COVER = {"audio/keep-doing-great-things.mp3":"covers/kdgt.jpg","audio/stay-calm.mp3":"covers/stay-calm.jpg","audio/heavy-weights-light-plates.mp3":"covers/hwlp.jpg","audio/heavy-weights-light-plates-comp-anthem.mp4":"covers/hwlp-comp.jpg","audio/started-in-a-garage.mp4":"covers/garage.jpg","audio/team-bodybox.mp4":"covers/teambodybox.jpg","audio/run-mix-pt-1-warm-up.mp4":"covers/runmix-1.jpg?v=2","audio/run-mix-pt-2-settle-in.mp4":"covers/runmix-2.jpg?v=2","audio/s-h-i-i-t.mp4":"covers/shiit-1.jpg","audio/s-h-i-i-t-dont-stop-the-work.mp4":"covers/shiit-5.jpg","audio/tighten-up.mp4":"covers/tighten-up.jpg","audio/smooth-moves.mp4":"covers/smooth-moves.jpg","audio/rest-day.mp4":"covers/rest-day.jpg","audio/rest-day-take-it-easy.mp4":"covers/take-it-easy.jpg?v=2","audio/swing-it-body-box-class.mp4":"covers/swing-it.jpg","audio/i-pushed-the-heart-swing-set-remix.mp4":"covers/pushed-the-heart.jpg","audio/we-take-this-serious.mp4":"covers/we-take-this-serious.jpg?v=2","audio/new-era.mp4":"covers/new-era.jpg","audio/stronger-every-day.mp4":"covers/stronger-every-day.jpg"};
+const thumb = (t,id) => COVER[t[1]] ? '<div class="art th photo"><img src="'+COVER[t[1]]+'" alt=""></div>' : '<div class="art th" style="--g:'+grad(id)+'"><img src="tape.png" alt=""></div>';
+const HUE = {run:"#d62828,#5b0b0b",shiit:"#ff5f1f,#7a1300",toning:"#ff6fa8,#7d1d4f",rest:"#5b7cfa,#1b2560",grooves:"#ffb703,#7a3d00",anthems:"#d62828,#111",newera:"#b14cff,#2d0b5a",yoga:"#2ec4b6,#0a3d3a",hiit:"#f72585,#3a0b5a",originals:"#e63946,#2b2b2b",chill:"#4cc9f0,#16325c","hype-mix":"#ff1e1e,#3a0000",rnb:"#c77dff,#3c096c",hiphop:"#f4a261,#4a2511",rap:"#adb5bd,#141414",instrumental:"#06d6a0,#073b4c",satclass:"#ef476f,#3d0a1a","sunday-reset":"#90be6d,#1f3a14",search:"#8e8e93,#2c2c2e"};
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = s => { s=Math.max(0,Math.round(s||0)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
+const grad = id => { const [a,b]=(HUE[id]||HUE.search).split(","); return "linear-gradient(145deg,"+a+" 0%,"+b+" 100%)"; };
+const art = (set,cls) => '<div class="art '+(cls||"")+'" style="--g:'+grad(set.id)+'"><img src="tape.png" alt=""><em>BODYBOX</em><span>'+esc(set.name.replace(/^BODYBOX /,""))+'</span></div>';
+const ICON_PLAY='<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>', ICON_PAUSE='<svg viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>', ICON_SHUF='<svg viewBox="0 0 24 24"><path d="M16 3h5v5l-1.8-1.8-4.5 4.5-1.4-1.4 4.5-4.5zM3 5.4 4.4 4l15.8 15.8L21 18v5h-5l1.8-1.8z"/></svg>';
+const main=document.getElementById("main"), nav=document.getElementById("nav"), chips=document.getElementById("chips");
+const audio=document.getElementById("audio"), player=document.getElementById("player"), bar=document.getElementById("bar");
+const npT=document.getElementById("npT"), npS=document.getElementById("npS"), npArt=document.getElementById("npArt"), ppIcon=document.getElementById("ppIcon");
+const cur=document.getElementById("cur"), len=document.getElementById("len"), q1=document.getElementById("q1"), q2=document.getElementById("q2");
+const songCount = Object.keys(S).length;
+let queue=[], qi=-1, qset=null, view=null, seeking=false;
+
+nav.innerHTML = '<button data-id="home"><i style="background:'+grad("run")+'"></i>Home</button>' + GROUPS.map(g=>'<h4>'+esc(g.label)+'</h4>'+g.sets.map(s=>'<button data-id="'+s.id+'"><i style="background:'+grad(s.id)+'"></i>'+esc(s.name)+'</button>').join("")).join("");
+chips.innerHTML = '<button data-id="home">Home</button>' + ALL.map(s=>'<button data-id="'+s.id+'">'+esc(s.name.replace(/^BODYBOX /,""))+'</button>').join("");
+const go = e => { const b=e.target.closest("[data-id]"); if(!b) return; q1.value=q2.value=""; location.hash = b.dataset.id==="home" ? "" : b.dataset.id; if(b.dataset.id==="home") route(); };
+nav.addEventListener("click",go); chips.addEventListener("click",go);
+window.__bbmNavExtra = (isCoach,email) => {
+  if(isCoach){ nav.insertAdjacentHTML("beforeend",'<h4>Coach</h4><button data-id="listeners"><i style="background:'+grad("anthems")+'"></i>Who can listen</button>'); chips.insertAdjacentHTML("beforeend",'<button data-id="listeners">Who can listen</button>'); }
+  nav.insertAdjacentHTML("afterend",'<div class="acct">Signed in as '+esc(email)+'<br><button id="bbmOut">Sign out</button></div>');
+  document.getElementById("bbmOut").onclick=()=>window.__bbmSignOut&&window.__bbmSignOut();
+  if(location.hash==="#listeners") route();
+};
+
+function markNav(id){ document.querySelectorAll("#nav [data-id],#chips [data-id]").forEach(b=>b.classList.toggle("on",b.dataset.id===id)); const c=chips.querySelector('.on'); if(c) c.scrollIntoView({inline:"center",block:"nearest"}); }
+function home(){
+  view=null; markNav("home");
+  main.innerHTML='<h1>Home</h1><div class="hero"><img src="banner.jpg" alt="BODYBOX Music boombox logo"></div>'+
+   GROUPS.map(g=>'<h3>'+esc(g.label)+'</h3><div class="shelf">'+g.sets.map(s=>'<button class="tile" data-id="'+s.id+'">'+art(s)+'<div class="t">'+esc(s.name)+'</div><div class="s">'+s.tracks.length+' songs</div></button>').join("")+'</div>').join("")+
+   '<div class="inst"><b>Put it on your phone:</b> iPhone: tap Share, then <b>Add to Home Screen</b>. Android: tap the ⋮ menu, then <b>Install app</b> or <b>Add to Home screen</b>.</div><div class="about"><img src="headphones-lg.jpg" alt="BODYBOX Music headphones logo"><div><h3>About BODYBOX Music</h3><p>'+songCount+' original tracks made for Team BodyBox and Rebuilt Training: class sets, runs, recovery days and the story of the garage. Members only: this library is for the people Coach Reef invites.</p><p class="kdgt">Keep doing great things.</p></div></div>';
+}
+main.addEventListener("click", e=>{
+  const t=e.target.closest(".tile"); if(t){ location.hash=t.dataset.id; return; }
+  const a=e.target.closest("[data-act]");
+  if(a && view){ const act=a.dataset.act;
+    if(act==="all") start(view,view.tracks,0);
+    else if(act==="shuf"){ const s=[...view.tracks]; for(let i=s.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[s[i],s[j]]=[s[j],s[i]];} start(view,s,0); }
+    else if(act==="jump") fadeTo(view,view.jumpTo);
+    return; }
+  const r=e.target.closest(".row"); if(r && view) start(view,view.tracks,+r.dataset.i);
+});
+main.addEventListener("keydown", e=>{ if(e.key==="Enter"){ const r=e.target.closest(".row"); if(r && view) start(view,view.tracks,+r.dataset.i); } });
+function show(set){
+  view=set; markNav(set.id);
+  const total=set.tracks.reduce((a,t)=>a+t[2],0);
+  const rows = set.tracks.map((t,i)=>{
+    const head=(t[4] && t[4]!==(set.tracks[i-1]||[])[4])?'<div class="sec">'+esc(t[4])+'</div>':'';
+    return head+'<div class="row" tabindex="0" data-i="'+i+'" data-f="'+esc(t[1])+'"><span class="n">'+(i+1)+'</span>'+thumb(t,set.id)+'<div><div class="tt">'+esc(t[0])+'</div>'+(t[3]?'<div class="u">'+esc(t[3])+'</div>':'')+'</div><span class="d">'+fmt(t[2])+'</span></div>';
+  }).join("");
+  main.innerHTML='<div class="head">'+art(set)+'<div><h2>'+esc(set.name)+'</h2><div class="by">BODYBOX Music</div><div class="meta">'+set.tracks.length+' songs · '+Math.round(total/60)+' minutes</div><p class="note">'+esc(set.note)+'</p>'+
+   (set.tracks.length?'<div class="btns"><button class="pill" data-act="all">'+ICON_PLAY+'Play</button><button class="pill alt" data-act="shuf">'+ICON_SHUF+'Shuffle</button></div>':'')+
+   (set.jumpTo!=null?'<button class="jump" data-act="jump">'+esc((set.jumpLabel||"Workout starts → fade into ")+set.tracks[set.jumpTo][0])+'</button>':'')+
+   '</div></div><div class="list">'+(rows||'<div class="empty">No songs match.</div>')+'</div>';
+  mark(); window.scrollTo(0,0);
+}
+function search(v){
+  const s=v.trim().toLowerCase(); if(!s){ route(); return; }
+  const seen=new Set(), hits=[];
+  Object.values(S).forEach(t=>{ if(t[0].toLowerCase().includes(s) && !seen.has(t[1])){ seen.add(t[1]); hits.push(t); } });
+  show({id:"search",name:"Results for “"+v.trim()+"”",note:"Every song that matches, across all playlists.",tracks:hits});
+}
+q1.addEventListener("input",()=>{q2.value=q1.value;search(q1.value);}); q2.addEventListener("input",()=>{q1.value=q2.value;search(q2.value);});
+function route(){ const id=location.hash.slice(1); if(id==="listeners" && window.__bbmListeners){ view=null; markNav("listeners"); window.__bbmListeners(main); return; } const s=ALL.find(x=>x.id===id); s?show(s):home(); }
+window.addEventListener("hashchange",route);
+
+function start(set,list,i){ qset=set; queue=list; qi=i; play(); openFull(); }
+function fadeTo(set,i){
+  if(audio.paused || qset!==set){ start(set,set.tracks,i); return; }
+  const v0=audio.volume; let n=0;
+  const iv=setInterval(()=>{ n++; audio.volume=Math.max(0,v0*(1-n/20)); if(n>=20){ clearInterval(iv); start(set,set.tracks,i); audio.volume=v0; } },150);
+}
+const SILENT="data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"; let unlocked=false, cache=new Map(), loadId=0;
+function getBlob(f){ if(!cache.has(f)){ const p=decryptSong(f); p.catch(()=>cache.delete(f)); cache.set(f,p); if(cache.size>4){ const k=cache.keys().next().value; if(k!==f){ cache.get(k).then(u=>URL.revokeObjectURL(u)).catch(()=>{}); cache.delete(k);} } } return cache.get(f); }
+const RAW="https://raw.githubusercontent.com/reefwtraining/bodybox/music-files/a/";
+async function decryptSong(f){
+  const key=await window.__bbmKeyP;
+  const r=await fetch(RAW+f.replace(/^audio\//,"")+".enc"); if(!r.ok) throw new Error(r.status);
+  const buf=await r.arrayBuffer();
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:new Uint8Array(buf,0,12)},key,new Uint8Array(buf,12));
+  const h=new Uint8Array(pt,0,12); const isMp4=h[4]===0x66&&h[5]===0x74&&h[6]===0x79&&h[7]===0x70;
+  return URL.createObjectURL(new Blob([pt],{type:isMp4?"audio/mp4":"audio/mpeg"}));
+}
+function prefetch(t){ if(t) getBlob(t[1]).catch(()=>{}); }
+function loadAndPlay(f){
+  const id=++loadId;
+  if(!unlocked){ audio.src=SILENT; audio.play().then(()=>{unlocked=true;}).catch(()=>{}); }
+  npS.textContent=(qset?qset.name:"")+" · loading…";
+  getBlob(f).then(u=>{ if(id!==loadId) return; audio.src=u; npS.textContent=qset?qset.name:""; return audio.play(); })
+   .catch(()=>{ if(id!==loadId) return; npS.textContent="Couldn't load this song. Check your connection and tap it again."; });
+}
+function play(){
+  const t=queue[qi]; if(!t) return;
+  npT.textContent=t[0]; npS.textContent=qset?qset.name:"";
+  npArt.style.setProperty("--g",grad(qset?qset.id:"search")); const cv=COVER[t[1]]; npArt.classList.toggle("photo",!!cv); npArt.querySelector("img").src=cv||"tape.png"; player.classList.add("on");
+  len.textContent=fmt(t[2]); syncFull(); mark();
+  loadAndPlay(t[1]); prefetch(queue[qi+1]);
+  if("mediaSession" in navigator){ try{ navigator.mediaSession.metadata=new MediaMetadata({title:t[0],artist:"BODYBOX Music",album:qset?qset.name:"",artwork:[{src:new URL(COVER[t[1]]||"headphones-lg.jpg",location.href).href,sizes:"600x600",type:"image/jpeg"}]}); }catch(e){} }
+}
+function mark(){
+  const f=queue[qi]&&queue[qi][1];
+  document.querySelectorAll(".row").forEach(r=>{ const on=r.dataset.f===f; r.classList.toggle("on",on); const n=r.querySelector(".n"); n.innerHTML=on?'<span class="eq"><i></i><i></i><i></i></span>':(+r.dataset.i+1); });
+  main.classList.toggle("paused",audio.paused);
+}
+function step(d){ const ni=qi+d; if(d<0 && audio.currentTime>3){ audio.currentTime=0; return; } if(ni>=0 && ni<queue.length){ qi=ni; play(); } }
+document.getElementById("pp").onclick=()=>{ if(!queue.length) return; audio.paused?audio.play().catch(()=>{}):audio.pause(); };
+document.getElementById("prev").onclick=()=>step(-1);
+document.getElementById("next").onclick=()=>step(1);
+audio.addEventListener("play",()=>{ ppIcon.innerHTML='<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>'; mark(); });
+audio.addEventListener("pause",()=>{ ppIcon.innerHTML='<path d="M7 4l13 8-13 8z"/>'; mark(); });
+audio.addEventListener("ended",()=>{ if(audio.src.startsWith("data:")) return; step(1); });
+audio.addEventListener("loadedmetadata",()=>{ len.textContent=fmt(audio.duration); });
+audio.addEventListener("timeupdate",()=>{ if(seeking||!audio.duration) return; bar.value=Math.round(audio.currentTime/audio.duration*1000); cur.textContent=fmt(audio.currentTime); });
+bar.addEventListener("input",()=>{ seeking=true; if(audio.duration) cur.textContent=fmt(bar.value/1000*audio.duration); });
+bar.addEventListener("change",()=>{ if(audio.duration) audio.currentTime=bar.value/1000*audio.duration; seeking=false; });
+if("mediaSession" in navigator){ try{ navigator.mediaSession.setActionHandler("nexttrack",()=>step(1)); navigator.mediaSession.setActionHandler("previoustrack",()=>step(-1)); }catch(e){} }
+
+const full=document.getElementById("full"), fArt=document.getElementById("fArt"), fBg=document.getElementById("fBg"), fT=document.getElementById("fT"), fS=document.getElementById("fS"), fBar=document.getElementById("fBar"), fCur=document.getElementById("fCur"), fLen=document.getElementById("fLen"), fIcon=document.getElementById("fIcon");
+function syncFull(){ const t=queue[qi]; if(!t) return; const src=COVER[t[1]]||"headphones-lg.jpg"; fArt.src=src; fBg.style.backgroundImage='url("'+src+'")'; fT.textContent=t[0]; fS.textContent=qset?qset.name:"BODYBOX Music"; fLen.textContent=len.textContent; full.classList.toggle("paused",audio.paused); }
+function openFull(){ if(!queue.length) return; syncFull(); full.classList.add("on"); document.body.style.overflow="hidden"; document.getElementById("fClose").focus(); }
+function closeFull(){ full.classList.remove("on"); document.body.style.overflow=""; }
+document.getElementById("fClose").onclick=closeFull;
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && full.classList.contains("on")) closeFull(); });
+document.querySelector(".np").addEventListener("click",openFull);
+document.getElementById("fPP").onclick=()=>document.getElementById("pp").click();
+document.getElementById("fPrev").onclick=()=>step(-1);
+document.getElementById("fNext").onclick=()=>step(1);
+audio.addEventListener("play",()=>{ fIcon.innerHTML='<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>'; full.classList.remove("paused"); });
+audio.addEventListener("pause",()=>{ fIcon.innerHTML='<path d="M7 4l13 8-13 8z"/>'; full.classList.add("paused"); });
+audio.addEventListener("loadedmetadata",()=>{ fLen.textContent=fmt(audio.duration); });
+audio.addEventListener("timeupdate",()=>{ if(seeking||!audio.duration) return; fBar.value=Math.round(audio.currentTime/audio.duration*1000); fCur.textContent=fmt(audio.currentTime); });
+fBar.addEventListener("input",()=>{ seeking=true; if(audio.duration) fCur.textContent=fmt(fBar.value/1000*audio.duration); });
+fBar.addEventListener("change",()=>{ if(audio.duration) audio.currentTime=fBar.value/1000*audio.duration; seeking=false; });
+route();
+}
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, sendEmailVerification, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+const cfg = { apiKey:"AIzaSyAMHdGXPgAwPkbdGdcmA538JHBAF_QWAEU", authDomain:"teambodybox-app.firebaseapp.com", projectId:"teambodybox-app", storageBucket:"teambodybox-app.firebasestorage.app", messagingSenderId:"212485533701", appId:"1:212485533701:web:a42605f3fdf0ad6b60ec6c" };
+const COACHES = ['reefwtraining@gmail.com','reefwtraining+bodybox@gmail.com'];
+const fb = initializeApp(cfg), auth = getAuth(fb), fs = getFirestore(fb);
+setPersistence(auth, browserLocalPersistence).catch(()=>{});
+const G = document.getElementById('bbGate');
+const esc = s => String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LOGO = '<div class="glogo"><img class="ghp" src="icon-192.png" alt=""><span class="logo" aria-label="BODY BOX"><span class="gw"><img src="b-mark.png" alt="">ODY</span><span class="gw r"><img src="b-mark-red.png" alt="">OX</span></span><small>MUSIC</small></div>';
+const card = h => { G.hidden = false; G.innerHTML = '<div class="gcard">'+LOGO+h+'</div>'; };
+const spin = () => card('<div class="gspin"></div>');
+const errText = e => { const c=(e&&e.code)||'';
+  if(c.includes('invalid-credential')||c.includes('wrong-password')||c.includes('user-not-found')) return "That email and password don't match.";
+  if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.';
+  if(c.includes('weak-password')) return 'Use at least 6 characters for your password.';
+  if(c.includes('invalid-email')) return 'Check the email address.';
+  if(c.includes('too-many-requests')) return 'Too many tries. Wait a minute and try again.';
+  if(c.includes('network')) return 'No connection. Check your internet and try again.';
+  return 'Something went wrong. Try again.'; };
+function showSignIn(msg){
+  card('<h2>Sign in</h2><p>BODYBOX Music is for invited members. Use your BODYBOX app login.</p>'+
+    '<form id="gIn" class="gcard" style="gap:12px"><label>Email<input id="gEm" type="email" autocomplete="email" required></label>'+
+    '<label>Password<input id="gPw" type="password" autocomplete="current-password" required></label>'+
+    '<p class="gerr" id="gErr">'+esc(msg)+'</p><button class="gbtn" type="submit">Sign in</button></form>'+
+    '<div class="grow"><button class="glink" id="gToUp" type="button">Create an account</button><button class="glink" id="gForgot" type="button">Forgot password</button></div>');
+  document.getElementById('gIn').onsubmit = async ev => { ev.preventDefault(); const b=ev.target.querySelector('button'); b.disabled=true;
+    try{ await signInWithEmailAndPassword(auth, document.getElementById('gEm').value.trim(), document.getElementById('gPw').value); }
+    catch(e){ document.getElementById('gErr').textContent = errText(e); b.disabled=false; } };
+  document.getElementById('gToUp').onclick = showSignUp;
+  document.getElementById('gForgot').onclick = async () => { const em=document.getElementById('gEm').value.trim(), er=document.getElementById('gErr');
+    if(!em){ er.textContent='Type your email above, then tap Forgot password.'; return; }
+    try{ await sendPasswordResetEmail(auth, em); er.textContent='Check your email for a link to reset your password.'; }catch(e){ er.textContent=errText(e); } };
+}
+function showSignUp(){
+  card('<h2>Create your account</h2><p>Already on the BODYBOX app? Sign in with that login instead. After you sign up, Coach Reef turns on music for you.</p>'+
+    '<form id="gUp" class="gcard" style="gap:12px"><label>Full name<input id="gNm" autocomplete="name" required maxlength="60"></label>'+
+    '<label>Email<input id="gEm" type="email" autocomplete="email" required></label>'+
+    '<label>Password (6+ characters)<input id="gPw" type="password" autocomplete="new-password" minlength="6" required></label>'+
+    '<p class="gerr" id="gErr"></p><button class="gbtn" type="submit">Create account</button></form>'+
+    '<div class="grow"><button class="glink" id="gToIn" type="button">I already have an account</button></div>');
+  document.getElementById('gUp').onsubmit = async ev => { ev.preventDefault(); const b=ev.target.querySelector('button'); b.disabled=true;
+    const nm=document.getElementById('gNm').value.trim();
+    try{ const cr=await createUserWithEmailAndPassword(auth, document.getElementById('gEm').value.trim(), document.getElementById('gPw').value);
+      try{ await updateProfile(cr.user,{displayName:nm}); }catch(e){}
+      try{ await sendEmailVerification(cr.user); }catch(e){}
+      await ensureMember(cr.user, nm);
+    }catch(e){ document.getElementById('gErr').textContent=errText(e); b.disabled=false; } };
+  document.getElementById('gToIn').onclick = () => showSignIn('');
+}
+async function ensureMember(u, nm){
+  const ref = doc(fs,'members',u.uid);
+  try{ const s = await getDoc(ref);
+    if(!s.exists()) await setDoc(ref,{ name:(nm||u.displayName||'').slice(0,60), email:(u.email||'').toLowerCase(), approved:false, created:serverTimestamp() });
+  }catch(e){}
+  return ref;
+}
+function showWaiting(u){
+  card('<h2>You\'re in line</h2><p>You\'re signed in as '+esc(u.email)+'. Coach Reef turns on BODYBOX Music for you. This page opens by itself as soon as he does.</p>'+
+    '<div class="grow"><button class="glink" id="gOut" type="button">Sign out</button></div>');
+  document.getElementById('gOut').onclick = () => signOut(auth);
+}
+let opened = false, memUnsub = null;
+async function openMusic(u, coach){
+  if(opened) return;
+  try{
+    const d = await getDoc(doc(fs,'music','key'));
+    if(!d.exists()) throw new Error('nokey');
+    const raw = Uint8Array.from(atob(d.data().k), c => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+    window.__bbmKeyResolve(key); opened = true; G.hidden = true; G.innerHTML = '';
+    window.__bbmNavExtra && window.__bbmNavExtra(coach, u.email || '');
+  }catch(e){
+    if(coach) card('<h2>Almost ready</h2><p>The music key isn\'t set up yet. Claude finishes this step.</p><div class="grow"><button class="glink" id="gOut" type="button">Sign out</button></div>');
+    else showWaiting(u);
+    const o=document.getElementById('gOut'); if(o) o.onclick=()=>signOut(auth);
+  }
+}
+window.__bbmSignOut = () => signOut(auth).then(() => location.reload());
+window.__bbmSetKey = async b64 => { await setDoc(doc(fs,'music','key'), { k:b64, at:serverTimestamp() }); return 'saved'; };
+window.__bbmListeners = async main => {
+  main.innerHTML = '<h1>Who can listen</h1><p style="color:var(--sub);max-width:60ch">Turn music on for the people you want. They sign in here with their BODYBOX app login (or create an account on this page), and it opens for them right away.</p><div class="lst" id="lst"><div class="gspin"></div></div>';
+  let snap; try{ snap = await getDocs(collection(fs,'members')); }catch(e){ document.getElementById('lst').textContent = "Couldn't load the member list."; return; }
+  const rows = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(m => m.email).sort((a,b) => (b.music===true)-(a.music===true) || String(a.name||a.email).localeCompare(String(b.name||b.email)));
+  const lst = document.getElementById('lst');
+  lst.innerHTML = rows.map(m => '<div class="lrow"><div class="who"><b>'+esc(m.name||m.email)+'</b><small>'+esc(m.email)+(m.approved?' · app member':' · music only')+'</small></div><button class="tg" role="switch" aria-checked="'+(m.music===true)+'" aria-label="Music for '+esc(m.name||m.email)+'" data-id="'+m.id+'"></button></div>').join('') || '<p>No accounts yet.</p>';
+  lst.onclick = async e => { const t=e.target.closest('.tg'); if(!t) return; const on = t.getAttribute('aria-checked') !== 'true'; t.disabled=true;
+    try{ await updateDoc(doc(fs,'members',t.dataset.id), { music:on }); t.setAttribute('aria-checked', String(on)); }catch(err){ alert("Couldn't change that. Try again."); }
+    t.disabled=false; };
+};
+onAuthStateChanged(auth, async u => {
+  if(memUnsub){ memUnsub(); memUnsub=null; }
+  if(!u){ if(opened) location.reload(); else showSignIn(''); return; }
+  spin();
+  const coach = COACHES.includes((u.email||'').toLowerCase()) && u.emailVerified;
+  if(coach){ openMusic(u, true); return; }
+  await ensureMember(u);
+  memUnsub = onSnapshot(doc(fs,'members',u.uid), s => { const m = s.data()||{}; if(m.music===true) openMusic(u, false); else if(!opened) showWaiting(u); }, () => showWaiting(u));
+});
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
