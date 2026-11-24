@@ -491,7 +491,7 @@ route();
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, sendEmailVerification, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, serverTimestamp, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { renderStats, computeTop } from "./stats.js?v=3";
+import { renderStats, computeTop, renderAccess } from "./stats.js?v=4";
 const cfg = { apiKey:"AIzaSyAMHdGXPgAwPkbdGdcmA538JHBAF_QWAEU", authDomain:"teambodybox-app.firebaseapp.com", projectId:"teambodybox-app", storageBucket:"teambodybox-app.firebasestorage.app", messagingSenderId:"212485533701", appId:"1:212485533701:web:a42605f3fdf0ad6b60ec6c" };
 const COACHES = ['reefwtraining@gmail.com','reefwtraining+bodybox@gmail.com'];
 const fb = initializeApp(cfg), auth = getAuth(fb), fs = getFirestore(fb);
@@ -593,15 +593,8 @@ window.__bbmStats = async main => { main.innerHTML = '<h1>Song stats</h1><div id
 window.__bbmSignOut = () => signOut(auth).then(() => location.reload());
 window.__bbmSetKey = async b64 => { await setDoc(doc(fs,'content','music'), { k:b64, at:serverTimestamp() }); return 'saved'; };
 window.__bbmListeners = async main => {
-  main.innerHTML = '<h1>Who can listen</h1><p style="color:var(--sub);max-width:60ch">Turn music on for the people you want. They sign in here with their BODYBOX app login (or create an account on this page), and it opens for them right away.</p><div class="lst" id="lst"><div class="gspin"></div></div>';
-  let snap; try{ snap = await getDocs(collection(fs,'members')); }catch(e){ document.getElementById('lst').textContent = "Couldn't load the member list."; return; }
-  const rows = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(m => m.email && !COACHES.includes(String(m.email).toLowerCase())).sort((a,b) => (b.music===true)-(a.music===true) || String(a.name||a.email).localeCompare(String(b.name||b.email)));
-  const lst = document.getElementById('lst');
-  lst.innerHTML = rows.map(m => '<div class="lrow"><div class="who"><b>'+esc(m.name||m.email)+'</b><small>'+esc(m.email)+(m.approved && !m.musicOnly ? ' · app member' : ' · music only')+'</small></div><button class="tg" role="switch" aria-checked="'+(m.music===true)+'" aria-label="Music for '+esc(m.name||m.email)+'" data-id="'+m.id+'"></button></div>').join('') || '<p>No accounts yet.</p>';
-  lst.onclick = async e => { const t=e.target.closest('.tg'); if(!t) return; const on = t.getAttribute('aria-checked') !== 'true'; t.disabled=true;
-    const m = rows.find(x => x.id===t.dataset.id); const upd = { music:on }; if(on && m && m.approved!==true){ upd.approved = true; upd.approvedAt = serverTimestamp(); upd.musicOnly = true; m.approved = true; m.musicOnly = true; }
-    try{ await updateDoc(doc(fs,'members',t.dataset.id), upd); t.setAttribute('aria-checked', String(on)); }catch(err){ alert("Couldn't change that. Try again."); }
-    t.disabled=false; };
+  main.innerHTML = '<h1>Who can listen</h1><p style="color:var(--sub);max-width:60ch">Turn music on for the people you want. They sign in here with their BODYBOX app login (or create an account on this page), and it opens for them right away. Jameson can switch people on and off from the admin page too.</p><div id="lst"></div>';
+  renderAccess(fs, document.getElementById('lst'), true);
 };
 onAuthStateChanged(auth, async u => {
   if(memUnsub){ memUnsub(); memUnsub=null; }
@@ -610,7 +603,11 @@ onAuthStateChanged(auth, async u => {
   const coach = COACHES.includes((u.email||'').toLowerCase()) && u.emailVerified;
   if(coach){ openMusic(u, true); return; }
   await ensureMember(u);
-  memUnsub = onSnapshot(doc(fs,'members',u.uid), s => { const m = s.data()||{}; if(m.music===true && m.approved===true) openMusic(u, false); else if(!opened) showWaiting(u); }, () => showWaiting(u));
+  let M = {}, Bm = {};
+  const check = () => { if((M.music===true || Bm.music===true) && M.approved===true) openMusic(u, false); else if(!opened) showWaiting(u); };
+  const u1 = onSnapshot(doc(fs,'members',u.uid), s => { M = s.data()||{}; check(); }, () => showWaiting(u));
+  const u2 = onSnapshot(doc(fs,'billing',u.uid), s => { Bm = s.data()||{}; check(); }, () => {});
+  memUnsub = () => { u1(); u2(); };
 });
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>

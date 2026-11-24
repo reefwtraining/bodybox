@@ -1,6 +1,6 @@
 // BODYBOX Music song stats: likes, dislikes, full plays and skips per song and per person.
 // Shared by the music page (coach tab) and the admin page. Reads data/users/{uid}/music for every member.
-import { doc, getDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { doc, getDoc, getDocs, collection, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pct = (a,b) => b ? Math.round(a*100/b)+'%' : '–';
 const mins = s => s ? (s>=3600 ? (s/3600).toFixed(1)+' h' : Math.round(s/60)+' min') : '0 min';
@@ -13,6 +13,8 @@ const CSS = `.mcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(1
 .mstat td:first-child{max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mstat tr.mwho td{color:#8F8B84;font-size:13px;text-align:left;white-space:normal;max-width:none}
 .mstat .mup{color:#7bd88f}.mstat .mdn{color:#ff8a7a}
+.mlst{display:grid;gap:8px;max-width:640px}.mlrow{display:flex;align-items:center;gap:12px;background:#1B1B1B;border:1px solid #2A2A2A;border-radius:12px;padding:12px 14px}.mwho2{flex:1;min-width:0}.mwho2 b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mwho2 small{color:#8F8B84}
+.mtg{width:52px;height:30px;border-radius:999px;background:#333;position:relative;flex:none;border:0;cursor:pointer}.mtg::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .15s}.mtg[aria-checked=true]{background:#C8102E}.mtg[aria-checked=true]::after{left:25px}
 .mstats h3{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.02em;font-size:22px;margin:24px 0 8px}`;
 function addCss(){ if(document.getElementById('mstatsCss')) return; const st=document.createElement('style'); st.id='mstatsCss'; st.textContent=CSS; document.head.appendChild(st); }
 export async function renderStats(fs, el, songs){
@@ -68,4 +70,27 @@ export async function computeTop(fs){
   const liked = E.filter(([,r]) => r.l > 0).sort((a,b) => (b[1].l - b[1].d) - (a[1].l - a[1].d) || (b[1].l - a[1].l)).slice(0,12).map(x => x[0]);
   const counts = {}; [...new Set([...played, ...liked])].forEach(k => counts[k] = { p: c[k].p, l: c[k].l });
   return { played, liked, counts };
+}
+
+// Who can listen: the music switch lives on billing/{uid}.music so both the coach and the admin can flip it
+// (members/{uid}.music from the first version still counts). Turning music on for someone not yet approved approves them.
+const COACH_EMAILS = ['reefwtraining@gmail.com','reefwtraining+bodybox@gmail.com'];
+export async function renderAccess(fs, el, coachMode){
+  addCss(); el.classList.add('mstats');
+  el.innerHTML = '<p style="color:#8F8B84">Loading…</p>';
+  let mem, bill;
+  try{ [mem, bill] = await Promise.all([getDocs(collection(fs,'members')), getDocs(collection(fs,'billing'))]); }catch(e){ el.textContent = "Couldn't load the member list."; return; }
+  const B = Object.fromEntries(bill.docs.map(d => [d.id, d.data()]));
+  const rows = mem.docs.map(d => ({ id:d.id, ...d.data() })).filter(m => m.email && !COACH_EMAILS.includes(String(m.email).toLowerCase()))
+    .map(m => ({ ...m, on: m.music === true || (B[m.id] && B[m.id].music === true) }))
+    .sort((a,b) => (b.on - a.on) || String(a.name||a.email).localeCompare(String(b.name||b.email)));
+  el.innerHTML = '<div class="mlst">' + (rows.map(m => '<div class="mlrow"><div class="mwho2"><b>'+esc(m.name||m.email)+'</b><small>'+esc(m.email)+(m.approved && !m.musicOnly ? ' · app member' : ' · music only')+'</small></div><button class="mtg" role="switch" aria-checked="'+m.on+'" aria-label="Music for '+esc(m.name||m.email)+'" data-id="'+m.id+'"></button></div>').join('') || '<p>No accounts yet.</p>') + '</div>';
+  el.onclick = async e => { const t = e.target.closest('.mtg'); if(!t) return; const m = rows.find(x => x.id === t.dataset.id); const on = t.getAttribute('aria-checked') !== 'true'; t.disabled = true;
+    try{
+      await setDoc(doc(fs,'billing',m.id), { music: on }, { merge:true });
+      if(on && m.approved !== true){ const upd = { approved:true, approvedAt: serverTimestamp() }; if(coachMode) upd.musicOnly = true; await updateDoc(doc(fs,'members',m.id), upd); m.approved = true; }
+      if(!on && m.music === true && coachMode){ await updateDoc(doc(fs,'members',m.id), { music:false }); m.music = false; }
+      m.on = on; t.setAttribute('aria-checked', String(on));
+    }catch(err){ alert("Couldn't change that. Try again."); }
+    t.disabled = false; };
 }

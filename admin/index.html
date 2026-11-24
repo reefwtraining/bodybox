@@ -178,7 +178,7 @@ h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color
       <button role="tab" data-tab="events" aria-selected="false">Events &amp; news</button>
       <button role="tab" data-tab="challenges" aria-selected="false">Challenges</button>
       <button role="tab" data-tab="prices" aria-selected="false">Price sheet</button>
-      <button role="tab" data-tab="music" aria-selected="false">Song stats</button>
+      <button role="tab" data-tab="music" aria-selected="false">Music</button>
     </nav>
     <div class="who"><span id="whoName"></span><a href="../app2/" class="btn ghost sm" style="text-decoration:none">Open the app</a><button class="btn ghost sm" id="outBtn" type="button">Sign out</button></div>
   </div></header>
@@ -826,13 +826,19 @@ function wireFlyers(){
     try{ await saveFlyer(id, { name: n, desc: $('#nfDesc').value.trim(), dl: slug(n) }, img, pdf); toast('Flyer added'); renderPrices(); }catch(e){ $('#nfSave').disabled = false; $('#nfErr').textContent = e.message && !/permission/i.test(e.message) ? e.message : 'Couldn\'t upload. Try again.'; } };
 }
 /* ---------- BODYBOX Music: likes, dislikes, full plays and skips (shared with /music/) ---------- */
-let MUSIC_SONGS = null;
+let MUSIC_SONGS = null, MUSIC_VIEW = 'access';
 async function renderMusic(){
-  $('#view').innerHTML = '<h2>Song stats</h2><p class="note">What everyone on BODYBOX Music likes, dislikes, plays all the way through and skips. Music access is switched on per person from the music app (Who can listen).</p><div id="musicStats" style="margin-top:14px"></div>';
+  $('#view').innerHTML = '<h2>BODYBOX Music</h2><p class="note">Who can listen to the members-only music app (<a href="../music/" target="_blank" rel="noopener" style="color:var(--red2)">reefwtraining.github.io/bodybox/music</a>), and what they like, dislike, play all the way through and skip.</p>'+
+    '<div class="seg" role="tablist" style="margin-top:14px;display:flex;gap:8px"><button class="btn" id="muA" type="button">Who can listen</button><button class="btn" id="muS" type="button">Song stats</button></div><div id="musicStats" style="margin-top:14px"></div>';
   try{
     if(!MUSIC_SONGS) MUSIC_SONGS = await fetch('../music/songs.json').then(r => r.json());
-    const { renderStats } = await import('../music/stats.js?v=2');
-    if(TAB === 'music') renderStats(fs, document.getElementById('musicStats'), MUSIC_SONGS);
+    const { renderStats, renderAccess } = await import('../music/stats.js?v=4');
+    const el = () => document.getElementById('musicStats');
+    const showA = () => { MUSIC_VIEW='access'; document.getElementById('muA').classList.add('solid'); document.getElementById('muS').classList.remove('solid'); el().innerHTML='<p class="note" style="margin-bottom:10px">Turn music on for the people you want. They sign in with their BODYBOX app login and it opens right away. People without an app account can create one on the music page, then show up here.</p><div id="muList"></div>'; renderAccess(fs, document.getElementById('muList'), false); };
+    const showS = () => { MUSIC_VIEW='stats'; document.getElementById('muS').classList.add('solid'); document.getElementById('muA').classList.remove('solid'); renderStats(fs, el(), MUSIC_SONGS); };
+    if(TAB !== 'music') return;
+    document.getElementById('muA').onclick = showA; document.getElementById('muS').onclick = showS;
+    (MUSIC_VIEW === 'stats' ? showS : showA)();
   }catch(e){ const el = document.getElementById('musicStats'); if(el) el.textContent = "Couldn't load song stats. Check your internet and try again."; }
 }
 function renderPrices(){
