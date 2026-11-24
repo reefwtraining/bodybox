@@ -494,7 +494,7 @@ let opened = false, memUnsub = null;
 async function openMusic(u, coach){
   if(opened) return;
   try{
-    const d = await getDoc(doc(fs,'music','key'));
+    const d = await getDoc(doc(fs,'content','music'));
     if(!d.exists()) throw new Error('nokey');
     const raw = Uint8Array.from(atob(d.data().k), c => c.charCodeAt(0));
     const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
@@ -507,15 +507,16 @@ async function openMusic(u, coach){
   }
 }
 window.__bbmSignOut = () => signOut(auth).then(() => location.reload());
-window.__bbmSetKey = async b64 => { await setDoc(doc(fs,'music','key'), { k:b64, at:serverTimestamp() }); return 'saved'; };
+window.__bbmSetKey = async b64 => { await setDoc(doc(fs,'content','music'), { k:b64, at:serverTimestamp() }); return 'saved'; };
 window.__bbmListeners = async main => {
   main.innerHTML = '<h1>Who can listen</h1><p style="color:var(--sub);max-width:60ch">Turn music on for the people you want. They sign in here with their BODYBOX app login (or create an account on this page), and it opens for them right away.</p><div class="lst" id="lst"><div class="gspin"></div></div>';
   let snap; try{ snap = await getDocs(collection(fs,'members')); }catch(e){ document.getElementById('lst').textContent = "Couldn't load the member list."; return; }
   const rows = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(m => m.email).sort((a,b) => (b.music===true)-(a.music===true) || String(a.name||a.email).localeCompare(String(b.name||b.email)));
   const lst = document.getElementById('lst');
-  lst.innerHTML = rows.map(m => '<div class="lrow"><div class="who"><b>'+esc(m.name||m.email)+'</b><small>'+esc(m.email)+(m.approved?' · app member':' · music only')+'</small></div><button class="tg" role="switch" aria-checked="'+(m.music===true)+'" aria-label="Music for '+esc(m.name||m.email)+'" data-id="'+m.id+'"></button></div>').join('') || '<p>No accounts yet.</p>';
+  lst.innerHTML = rows.map(m => '<div class="lrow"><div class="who"><b>'+esc(m.name||m.email)+'</b><small>'+esc(m.email)+(m.approved && !m.musicOnly ? ' · app member' : ' · music only')+'</small></div><button class="tg" role="switch" aria-checked="'+(m.music===true)+'" aria-label="Music for '+esc(m.name||m.email)+'" data-id="'+m.id+'"></button></div>').join('') || '<p>No accounts yet.</p>';
   lst.onclick = async e => { const t=e.target.closest('.tg'); if(!t) return; const on = t.getAttribute('aria-checked') !== 'true'; t.disabled=true;
-    try{ await updateDoc(doc(fs,'members',t.dataset.id), { music:on }); t.setAttribute('aria-checked', String(on)); }catch(err){ alert("Couldn't change that. Try again."); }
+    const m = rows.find(x => x.id===t.dataset.id); const upd = { music:on }; if(on && m && m.approved!==true){ upd.approved = true; upd.approvedAt = serverTimestamp(); m.approved = true; }
+    try{ await updateDoc(doc(fs,'members',t.dataset.id), upd); t.setAttribute('aria-checked', String(on)); }catch(err){ alert("Couldn't change that. Try again."); }
     t.disabled=false; };
 };
 onAuthStateChanged(auth, async u => {
@@ -525,7 +526,7 @@ onAuthStateChanged(auth, async u => {
   const coach = COACHES.includes((u.email||'').toLowerCase()) && u.emailVerified;
   if(coach){ openMusic(u, true); return; }
   await ensureMember(u);
-  memUnsub = onSnapshot(doc(fs,'members',u.uid), s => { const m = s.data()||{}; if(m.music===true) openMusic(u, false); else if(!opened) showWaiting(u); }, () => showWaiting(u));
+  memUnsub = onSnapshot(doc(fs,'members',u.uid), s => { const m = s.data()||{}; if(m.music===true && m.approved===true) openMusic(u, false); else if(!opened) showWaiting(u); }, () => showWaiting(u));
 });
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
