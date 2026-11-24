@@ -175,6 +175,15 @@ h1{font-size:clamp(30px,4.4vw,40px)}h3{font-size:22px}.head h2{font-size:clamp(2
 .tg[aria-checked=true]{background:var(--red)}.tg[aria-checked=true]::after{left:25px}
 .acct{margin-top:18px;padding:0 8px;font-size:13px;color:var(--sub)}.acct button{color:var(--acc);text-decoration:underline;padding:4px 0}
 .inst{margin-top:26px;padding:16px;border-radius:14px;background:var(--side);border:1px solid var(--line);color:var(--sub);font-size:14px}.inst b{color:var(--ink)}
+
+@media (max-width:760px){
+ .top{padding-top:calc(12px + env(safe-area-inset-top));padding-left:calc(14px + env(safe-area-inset-left));padding-right:calc(14px + env(safe-area-inset-right))}
+ .top .chips{padding:2px 0 6px;scroll-padding-left:2px}
+ .top .chips button{min-height:36px}
+ main{padding-bottom:calc(170px + env(safe-area-inset-bottom))}
+}
+.player{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+#bbGate{padding-top:calc(24px + env(safe-area-inset-top));padding-bottom:calc(24px + env(safe-area-inset-bottom))}
 </style>
 </head>
 <body>
