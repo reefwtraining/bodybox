@@ -178,6 +178,7 @@ h3{font:700 13px var(--cond);letter-spacing:.12em;text-transform:uppercase;color
       <button role="tab" data-tab="events" aria-selected="false">Events &amp; news</button>
       <button role="tab" data-tab="challenges" aria-selected="false">Challenges</button>
       <button role="tab" data-tab="prices" aria-selected="false">Price sheet</button>
+      <button role="tab" data-tab="music" aria-selected="false">Song stats</button>
     </nav>
     <div class="who"><span id="whoName"></span><a href="../app2/" class="btn ghost sm" style="text-decoration:none">Open the app</a><button class="btn ghost sm" id="outBtn" type="button">Sign out</button></div>
   </div></header>
@@ -264,7 +265,7 @@ function live(){
   onSnapshot(collection(fs, 'challenges'), s => { D.ch = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if(TAB === 'challenges') redraw(); }, () => {});
 }
 function go(t){ TAB = t; document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t))); render(); }
-function render(){ if(TAB === 'days' && !DAYS_OK) TAB = 'members'; ({ days: renderDays, invite: renderInvite, calendar: renderCal, members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices })[TAB](); }
+function render(){ if(TAB === 'days' && !DAYS_OK) TAB = 'members'; ({ days: renderDays, invite: renderInvite, calendar: renderCal, members: renderMembers, events: renderEvents, challenges: renderCh, prices: renderPrices, music: renderMusic })[TAB](); }
 
 /* ---------- calendar: the week's programming per track, like SugarWOD ---------- */
 const TRACKS = [['class','RT Movement','VXW86K','rt'],['comp','Athlete Comp','WGC534','comp'],['build','Building','RMXGZJ','build'],['cardio','Cardio','WQH7V7','cardio'],['garage','Garage Box','ZUBVXM','garage'],['shiit','S.H.I.I.T','56EG63','shiit'],['yoga','Yoga & Toning','GN83T7','yoga']];
@@ -823,6 +824,16 @@ function wireFlyers(){
     let id = slug(n); while((FLY || {})[id] || FLYERS.some(f => f.id === id)) id += '-2';
     $('#nfSave').disabled = true; toast('Uploading…');
     try{ await saveFlyer(id, { name: n, desc: $('#nfDesc').value.trim(), dl: slug(n) }, img, pdf); toast('Flyer added'); renderPrices(); }catch(e){ $('#nfSave').disabled = false; $('#nfErr').textContent = e.message && !/permission/i.test(e.message) ? e.message : 'Couldn\'t upload. Try again.'; } };
+}
+/* ---------- BODYBOX Music: likes, dislikes, full plays and skips (shared with /music/) ---------- */
+let MUSIC_SONGS = null;
+async function renderMusic(){
+  $('#view').innerHTML = '<h2>Song stats</h2><p class="note">What everyone on BODYBOX Music likes, dislikes, plays all the way through and skips. Music access is switched on per person from the music app (Who can listen).</p><div id="musicStats" style="margin-top:14px"></div>';
+  try{
+    if(!MUSIC_SONGS) MUSIC_SONGS = await fetch('../music/songs.json').then(r => r.json());
+    const { renderStats } = await import('../music/stats.js?v=2');
+    if(TAB === 'music') renderStats(fs, document.getElementById('musicStats'), MUSIC_SONGS);
+  }catch(e){ const el = document.getElementById('musicStats'); if(el) el.textContent = "Couldn't load song stats. Check your internet and try again."; }
 }
 function renderPrices(){
   const P = D.bill._prices || {}, c = payCfg(P);

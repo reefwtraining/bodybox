@@ -476,7 +476,7 @@ route();
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, sendEmailVerification, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, serverTimestamp, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { renderStats } from "./stats.js?v=1";
+import { renderStats } from "./stats.js?v=2";
 const cfg = { apiKey:"AIzaSyAMHdGXPgAwPkbdGdcmA538JHBAF_QWAEU", authDomain:"teambodybox-app.firebaseapp.com", projectId:"teambodybox-app", storageBucket:"teambodybox-app.firebasestorage.app", messagingSenderId:"212485533701", appId:"1:212485533701:web:a42605f3fdf0ad6b60ec6c" };
 const COACHES = ['reefwtraining@gmail.com','reefwtraining+bodybox@gmail.com'];
 const fb = initializeApp(cfg), auth = getAuth(fb), fs = getFirestore(fb);

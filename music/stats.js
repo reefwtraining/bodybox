@@ -4,7 +4,19 @@ import { doc, getDoc, getDocs, collection } from "https://www.gstatic.com/fireba
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pct = (a,b) => b ? Math.round(a*100/b)+'%' : '–';
 const mins = s => s ? (s>=3600 ? (s/3600).toFixed(1)+' h' : Math.round(s/60)+' min') : '0 min';
+const CSS = `.mcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:6px 0 20px;max-width:900px}
+.mcard{background:#1B1B1B;border:1px solid #2A2A2A;border-radius:12px;padding:12px}.mcard b{display:block;font-family:"Anton",Impact,sans-serif;font-weight:400;font-size:28px}.mcard small{color:#8F8B84}
+.msx{overflow-x:auto}.mstat{width:100%;border-collapse:collapse;font-size:14px;max-width:900px}
+.mstat th{font-family:"Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.06em;font-size:12px;color:#8F8B84;text-align:right;padding:8px 6px;border-bottom:1px solid #2A2A2A;cursor:pointer;white-space:nowrap;background:none}
+.mstat th:first-child,.mstat td:first-child{text-align:left}
+.mstat td{padding:9px 6px;border-bottom:1px solid #2A2A2A;text-align:right;font-variant-numeric:tabular-nums}
+.mstat td:first-child{max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mstat tr.mwho td{color:#8F8B84;font-size:13px;text-align:left;white-space:normal;max-width:none}
+.mstat .mup{color:#7bd88f}.mstat .mdn{color:#ff8a7a}
+.mstats h3{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.02em;font-size:22px;margin:24px 0 8px}`;
+function addCss(){ if(document.getElementById('mstatsCss')) return; const st=document.createElement('style'); st.id='mstatsCss'; st.textContent=CSS; document.head.appendChild(st); }
 export async function renderStats(fs, el, songs){
+  addCss(); el.classList.add('mstats');
   el.innerHTML = '<p style="color:var(--sub,#8F8B84)">Loading song stats…</p>';
   const title = Object.fromEntries((songs||[]).map(x => [x.k, x.title]));
   let mem; try{ mem = await getDocs(collection(fs,'members')); }catch(e){ el.textContent = "Couldn't load members."; return; }
@@ -28,14 +40,14 @@ export async function renderStats(fs, el, songs){
   function draw(){
     const L = list().sort((a,b) => { const x=a[sortKey], y=b[sortKey]; return (typeof x==='string' ? x.localeCompare(y) : (x-y)) * dir; });
     el.innerHTML =
-      '<div class="cards"><div class="card"><b>'+users.length+'</b><small>listeners</small></div><div class="card"><b>'+tStarts+'</b><small>plays</small></div><div class="card"><b>'+pct(tDone,tStarts)+'</b><small>played all the way</small></div><div class="card"><b>'+tSkips+'</b><small>skips</small></div><div class="card"><b>'+tLikes+'</b><small>likes</small></div><div class="card"><b>'+mins(tSecs)+'</b><small>listened</small></div></div>'+
-      (L.length ? '<h3>By song</h3><p style="color:var(--sub,#8F8B84);margin:0 0 8px">Tap a column to sort. Tap a song to see who liked, disliked or skipped it. "Full" = played to the end (90%+); "Skipped" = moved on before that.</p><div class="sx"><table class="stat"><thead><tr>'+cols.map(c=>'<th data-k="'+c[0]+'">'+c[1]+(sortKey===c[0]?(dir<0?' ▾':' ▴'):'')+'</th>').join('')+'</tr></thead><tbody>'+
-        L.map((r,i) => '<tr data-i="'+i+'" style="cursor:pointer"><td>'+esc(r.title)+'</td><td>'+r.starts+'</td><td>'+r.completes+'</td><td>'+r.skips+'</td><td>'+(r.rate<0?'–':Math.round(r.rate*100)+'%')+'</td><td class="up">'+r.likes+'</td><td class="dn">'+r.dislikes+'</td><td>'+mins(r.secs)+'</td></tr>'+
-          '<tr class="who" data-w="'+i+'" hidden><td colspan="8">'+(r.liked.length?'👍 '+esc(r.liked.join(', '))+'<br>':'')+(r.disliked.length?'👎 '+esc(r.disliked.join(', '))+'<br>':'')+(r.skippers.length?'⏭ Skipped by '+esc(r.skippers.join(', ')):'')+(!r.liked.length&&!r.disliked.length&&!r.skippers.length?'No likes or skips yet.':'')+'</td></tr>').join('')+
+      '<div class="mcards"><div class="mcard"><b>'+users.length+'</b><small>listeners</small></div><div class="mcard"><b>'+tStarts+'</b><small>plays</small></div><div class="mcard"><b>'+pct(tDone,tStarts)+'</b><small>played all the way</small></div><div class="mcard"><b>'+tSkips+'</b><small>skips</small></div><div class="mcard"><b>'+tLikes+'</b><small>likes</small></div><div class="mcard"><b>'+mins(tSecs)+'</b><small>listened</small></div></div>'+
+      (L.length ? '<h3>By song</h3><p style="color:var(--sub,#8F8B84);margin:0 0 8px">Tap a column to sort. Tap a song to see who liked, disliked or skipped it. "Full" = played to the end (90%+); "Skipped" = moved on before that.</p><div class="msx"><table class="mstat"><thead><tr>'+cols.map(c=>'<th data-k="'+c[0]+'">'+c[1]+(sortKey===c[0]?(dir<0?' ▾':' ▴'):'')+'</th>').join('')+'</tr></thead><tbody>'+
+        L.map((r,i) => '<tr data-i="'+i+'" style="cursor:pointer"><td>'+esc(r.title)+'</td><td>'+r.starts+'</td><td>'+r.completes+'</td><td>'+r.skips+'</td><td>'+(r.rate<0?'–':Math.round(r.rate*100)+'%')+'</td><td class="mup">'+r.likes+'</td><td class="mdn">'+r.dislikes+'</td><td>'+mins(r.secs)+'</td></tr>'+
+          '<tr class="mwho" data-w="'+i+'" hidden><td colspan="8">'+(r.liked.length?'👍 '+esc(r.liked.join(', '))+'<br>':'')+(r.disliked.length?'👎 '+esc(r.disliked.join(', '))+'<br>':'')+(r.skippers.length?'⏭ Skipped by '+esc(r.skippers.join(', ')):'')+(!r.liked.length&&!r.disliked.length&&!r.skippers.length?'No likes or skips yet.':'')+'</td></tr>').join('')+
         '</tbody></table></div>' : '<p>No plays yet. Stats show up here once people start listening.</p>')+
-      (ppl.length ? '<h3>By person</h3><div class="sx"><table class="stat"><thead><tr><th>Person</th><th>Plays</th><th>Full</th><th>Skipped</th><th>Listened</th><th>Last</th></tr></thead><tbody>'+
+      (ppl.length ? '<h3>By person</h3><div class="msx"><table class="mstat"><thead><tr><th>Person</th><th>Plays</th><th>Full</th><th>Skipped</th><th>Listened</th><th>Last</th></tr></thead><tbody>'+
         ppl.sort((a,b)=>b.st-a.st).map(u => '<tr><td>'+esc(u.nm)+'</td><td>'+u.st+'</td><td>'+u.dn+'</td><td>'+u.sk+'</td><td>'+mins(u.sc)+'</td><td>'+(u.at?u.at.toLocaleDateString(undefined,{month:'short',day:'numeric'}):'–')+'</td></tr>'+
-          ((u.likes.length||u.dislikes.length)?'<tr class="who"><td colspan="6">'+(u.likes.length?'👍 '+esc(u.likes.join(', '))+'<br>':'')+(u.dislikes.length?'👎 '+esc(u.dislikes.join(', ')):'')+'</td></tr>':'')).join('')+'</tbody></table></div>' : '');
+          ((u.likes.length||u.dislikes.length)?'<tr class="mwho"><td colspan="6">'+(u.likes.length?'👍 '+esc(u.likes.join(', '))+'<br>':'')+(u.dislikes.length?'👎 '+esc(u.dislikes.join(', ')):'')+'</td></tr>':'')).join('')+'</tbody></table></div>' : '');
     el.querySelectorAll('th[data-k]').forEach(th => th.onclick = () => { const k=th.dataset.k; if(sortKey===k) dir=-dir; else { sortKey=k; dir = k==='title'?1:-1; } draw(); });
     el.querySelectorAll('tr[data-i]').forEach(tr => tr.onclick = () => { const w=el.querySelector('tr[data-w="'+tr.dataset.i+'"]'); w.hidden=!w.hidden; });
   }
