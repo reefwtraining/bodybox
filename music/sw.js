@@ -1,5 +1,5 @@
 /* BODYBOX Music: keeps the page and the (locked) song files on the phone after the first play. */
-const SHELL='bbm-shell-v10', SONGS='bbm-songs-v1';
+const SHELL='bbm-shell-v11', SONGS='bbm-songs-v1';
 self.addEventListener('install', e => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', e => {
