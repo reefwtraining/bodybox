@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-26",
+  "name": "Today's Class",
+  "note": "Thu Nov 26 · Turkey Burner · warm-up + 5 parts, about 47 min. Same order as the BODYBOX Clock.",
+  "jumpTo": 4,
+  "jumpLabel": "Workout starts → fade into ",
+  "tracks": [
+    ["calm","While the coach explains the Turkey Burner","Intro"],
+    ["groove","Machine build, :45 work / :15 switch","Warm-up · about 11 min"],
+    ["swingadl","Follow the coach, nonstop","Warm-up · about 11 min"],
+    ["h1","Gobble starts","Warm-up · about 11 min"],
+    ["kdgt","3, 2, 1, go · Round 1 easy","1. Engine · 8:30"],
+    ["fire","Round 2 harder","1. Engine · 8:30"],
+    ["tabata","Finish the round, then 1:00 rest","1. Engine · 8:30"],
+    ["h2","Round 1 · easy","2. Full Body · 18:00"],
+    ["h3","Round 2 · harder","2. Full Body · 18:00"],
+    ["h4","Round 3 · hardest","2. Full Body · 18:00"],
+    ["drum","Squat jumps, jumping lunges, lateral burpees","3. Power: Pop and Drop · 7:00"],
+    ["burnout","Back down the ladder to tuck jumps","3. Power: Pop and Drop · 7:00"],
+    ["grit","3:00 max rounds, count out loud","4. Grit · 4:30"],
+    ["talkbed","1:30 rest, write your score","4. Grit · 4:30"],
+    ["plank","Round 1 · easy","5. Midline · 9:00"],
+    ["pulse","Round 2 · harder","5. Midline · 9:00"],
+    ["glute","Round 3 · hardest","5. Midline · 9:00"],
+    ["cool","Stretch it out, Happy Thanksgiving","After"]
+  ]
+}

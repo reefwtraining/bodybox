@@ -315,7 +315,7 @@ const GROUPS = [
   P("instrumental","Instrumental Mix","Beats with little or no vocals. Background for class and talking videos.",["swingadl","talkbed","hype","groove","h1","h2","h3","h4","h5","h6","y1","y2","y3","y4","y5","y6","y7","y8"])
  ]},
  {label:"Class sets", sets:[
-  P("satclass","Sat Class","Intro, warm-up, then the workout.",[["calm","While the coach explains the workout","Intro"],["groove","Warm-up starts, easy head-nod","Warm-up · about 12 min"],["h1","Building energy","Warm-up · about 12 min"],["swingadl","Last few minutes of warm-up","Warm-up · about 12 min"],["kdgt","3, 2, 1, go","Workout · 31 min"],["hype","S.H.I.I.T track with the shouts","Workout · 31 min"],["h2","Steady, driving","Workout · 31 min"],["h3","Harder kick, bigger drops","Workout · 31 min"],["h4","Peak energy","Workout · 31 min"],["h5","Biggest builds for the last block","Workout · 31 min"],["h6","Scores, clean-up, stretch","After"]],{jumpTo:4}),
+  P("satclass","Today's Class","Changes every day to match the class workout.",[["calm","While the coach explains","Intro"]],{jumpTo:0}),
   P("sunday-reset","Sunday Reset","Flush, skills, easy partner piece, mobility.",[["y2","Easy machine or jog, talking pace","Flush · 10 min"],["y3","Still easy, coaches set up stations","Flush · 10 min"],["groove","Rope, rig and overhead stations","Skill stations · about 25 min"],["talkbed","Easy to coach over","Skill stations · about 25 min"],["h1","Light, funky","Skill stations · about 25 min"],["h2","Steady","Skill stations · about 25 min"],["kdgt","Second time through the stations","Skill stations · about 25 min"],["swingadl","Last station","Skill stations · about 25 min"],["h6","Steady, talking pace","Easy partner piece · 15 min"],["y4","Steady groove","Easy partner piece · 15 min"],["y5","Finish the piece","Easy partner piece · 15 min"],["calm","Couch stretch, pigeon","Mobility · 10 min"],["y7","Half split, puppy dog, deep squat","Mobility · 10 min"],["y8","Wrap up","Mobility · 10 min"]],{jumpTo:2,jumpLabel:"Stations start → fade into "})
  ]}
 ];
@@ -339,6 +339,15 @@ nav.innerHTML = '<button data-id="home"><i style="background:'+grad("run")+'"></
 chips.innerHTML = '<button data-id="home">Home</button>' + ALL.map(s=>'<button data-id="'+s.id+'">'+esc(s.name.replace(/^BODYBOX /,""))+'</button>').join("");
 const go = e => { const b=e.target.closest("[data-id]"); if(!b) return; q1.value=q2.value=""; location.hash = b.dataset.id==="home" ? "" : b.dataset.id; if(b.dataset.id==="home") route(); };
 nav.addEventListener("click",go); chips.addEventListener("click",go);
+/* Today's Class: the day's class playlist lives in today.json, so it can change every day without a new app version. */
+(async()=>{ try{
+  const r=await fetch("today.json?t="+Date.now(),{cache:"no-store"}); if(!r.ok) return; const d=await r.json();
+  const set=ALL.find(x=>x.id==="satclass"); if(!set||!Array.isArray(d.tracks)) return;
+  const fresh=P("satclass",d.name||"Today's Class",d.note||"",d.tracks.filter(t=>S[t[0]]),{jumpTo:d.jumpTo,jumpLabel:d.jumpLabel});
+  Object.assign(set,fresh); if(d.jumpTo==null) delete set.jumpTo;
+  document.querySelectorAll('[data-id="satclass"]').forEach(b=>{ const i=b.querySelector("i"); b.textContent=""; if(i) b.appendChild(i); b.append(i?set.name:set.name); });
+  if(location.hash.slice(1)==="satclass"||!location.hash) route();
+}catch(e){} })();
 window.__bbmNavExtra = (isCoach,email) => {
   if(isCoach){ nav.insertAdjacentHTML("beforeend",'<h4>Coach</h4><button data-id="listeners"><i style="background:'+grad("anthems")+'"></i>Who can listen</button><button data-id="stats"><i style="background:'+grad("run")+'"></i>Song stats</button>'); chips.insertAdjacentHTML("beforeend",'<button data-id="listeners">Who can listen</button><button data-id="stats">Song stats</button>'); }
   nav.insertAdjacentHTML("afterend",'<div class="acct">Signed in as '+esc(email)+'<br><button id="bbmOut">Sign out</button></div>');
