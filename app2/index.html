@@ -4844,7 +4844,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 
   /* ---------- Nov 26: one-time "BODYBOX Music is available" pop-up (shows once, like the questionnaire) ---------- */
   function musicPopCheck(push){
-    if(A.musicPop || window.__bbNoIntake || (typeof isCoach === 'function' && isCoach()) || document.getElementById('bbMusicPop')) return;
+    const preview = /[?&]musicpop/.test(location.search); // coach preview: add ?musicpop to the app link
+    if(document.getElementById('bbMusicPop') || (!preview && (A.musicPop || window.__bbNoIntake || (typeof isCoach === 'function' && isCoach())))) return;
     if(document.getElementById('bbIntake') || document.getElementById('bbGoalSet')){ setTimeout(() => musicPopCheck(push), 1500); return; }
     const url = 'https://reefwtraining.github.io/bodybox/music/';
     const ov = document.createElement('div'); ov.id = 'bbMusicPop';
@@ -4853,7 +4854,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       '<a class="iq-go mp-open" id="mpOpen" href="'+url+'" target="_blank" rel="noopener">Open BODYBOX Music</a><p class="mp-url">'+url+'</p>'+
       '<p class="iq-s">Sign in with your BODYBOX app login. Add it to your home screen to keep it like an app.</p><button type="button" class="gs-skip" id="mpLater">Got it</button></div>';
     document.body.appendChild(ov); document.body.style.overflow = 'hidden';
-    const done = () => { A.musicPop = new Date().toISOString(); saveA(); try{ push(); }catch(e){} ov.remove(); document.body.style.overflow = ''; };
+    const done = () => { if(!preview){ A.musicPop = new Date().toISOString(); saveA(); } try{ push(); }catch(e){} ov.remove(); document.body.style.overflow = ''; };
     ov.querySelector('#mpOpen').addEventListener('click', () => setTimeout(done, 300));
     ov.querySelector('#mpLater').onclick = done;
   }
