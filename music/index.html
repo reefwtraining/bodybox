@@ -150,6 +150,7 @@ h1{font-size:clamp(30px,4.4vw,40px)}h3{font-size:22px}.head h2{font-size:clamp(2
 .top .row1 .logo{font-size:20px}.top .row1 .logo img{height:24px;width:auto;border-radius:0}
 #bbGate{position:fixed;inset:0;z-index:20000;background:#111111;color:#F4F2EE;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;font-family:var(--body)}
 #bbGate[hidden]{display:none}
+#bbGate .gfree{border:1px solid #2A2A2A;border-radius:16px;padding:12px;display:grid;gap:10px;background:#161616}#bbGate .gfree .gfr{display:flex;gap:12px;align-items:center}#bbGate .gfree img{width:64px;height:64px;border-radius:10px;object-fit:cover}#bbGate .gfree b{display:block;font-size:15px}#bbGate .gfree span{color:#8F8B84;font-size:13px}#bbGate .gfree audio{width:100%;height:36px}#bbGate .gfree a.gbtn{display:block;text-align:center;text-decoration:none;box-sizing:border-box}
 #bbGate .gcard{width:100%;max-width:380px;display:grid;gap:14px}
 #bbGate .glogo{display:flex;flex-direction:column;align-items:center;gap:8px}
 #bbGate .glogo .logo{font-size:34px}#bbGate .glogo .logo img{height:44px}
@@ -534,6 +535,9 @@ const G = document.getElementById('bbGate');
 const esc = s => String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LOGO = '<div class="glogo"><img class="ghp" src="icon-192.png" alt=""><span class="logo" aria-label="BODY BOX"><span class="gw"><img src="b-mark.png" alt="">ODY</span><span class="gw r"><img src="b-mark-red.png" alt="">OX</span></span><small>MUSIC</small></div>';
 const card = h => { G.hidden = false; G.innerHTML = '<div class="gcard">'+LOGO+h+'</div>'; };
+const FREE = '<div class="gfree"><div class="gfr"><img src="covers/kdgt.jpg" alt=""><div><b>Keep Doing Great Things</b><span>Free 1:30 sample. Use it on your post.</span></div></div>'+
+  '<audio controls preload="none" src="free/keep-doing-great-things-sample.mp3"></audio>'+
+  '<a class="gbtn" href="free/keep-doing-great-things-sample.mp3" download="TeamBodyBox Music - Keep Doing Great Things.mp3">Download the sample</a></div>';
 const spin = () => card('<div class="gspin"></div>');
 const errText = e => { const c=(e&&e.code)||'';
   if(c.includes('invalid-credential')||c.includes('wrong-password')||c.includes('user-not-found')) return "That email and password don't match.";
@@ -544,7 +548,7 @@ const errText = e => { const c=(e&&e.code)||'';
   if(c.includes('network')) return 'No connection. Check your internet and try again.';
   return 'Something went wrong. Try again.'; };
 function showSignIn(msg){
-  card('<h2>Sign in</h2><p>BODYBOX Music is for invited members. Use your BODYBOX app login.</p>'+
+  card(FREE+'<h2>Sign in</h2><p>BODYBOX Music is for invited members. Use your BODYBOX app login.</p>'+
     '<form id="gIn" class="gcard" style="gap:12px"><label>Email<input id="gEm" type="email" autocomplete="email" required></label>'+
     '<label>Password<input id="gPw" type="password" autocomplete="current-password" required></label>'+
     '<p class="gerr" id="gErr">'+esc(msg)+'</p><button class="gbtn" type="submit">Sign in</button></form>'+
@@ -558,7 +562,7 @@ function showSignIn(msg){
     try{ await sendPasswordResetEmail(auth, em); er.textContent='Check your email for a link to reset your password.'; }catch(e){ er.textContent=errText(e); } };
 }
 function showSignUp(){
-  card('<h2>Create your account</h2><p>Already on the BODYBOX app? Sign in with that login instead. After you sign up, Coach Reef turns on music for you.</p>'+
+  card(FREE+'<h2>Create your account</h2><p>Already on the BODYBOX app? Sign in with that login instead. After you sign up, Coach Reef turns on music for you.</p>'+
     '<form id="gUp" class="gcard" style="gap:12px"><label>Full name<input id="gNm" autocomplete="name" required maxlength="60"></label>'+
     '<label>Email<input id="gEm" type="email" autocomplete="email" required></label>'+
     '<label>Password (6+ characters)<input id="gPw" type="password" autocomplete="new-password" minlength="6" required></label>'+
@@ -581,7 +585,7 @@ async function ensureMember(u, nm){
   return ref;
 }
 function showWaiting(u){
-  card('<h2>You\'re in line</h2><p>You\'re signed in as '+esc(u.email)+'. Coach Reef turns on BODYBOX Music for you. This page opens by itself as soon as he does.</p>'+
+  card(FREE+'<h2>You\'re in line</h2><p>You\'re signed in as '+esc(u.email)+'. Coach Reef turns on BODYBOX Music for you. This page opens by itself as soon as he does.</p>'+
     '<div class="grow"><button class="glink" id="gOut" type="button">Sign out</button></div>');
   document.getElementById('gOut').onclick = () => signOut(auth);
 }
