@@ -382,7 +382,7 @@ function adPart(tag, title, lines, note, mine, lift, itemId){
 function intakeHtml(A){
   const q = A && A.intake;
   if(!q) return '<p class="iq-none">Questionnaire: not answered yet</p>';
-  const L = [['goals','Goals'],['comps','Comps / races'],['where','Trains'],['days','Rebuilt days'],['equip','Home equipment'],['weights','DB / KB weights'],['jump','Can jump at home'],['hurt','Injuries / pain'],['weak','Weaknesses'],['sports','Sports / schedule'],['exp','Experience'],['yt','YouTube']];
+  const L = [['goals','Goals'],['hours','Time a day'],['perweek','Days a week'],['where','Trains'],['hurt','Injuries / pain'],['weak','Weaknesses']];
   const v = x => Array.isArray(x) ? x.join(', ') : String(x||'');
   const rows = L.filter(([k]) => v(q[k]).trim()).map(([k, t]) => '<div><b>'+esc(t)+'</b><span>'+esc(v(q[k]))+'</span></div>').join('');
   return '<details class="iq-box"><summary>Questionnaire · answered '+esc(String(q.at||'').slice(0,10))+'</summary><div class="iq-rows">'+rows+'</div></details>';

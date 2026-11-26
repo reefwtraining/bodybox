@@ -4812,21 +4812,15 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(A.intake || (typeof isCoach === 'function' && isCoach()) || document.getElementById('bbIntake')) return;
     const Q = [
       { k:'goals', t:'What are your goals?', s:'What do you want out of your training?', type:'text', req:true },
-      { k:'comps', t:'Any comps or races coming up?', s:'Name and date if you know it. Leave blank if none.', type:'line' },
-      { k:'where', t:'Where do you train?', s:'Pick all that apply.', type:'multi', opts:['Rebuilt class','At home','Another gym','A mix'], req:true },
-      { k:'days', t:'Which days do you plan to come to Rebuilt?', s:'Pick all that apply.', type:'multi', opts:['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Not sure yet'] },
-      { k:'equip', t:'What equipment do you have at home?', s:'Pick all that apply.', type:'multi', opts:['Jump rope','Dumbbells','Kettlebell','Box or stairs','Pull-up bar','Bands','Barbell','Nothing'] },
-      { k:'weights', t:'What weights are your dumbbells or kettlebell?', s:'For example: 2 x 25 lb DBs, one 35 lb KB.', type:'line' },
-      { k:'jump', t:'Can you jump at home?', s:'Some people can\'t because of neighbors or floors.', type:'one', opts:['Yes','No'] },
+      { k:'hours', t:'How much time can you train a day?', s:'', type:'one', opts:['30 min','1 hour','1.5 hours','2 hours','2+ hours'], req:true },
+      { k:'perweek', t:'How many days a week do you train?', s:'', type:'one', opts:['2','3','4','5','6','7'], req:true },
+      { k:'where', t:'Where do you train?', s:'Pick all that apply.', type:'multi', opts:['Rebuilt class','At home','Another gym'], req:true },
       { k:'hurt', t:'Any injuries or anything that hurts right now?', s:'Write "None" if you\'re good.', type:'text', req:true },
-      { k:'weak', t:'What do you think your weaknesses are?', s:'Movements, lifts, engine, anything.', type:'text' },
-      { k:'sports', t:'Other sports or a schedule we should train around?', s:'Practices, games, work shifts.', type:'text' },
-      { k:'exp', t:'How long have you been training like this?', s:'', type:'one', opts:['New to this','1-2 years','3+ years','I compete'], req:true },
-      { k:'yt', t:'Your YouTube channel', s:'So you can post videos for coaching. Paste the link, or leave blank.', type:'line' }
+      { k:'weak', t:'What do you think your weaknesses are?', s:'Movements, lifts, engine, anything.', type:'text' }
     ];
     const ans = {};
     const ov = document.createElement('div'); ov.id = 'bbIntake';
-    ov.innerHTML = '<div class="iq-card"><p class="iq-k">Team BodyBox</p><h2>A few questions first</h2><p class="iq-s">This helps Coach Reef build your program. It takes about 2 minutes, and you only do it once.</p>'+
+    ov.innerHTML = '<div class="iq-card"><p class="iq-k">Team BodyBox</p><h2>A few questions first</h2><p class="iq-s">This helps Coach Reef build your program. It takes about a minute, and you only do it once.</p>'+
       Q.map(q => '<div class="iq-q" data-k="'+q.k+'"><b>'+esc(q.t)+(q.req ? '' : ' <span class="iq-opt">optional</span>')+'</b>'+(q.s ? '<small>'+esc(q.s)+'</small>' : '')+
         (q.type === 'text' ? '<textarea rows="3" data-in="'+q.k+'"></textarea>' : q.type === 'line' ? '<input type="text" data-in="'+q.k+'">' :
          '<div class="iq-chips">'+q.opts.map(o => '<button type="button" data-ch="'+q.k+'" data-v="'+esc(o)+'" data-one="'+(q.type === 'one')+'" aria-pressed="false">'+esc(o)+'</button>').join('')+'</div>')+'</div>').join('')+
