@@ -997,7 +997,7 @@ Rest 2:00"></textarea></label>
   const D = JSON.parse(document.getElementById('data').textContent);
 // Comp practice workouts live on the website and in emails, not in the app.
 if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(c.title||''));
-  const ORDER = ['class','comp','build','cardio','garage','shiit','yoga'];
+  const ORDER = ['class','garage','comp','build','cardio','shiit','yoga'];
   const store = {
     get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
     set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} },
