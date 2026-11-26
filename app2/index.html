@@ -4552,8 +4552,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const gk = Object.keys(A.goals||{}).filter(k => k.startsWith('gym:') && A.goals[k] && A.goals[k].n > 0).map(k => k.slice(4));
     let h = '<div class="psec"><span class="label">What you\'re chasing</span><h2>My goals</h2></div>' + coachGoalHtml()
       + (A.intake && A.intake.goals ? '<p class="how"><b>In your words:</b> '+esc(A.intake.goals)+'</p>' : '')
-      + '<div class="row" style="margin:0 0 10px"><button class="btn" type="button" data-setgoals="1">'+(ks.length || gk.length ? 'Add a goal' : 'Set my goals')+'</button></div>';
-    if(!ks.length && !gk.length) return h + '<p class="how">Set a goal and you get a graph here of how close you are. You can also open any lift and tap "Set a goal".</p>';
+;
+    if(!ks.length && !gk.length) return h + '<p class="how">'+(A.intake ? 'Coach Reef is setting your goals from your answers. They show up here with a graph of how close you are.' : 'Your goals show up here with a graph of how close you are.')+'</p>';
     return h + '<ul class="ilist">' + ks.map(k => '<li><span class="w">'+esc(LIFTS[k])+'</span>'+goalBar(k)+'</li>').join('') + gk.map(k => '<li><span class="w">'+esc(gymName(k))+'</span>'+gymGoalBar(k)+'</li>').join('') + '</ul>';
   }
   function goalEditHtml(k){
@@ -4879,8 +4879,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       ov.querySelectorAll('.iq-q').forEach(el => el.classList.toggle('miss', miss.some(q => q.k === el.dataset.k)));
       if(miss.length){ ov.querySelector('#iqErr').textContent = 'Please answer: ' + miss.map(q => q.t.replace(/\?$/,'')).join(', ') + '.'; const f = ov.querySelector('.iq-q.miss'); if(f) f.scrollIntoView({ behavior:'smooth', block:'center' }); return; }
       A.intake = Object.assign({ v:1, at: new Date().toISOString() }, ans); saveA(); try{ push(); }catch(e){}
-      ov.querySelector('.iq-card').innerHTML = '<p class="iq-k">Team BodyBox</p><h2>Thank you</h2><p class="iq-s">Coach Reef has your answers. Next, turn your goals into numbers so you can watch your progress.</p><button type="button" class="iq-go" id="iqDone">Set my goals</button>';
-      ov.querySelector('#iqDone').onclick = () => { ov.remove(); document.body.style.overflow = ''; openGoalSetter(); };
+      ov.querySelector('.iq-card').innerHTML = '<p class="iq-k">Team BodyBox</p><h2>Thank you</h2><p class="iq-s">Coach Reef has your answers and will set your goals from them. You\'ll see them on your Me page with a graph of how close you are.</p><button type="button" class="iq-go" id="iqDone">Go to my program</button>';
+      ov.querySelector('#iqDone').onclick = () => { ov.remove(); document.body.style.overflow = ''; };
     };
   }
   /* ---------- cloud save: keeps each athlete's logs on their claude.ai account ---------- */
@@ -4923,7 +4923,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     async function pullCoach(){
       if(!window.__bbCoachLogs) return; let L = []; try{ L = await window.__bbCoachLogs(); }catch(e){ return; }
       let n = 0; A.indr = A.indr || {};
-      L.sort((a, b) => ((a.r||{}).t||0) - ((b.r||{}).t||0)).forEach(c => { if(c && c.yt && c.yt.url){ A.ytPosts = A.ytPosts || []; const k = c.yt.url.split('?')[0]; if(!A.ytPosts.some(x => x && String(x.url||'').split('?')[0] === k)){ A.ytPosts.push({ date: c.yt.date || '', title: c.yt.title || 'Video', url: c.yt.url }); n++; } return; }
+      L.sort((a, b) => ((a.r||{}).t||0) - ((b.r||{}).t||0)).forEach(c => { if(c && c.kind === 'goals' && c.goals && typeof c.goals === 'object'){ /* Nov 26: goals Coach Reef sets for the athlete */
+          A.goals = A.goals || {}; Object.keys(c.goals).forEach(k => { const g = c.goals[k], cur = A.goals[k]; if(g === null){ if(cur && cur.coach){ delete A.goals[k]; n++; } return; } if(!cur || (cur.coach && (cur.at||0) < (g.at||0)) || (!cur.coach && (cur.set||'') < (g.set||''))){ A.goals[k] = Object.assign({ coach: true }, g); n++; } }); return; }
+        if(c && c.yt && c.yt.url){ A.ytPosts = A.ytPosts || []; const k = c.yt.url.split('?')[0]; if(!A.ytPosts.some(x => x && String(x.url||'').split('?')[0] === k)){ A.ytPosts.push({ date: c.yt.date || '', title: c.yt.title || 'Video', url: c.yt.url }); n++; } return; }
         if(!c || !c.item || !c.r) return;
         if(c.part){ A.personal = A.personal || []; const ex = A.personal.filter(x => x && x.src === c.item).slice(-1)[0]; /* Nov 23: coach-entered result on a team card, shown on that card's log bar */
           if(!ex || (ex.t||0) < (c.r.t||0)){ A.personal.push(Object.assign({ id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), kind:'own', src: c.item, date: c.r.date, t: c.r.t||Date.now(), title: c.r.title || 'Workout', s: c.r.s || 'Done' }, c.r.feel ? { feel: c.r.feel } : {}, c.r.note ? { note: c.r.note } : {}, c.r.vid ? { vid: c.r.vid } : {}, { by: c.r.by || 'Coach Reef' })); n++; } }
