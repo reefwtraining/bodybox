@@ -4550,8 +4550,10 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function goalsHtml(){
     const ks = Object.keys(A.goals||{}).filter(k => LIFTS[k] && goalOf(k));
     const gk = Object.keys(A.goals||{}).filter(k => k.startsWith('gym:') && A.goals[k] && A.goals[k].n > 0).map(k => k.slice(4));
-    let h = '<div class="psec"><span class="label">What you\'re chasing</span><h2>My goals</h2></div>' + coachGoalHtml();
-    if(!ks.length && !gk.length) return h + '<p class="how">Open any lift below and tap "Set a goal" to track how close you are.</p>';
+    let h = '<div class="psec"><span class="label">What you\'re chasing</span><h2>My goals</h2></div>' + coachGoalHtml()
+      + (A.intake && A.intake.goals ? '<p class="how"><b>In your words:</b> '+esc(A.intake.goals)+'</p>' : '')
+      + '<div class="row" style="margin:0 0 10px"><button class="btn" type="button" data-setgoals="1">'+(ks.length || gk.length ? 'Add a goal' : 'Set my goals')+'</button></div>';
+    if(!ks.length && !gk.length) return h + '<p class="how">Set a goal and you get a graph here of how close you are. You can also open any lift and tap "Set a goal".</p>';
     return h + '<ul class="ilist">' + ks.map(k => '<li><span class="w">'+esc(LIFTS[k])+'</span>'+goalBar(k)+'</li>').join('') + gk.map(k => '<li><span class="w">'+esc(gymName(k))+'</span>'+gymGoalBar(k)+'</li>').join('') + '</ul>';
   }
   function goalEditHtml(k){
@@ -4807,6 +4809,38 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   render();
   unlockSaved().then(() => indInit()).catch(() => indInit());
 
+
+  /* ---------- Nov 26: turn written goals into number goals (lift or gymnastics) with a progress graph on the Me page ---------- */
+  function openGoalSetter(onDone){
+    if(document.getElementById('bbGoalSet')) return;
+    const LK = ['back_squat','front_squat','deadlift','clean','power_clean','clean_jerk','jerk','snatch','power_snatch','overhead_squat','strict_press','push_press','bench','thruster'].filter(k => LIFTS[k]);
+    const opt = '<option value="">Pick one</option><optgroup label="Lifts">'+LK.map(k => '<option value="L:'+k+'">'+esc(LIFTS[k])+'</option>').join('')+'</optgroup><optgroup label="Gymnastics + skills">'+GYM.map(g => '<option value="G:'+g[0]+'">'+esc(g[1])+'</option>').join('')+'</optgroup>';
+    const row = i => '<div class="gs-row" data-row="'+i+'"><select data-gsel="'+i+'">'+opt+'</select><input type="number" inputmode="decimal" min="1" step="any" data-gnum="'+i+'" placeholder="Goal"><small data-ghint="'+i+'"></small></div>';
+    const ov = document.createElement('div'); ov.id = 'bbGoalSet';
+    const wrote = A.intake && A.intake.goals ? '<div class="gs-you"><span>Your goals</span><p>'+esc(A.intake.goals)+'</p></div>' : '';
+    ov.innerHTML = '<div class="iq-card"><p class="iq-k">Team BodyBox</p><h2>Set your goals</h2><p class="iq-s">Pick up to 3 things to chase and the number you want. Your Me page shows a graph of how close you are, and it moves every time you log.</p>'+wrote+
+      '<div class="gs-rows">'+row(0)+'</div><button type="button" class="iq-more" id="gsAdd">+ Add another goal</button><p class="iq-err" id="gsErr"></p>'+
+      '<button type="button" class="iq-go" id="gsSave">Save my goals</button><button type="button" class="gs-skip" id="gsSkip">Skip for now</button></div>';
+    document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+    let n = 1;
+    const hint = i => { const s = ov.querySelector('[data-gsel="'+i+'"]').value, el = ov.querySelector('[data-ghint="'+i+'"]'), inp = ov.querySelector('[data-gnum="'+i+'"]'); if(!s){ el.textContent = ''; return; }
+      const [t, k] = s.split(':'); if(t === 'L'){ const b = bestOf(k); inp.placeholder = A.unit; el.textContent = (b ? 'Your best now: '+fmtW(b.val)+' '+A.unit : 'No number logged yet. Log it and the graph starts.')+' · Type your goal in '+A.unit+'.'; }
+      else { const cur = gymBest(k), u = gymUnit(k); inp.placeholder = u; el.textContent = (cur ? 'Your best now: '+cur+' '+u : 'No number logged yet. Log it and the graph starts.')+' · Type your goal in '+u+'.'; } };
+    ov.addEventListener('change', e => { const s = e.target.closest('[data-gsel]'); if(s) hint(s.dataset.gsel); });
+    ov.querySelector('#gsAdd').onclick = () => { if(n >= 3) return; ov.querySelector('.gs-rows').insertAdjacentHTML('beforeend', row(n)); n++; if(n >= 3) ov.querySelector('#gsAdd').hidden = true; };
+    const close = () => { ov.remove(); document.body.style.overflow = ''; if(onDone) onDone(); };
+    ov.querySelector('#gsSkip').onclick = close;
+    ov.querySelector('#gsSave').onclick = () => {
+      const picks = []; for(let i = 0; i < n; i++){ const s = ov.querySelector('[data-gsel="'+i+'"]').value, v = parseFloat(ov.querySelector('[data-gnum="'+i+'"]').value); if(s && v > 0) picks.push([s, v]); else if(s || v > 0){ ov.querySelector('#gsErr').textContent = 'Pick what it is and type the number for each goal.'; return; } }
+      if(!picks.length){ ov.querySelector('#gsErr').textContent = 'Pick at least one goal, or tap Skip for now.'; return; }
+      A.goals = A.goals || {}; const today = todayStr();
+      picks.forEach(([s, v]) => { const [t, k] = s.split(':'); if(t === 'L') A.goals[k] = { w: v, u: A.unit, set: today }; else A.goals['gym:'+k] = { n: v, set: today }; });
+      saveA(); try{ render(); }catch(e){}
+      ov.querySelector('.iq-card').innerHTML = '<p class="iq-k">Team BodyBox</p><h2>Goals set</h2><p class="iq-s">Find them on your Me page under My goals. Log your lifts and scores and watch the graph move.</p><button type="button" class="iq-go" id="gsDone">Go to my program</button>';
+      ov.querySelector('#gsDone').onclick = close;
+    };
+  }
+  document.addEventListener('click', e => { if(e.target.closest && e.target.closest('[data-setgoals]')) openGoalSetter(); });
   /* ---------- Nov 26: one-time athlete questionnaire (shows once, existing athletes too) ---------- */
   function intakeCheck(push){
     if(A.intake || window.__bbNoIntake || (typeof isCoach === 'function' && isCoach()) || document.getElementById('bbIntake')) return;
@@ -4845,8 +4879,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       ov.querySelectorAll('.iq-q').forEach(el => el.classList.toggle('miss', miss.some(q => q.k === el.dataset.k)));
       if(miss.length){ ov.querySelector('#iqErr').textContent = 'Please answer: ' + miss.map(q => q.t.replace(/\?$/,'')).join(', ') + '.'; const f = ov.querySelector('.iq-q.miss'); if(f) f.scrollIntoView({ behavior:'smooth', block:'center' }); return; }
       A.intake = Object.assign({ v:1, at: new Date().toISOString() }, ans); saveA(); try{ push(); }catch(e){}
-      ov.querySelector('.iq-card').innerHTML = '<p class="iq-k">Team BodyBox</p><h2>Thank you</h2><p class="iq-s">Coach Reef has your answers. Now go do the work.</p><button type="button" class="iq-go" id="iqDone">Go to my program</button>';
-      ov.querySelector('#iqDone').onclick = () => { ov.remove(); document.body.style.overflow = ''; };
+      ov.querySelector('.iq-card').innerHTML = '<p class="iq-k">Team BodyBox</p><h2>Thank you</h2><p class="iq-s">Coach Reef has your answers. Next, turn your goals into numbers so you can watch your progress.</p><button type="button" class="iq-go" id="iqDone">Set my goals</button>';
+      ov.querySelector('#iqDone').onclick = () => { ov.remove(); document.body.style.overflow = ''; openGoalSetter(); };
     };
   }
   /* ---------- cloud save: keeps each athlete's logs on their claude.ai account ---------- */
@@ -4949,6 +4983,15 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 #bbIntake .iq-morelist[hidden],#bbIntake .iq-q[hidden]{display:none}
 #bbIntake .iq-err{color:#ff8a7a;margin:0;min-height:1em;font-size:14px}
 #bbIntake .iq-go{background:#C8102E;border:0;border-radius:999px;color:#fff;font:700 17px var(--body);padding:15px 18px;cursor:pointer;width:100%}
+#bbGoalSet{position:fixed;inset:0;z-index:21000;background:#111;color:#F4F2EE;overflow-y:auto;font-family:var(--body);padding:max(20px,env(safe-area-inset-top)) 16px 40px}
+#bbGoalSet .iq-card{max-width:520px;margin:0 auto;display:grid;gap:16px}#bbGoalSet .iq-k{margin:0;font:700 12px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#FF5A64}
+#bbGoalSet h2{font-family:var(--display);font-weight:400;font-size:30px;margin:0;text-transform:uppercase}#bbGoalSet .iq-s{margin:0;color:#C9C5BE;font-size:16px;line-height:1.45}
+#bbGoalSet .gs-you{background:#1B1B1B;border:1px solid #2A2A2A;border-radius:14px;padding:12px 14px}#bbGoalSet .gs-you span{font:700 12px var(--body);letter-spacing:.1em;text-transform:uppercase;color:#8F8B84}#bbGoalSet .gs-you p{margin:6px 0 0;white-space:pre-line}
+#bbGoalSet .gs-rows{display:grid;gap:12px}#bbGoalSet .gs-row{display:grid;grid-template-columns:1fr 110px;gap:8px;background:#1B1B1B;border:1px solid #2A2A2A;border-radius:14px;padding:12px}
+#bbGoalSet .gs-row small{grid-column:1/-1;color:#8F8B84;font-size:14px}#bbGoalSet select,#bbGoalSet input{width:100%;box-sizing:border-box;background:#111;border:1px solid #2A2A2A;border-radius:10px;color:#F4F2EE;font:16px var(--body);padding:10px 12px}
+#bbGoalSet .iq-more{justify-self:start;background:none;border:1px dashed #3A3A3A;color:#FF5A64;border-radius:999px;padding:8px 14px;font:700 14px var(--body);cursor:pointer}#bbGoalSet .iq-more[hidden]{display:none}
+#bbGoalSet .iq-err{color:#ff8a7a;margin:0;min-height:1em;font-size:14px}#bbGoalSet .iq-go{background:#C8102E;border:0;border-radius:999px;color:#fff;font:700 17px var(--body);padding:15px 18px;cursor:pointer;width:100%}
+#bbGoalSet .gs-skip{background:none;border:0;color:#8F8B84;font:600 15px var(--body);cursor:pointer;padding:6px}
 #bbGate{position:fixed;inset:0;z-index:20000;background:#111111;color:#F4F2EE;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;font-family:var(--body)}
 #bbGate .gcard{width:100%;max-width:380px;display:grid;gap:14px}
 #bbGate .glogo{display:flex;align-items:center;justify-content:center;gap:.32em;font-family:var(--display);font-size:34px;letter-spacing:.04em;line-height:1}
