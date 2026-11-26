@@ -4814,7 +4814,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       { k:'goals', t:'What are your goals?', s:'What do you want out of your training?', type:'text', req:true },
       { k:'hours', t:'How much time can you train a day?', s:'', type:'one', opts:['30 min','1 hour','1.5 hours','2 hours','2+ hours'], req:true },
       { k:'perweek', t:'How many days a week do you train?', s:'', type:'one', opts:['2','3','4','5','6','7'], req:true },
-      { k:'where', t:'Where do you train?', s:'Pick up to 4.', type:'multi', max:4, opts:['Rebuilt class','At home','Apartment building gym','Another gym'], more:['908 Athletics','CrossFit Newark','Alpha Fit Club','Crunch','Equinox','LA Fitness','Life Time','Planet Fitness','PureGym (was Blink)','Retro Fitness','YMCA'], req:true },
+      { k:'where', t:'Where do you train?', s:'Pick up to 4. This tells us what equipment you have to work with.', type:'multi', max:4, opts:['Rebuilt class','At home','Apartment building gym','Another gym'], more:['908 Athletics','CrossFit Newark','Alpha Fit Club','Crunch','Equinox','LA Fitness','Life Time','Planet Fitness','PureGym (was Blink)','Retro Fitness','YMCA'], req:true },
       { k:'gymname', t:'Which location, apartment or other gym?', s:'For example: Planet Fitness Union, or the gym in your apartment building.', type:'line' },
       { k:'hurt', t:'Any injuries or anything that hurts right now?', s:'Write "None" if you\'re good.', type:'text', req:true },
       { k:'weak', t:'What do you think your weaknesses are?', s:'Movements, lifts, engine, anything.', type:'text' }
