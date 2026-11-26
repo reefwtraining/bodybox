@@ -4527,7 +4527,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const g = goalOf(k); if(!g) return '';
     const b = bestOf(k); const cur = b ? b.val : 0; const tgt = conv(g.w, g.u || A.unit, A.unit);
     const pct = Math.max(0, Math.min(100, Math.round(cur / tgt * 100))); const left = Math.max(0, Math.round((tgt - cur) * 10) / 10);
-    return '<span class="goalb'+(compact?' sm':'')+'"><span class="gtrack"><i style="width:'+pct+'%"></i></span><span class="glab">'+(left > 0 ? 'Goal '+fmtW(tgt)+' · '+fmtW(left)+' to go' : 'Goal '+fmtW(tgt)+' · hit it')+'</span></span>';
+    return '<span class="goalb'+(compact?' sm':'')+'"><span class="gtrack"><i style="width:'+pct+'%"></i></span><span class="glab">'+(!b ? 'Goal '+fmtW(tgt)+' · log your first numbers to see where you are' : left > 0 ? 'Goal '+fmtW(tgt)+' · '+fmtW(left)+' to go' : 'Goal '+fmtW(tgt)+' · hit it')+'</span></span>';
   }
   // Coach Reef's pick: written into the athlete's profile (A.coachGoal) when it fits the 6-week block
   const cgName = g => g.kind === 'gym' ? gymName(g.k) : (LIFTS[g.k] || g.k);
@@ -4536,7 +4536,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function gymGoalBar(k){
     const g = (A.goals||{})['gym:'+k]; if(!g || !(g.n > 0)) return '';
     const cur = gymBest(k), pct = Math.max(0, Math.min(100, Math.round(cur / g.n * 100))), left = Math.max(0, g.n - cur);
-    return '<span class="goalb"><span class="gtrack"><i style="width:'+pct+'%"></i></span><span class="glab">'+(left > 0 ? 'Goal '+g.n+' '+gymUnit(k)+' · '+left+' to go' : 'Goal '+g.n+' '+gymUnit(k)+' · hit it')+(g.by?' · by '+niceDate(g.by):'')+'</span></span>';
+    return '<span class="goalb"><span class="gtrack"><i style="width:'+pct+'%"></i></span><span class="glab">'+(!cur ? 'Goal '+g.n+' '+gymUnit(k)+' · log your first numbers to see where you are' : left > 0 ? 'Goal '+g.n+' '+gymUnit(k)+' · '+left+' to go' : 'Goal '+g.n+' '+gymUnit(k)+' · hit it')+(g.by?' · by '+niceDate(g.by):'')+'</span></span>';
   }
   function coachGoalHtml(){
     const g = A.coachGoal; if(!g || !g.k || g.done) return '';
