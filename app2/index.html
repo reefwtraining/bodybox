@@ -184,9 +184,11 @@ footer a{color:var(--muted)}
 .mlib{display:grid;gap:8px}.mcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:6px}
 .mcard p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
 .swap{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;background:rgba(90,163,200,.18);border:1px solid var(--blue);color:var(--chalk);font-family:var(--body);font-size:12px;font-weight:600;white-space:nowrap}
-.part.ind{border-color:var(--gold);box-shadow:inset 4px 0 0 var(--gold)}
+.part.ind{}
+.part.ind.must{border-color:var(--red);box-shadow:inset 4px 0 0 var(--red)}
+.part.ind.must .tag{color:var(--red)}
 .part.ind.staff{border-color:var(--blue);box-shadow:inset 4px 0 0 var(--blue)}
-.audb{float:right;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.audb{float:right;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .part.staff .audb{color:var(--blue)}
 .it-t{font-size:18px;margin:4px 0 6px}
 .grpv{margin:-4px 0 10px;border:1px dashed var(--line);border-radius:8px;padding:6px 10px;color:var(--muted)}
@@ -688,7 +690,7 @@ details.more{margin:14px 0}details.more summary{cursor:pointer;color:#FF5A64;fon
 .restpill.done{background:var(--red);color:#fff}
 .restpill.done button{border-color:#fff;color:#fff}
 .vc-prog i,.gtrack i{background:var(--red)}
-.part.ind{border-color:var(--red);box-shadow:inset 4px 0 0 var(--red)}
+.part.ind.must{border-color:var(--red);box-shadow:inset 4px 0 0 var(--red)}
 /* gold tints -> red tints */
 .example{background:rgba(200,16,46,.12);border-color:rgba(200,16,46,.45)}
 .news{background:linear-gradient(180deg,rgba(200,16,46,.16),rgba(200,16,46,.04));border-color:rgba(200,16,46,.55)}
@@ -4005,13 +4007,17 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(it._src === 'prog' || it.aud === 'prog') return 'Programmers only';
     const who = (it.who||[]).map(id => (athById(id)||{}).name || id);
     if(viewAs || isCoachKey()) return 'Only ' + (who.join(', ') || 'this athlete');
-    return 'Just for you';
+    return ''; // Nov 25 (Reef): no extra badge for athletes; personal cards look like normal cards
   }
   function itemCard(it, place){
     const r = (A.indr||{})[it.id];
     if(it._src === 'mine' && it.id && !viewAs && !isCoachKey()){ A.seen = A.seen || {}; if(!A.seen[it.id]){ A.seen[it.id] = Date.now(); setTimeout(saveA, 0); } } // Nov 16: coach can see when notes were opened
-    const kind = place === 'replace' ? 'Your version' : place === 'own' ? 'Your day' : 'Your extra';
-    let h = '<section class="part ind'+(it._src==='coach'||it._src==='prog'?' staff':'')+'"><span class="tag">'+esc(kind)+' · '+esc(it.tag||'')+'</span><span class="audb">'+esc(audBadge(it))+'</span>';
+    // Nov 25 (Reef): personal cards look like normal cards; red is kept only for MUST DO AND RECORD
+    const must = /must do/i.test(it.tag||'') || (it.lines||[]).some(l => /MUST DO AND RECORD/.test(l));
+    const tg = String(it.tag||'').trim(), plainTag = !tg || /^(coach reef|your version|your extra|must do and record)$/i.test(tg);
+    const kind = /^coach note$/i.test(tg) ? 'Coach note' : (place === 'replace' ? 'Your version' : place === 'own' ? 'Your day' : 'Added for you') + (plainTag || /^coach note$/i.test(tg) ? '' : ' · ' + tg);
+    const badge = audBadge(it);
+    let h = '<section class="part ind'+(it._src==='coach'||it._src==='prog'?' staff':'')+(must?' must':'')+'"><span class="tag">'+esc(must ? 'MUST DO AND RECORD' : kind)+'</span>'+(badge?'<span class="audb">'+esc(badge)+'</span>':'');
     if(it.title) h += '<h3 class="it-t">'+esc(it.title)+'</h3>';
     h += '<ul class="rx">'+(it.lines||[]).map(l => lineHtml(l, it.lift, true)).join('')+'</ul>';
     if(it.lift && LIFTS[it.lift]) h += liftNote({ lift:it.lift, lines:it.lines||[] });
