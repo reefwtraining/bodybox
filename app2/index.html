@@ -4814,7 +4814,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       { k:'goals', t:'What are your goals?', s:'What do you want out of your training?', type:'text', req:true },
       { k:'hours', t:'How much time can you train a day?', s:'', type:'one', opts:['30 min','1 hour','1.5 hours','2 hours','2+ hours'], req:true },
       { k:'perweek', t:'How many days a week do you train?', s:'', type:'one', opts:['2','3','4','5','6','7'], req:true },
-      { k:'where', t:'Where do you train?', s:'Pick up to 4. This tells us what equipment you have to work with.', type:'multi', max:4, opts:['Rebuilt class','At home','Apartment building gym','Another gym'], more:['908 Athletics','CrossFit Newark','Alpha Fit Club','Crunch','Equinox','LA Fitness','Life Time','Planet Fitness','PureGym (was Blink)','Retro Fitness','YMCA'], req:true },
+      { k:'where', t:'Where do you train?', s:'Pick up to 4. This tells us what equipment you have to work with.', type:'multi', max:4, opts:['Rebuilt class','At home / garage','Apartment building gym','Another gym'], more:['908 Athletics','CrossFit Newark','Alpha Fit Club','Crunch','Equinox','LA Fitness','Life Time','Planet Fitness','PureGym (was Blink)','Retro Fitness','YMCA'], req:true },
+      { k:'homeeq', t:'What equipment do you have at home or in your garage?', s:'Pick all that apply.', type:'multi', opts:['Jump rope','Dumbbells','Kettlebell','Barbell + plates','Pull-up bar','Box or stairs','Bands','Rower or bike','Nothing, bodyweight only'], showIf:['where','At home / garage'] },
+      { k:'homejump', t:'Can you jump at home?', s:'Some people can\'t because of neighbors or floors.', type:'one', opts:['Yes','No'], showIf:['where','At home / garage'] },
       { k:'gymname', t:'Which location, apartment or other gym?', s:'For example: Planet Fitness Union, or the gym in your apartment building.', type:'line' },
       { k:'hurt', t:'Any injuries or anything that hurts right now?', s:'Write "None" if you\'re good.', type:'text', req:true },
       { k:'weak', t:'What do you think your weaknesses are?', s:'Movements, lifts, engine, anything.', type:'text' }
@@ -4822,7 +4824,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     const ans = {};
     const ov = document.createElement('div'); ov.id = 'bbIntake';
     ov.innerHTML = '<div class="iq-card"><p class="iq-k">Team BodyBox</p><h2>A few questions first</h2><p class="iq-s">This helps Coach Reef build your program. It takes about a minute, and you only do it once.</p>'+
-      Q.map(q => '<div class="iq-q" data-k="'+q.k+'"><b>'+esc(q.t)+(q.req ? '' : ' <span class="iq-opt">optional</span>')+'</b>'+(q.s ? '<small>'+esc(q.s)+'</small>' : '')+
+      Q.map(q => '<div class="iq-q" data-k="'+q.k+'"'+(q.showIf ? ' hidden' : '')+'><b>'+esc(q.t)+(q.req ? '' : ' <span class="iq-opt">optional</span>')+'</b>'+(q.s ? '<small>'+esc(q.s)+'</small>' : '')+
         (q.type === 'text' ? '<textarea rows="3" data-in="'+q.k+'"></textarea>' : q.type === 'line' ? '<input type="text" data-in="'+q.k+'">' :
          (() => { const chip = o => '<button type="button" data-ch="'+q.k+'" data-v="'+esc(o)+'" data-one="'+(q.type === 'one')+'" aria-pressed="false">'+esc(o)+'</button>';
            return '<div class="iq-chips">'+q.opts.map(chip).join('')+'</div>'+(q.more ? '<button type="button" class="iq-more" data-more="'+q.k+'" aria-expanded="false">More gyms <span>▾</span></button><div class="iq-chips iq-morelist" data-morelist="'+q.k+'" hidden>'+q.more.map(chip).join('')+'</div>' : ''); })())+'</div>').join('')+
@@ -4836,7 +4838,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       if(one){ ov.querySelectorAll('[data-ch="'+k+'"]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); ans[k] = v; }
       else { const on = b.getAttribute('aria-pressed') !== 'true'; const cur = new Set(ans[k] || []); const q = Q.find(x => x.k === k), mx = q && q.max;
         if(on && mx && cur.size >= mx){ ov.querySelector('#iqErr').textContent = 'You can pick up to ' + mx + '. Tap one to turn it off first.'; return; }
-        b.setAttribute('aria-pressed', String(on)); on ? cur.add(v) : cur.delete(v); ans[k] = [...cur]; ov.querySelector('#iqErr').textContent = ''; } updMore(k); });
+        b.setAttribute('aria-pressed', String(on)); on ? cur.add(v) : cur.delete(v); ans[k] = [...cur]; ov.querySelector('#iqErr').textContent = ''; } updMore(k); Q.filter(x => x.showIf && x.showIf[0] === k).forEach(x => { const on = (ans[k] || []).includes(x.showIf[1]); const el = ov.querySelector('.iq-q[data-k="'+x.k+'"]'); el.hidden = !on; if(!on) delete ans[x.k], el.querySelectorAll('[aria-pressed=true]').forEach(c => c.setAttribute('aria-pressed','false')); }); });
     ov.querySelector('#iqGo').onclick = () => {
       ov.querySelectorAll('[data-in]').forEach(el => { ans[el.dataset.in] = el.value.trim().slice(0, 600); });
       const miss = Q.filter(q => q.req && !(Array.isArray(ans[q.k]) ? ans[q.k].length : ans[q.k]));
@@ -4944,7 +4946,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 #bbIntake .iq-chips button{background:#111;border:1px solid #2A2A2A;color:#F4F2EE;border-radius:999px;padding:9px 14px;font:600 15px var(--body);cursor:pointer}
 #bbIntake .iq-chips button[aria-pressed=true]{background:#C8102E;border-color:#C8102E;color:#fff}
 #bbIntake .iq-more{justify-self:start;background:none;border:1px dashed #3A3A3A;color:#FF5A64;border-radius:999px;padding:8px 14px;font:700 14px var(--body);cursor:pointer}
-#bbIntake .iq-morelist[hidden]{display:none}
+#bbIntake .iq-morelist[hidden],#bbIntake .iq-q[hidden]{display:none}
 #bbIntake .iq-err{color:#ff8a7a;margin:0;min-height:1em;font-size:14px}
 #bbIntake .iq-go{background:#C8102E;border:0;border-radius:999px;color:#fff;font:700 17px var(--body);padding:15px 18px;cursor:pointer;width:100%}
 #bbGate{position:fixed;inset:0;z-index:20000;background:#111111;color:#F4F2EE;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;font-family:var(--body)}
