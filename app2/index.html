@@ -4809,7 +4809,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 
   /* ---------- Nov 26: one-time athlete questionnaire (shows once, existing athletes too) ---------- */
   function intakeCheck(push){
-    if(A.intake || (typeof isCoach === 'function' && isCoach()) || document.getElementById('bbIntake')) return;
+    if(A.intake || window.__bbNoIntake || (typeof isCoach === 'function' && isCoach()) || document.getElementById('bbIntake')) return;
     const Q = [
       { k:'goals', t:'What are your goals?', s:'What do you want out of your training?', type:'text', req:true },
       { k:'hours', t:'How much time can you train a day?', s:'', type:'one', opts:['30 min','1 hour','1.5 hours','2 hours','2+ hours'], req:true },
@@ -5819,6 +5819,7 @@ async function openChSetup(){
 
 async function start(u, coach){
   if(started) return; started = true;
+  window.__bbNoIntake = !!coach; // Nov 26: coaches skip the athlete questionnaire
   card('<div class="gspin"></div><p>Loading your programs…</p>');
   let data = null, lb = null;
   try{
