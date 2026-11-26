@@ -4814,7 +4814,8 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       { k:'goals', t:'What are your goals?', s:'What do you want out of your training?', type:'text', req:true },
       { k:'hours', t:'How much time can you train a day?', s:'', type:'one', opts:['30 min','1 hour','1.5 hours','2 hours','2+ hours'], req:true },
       { k:'perweek', t:'How many days a week do you train?', s:'', type:'one', opts:['2','3','4','5','6','7'], req:true },
-      { k:'where', t:'Where do you train?', s:'Pick all that apply.', type:'multi', opts:['Rebuilt class','At home','Another gym'], req:true },
+      { k:'where', t:'Where do you train?', s:'Pick up to 4.', type:'multi', max:4, opts:['Rebuilt class','At home','Apartment building gym','Alpha Fit Club','908 Athletics','CrossFit Newark','Another gym'], req:true },
+      { k:'gymname', t:'Apartment or other gym? Name it here.', s:'For example, the gym in your apartment building.', type:'line' },
       { k:'hurt', t:'Any injuries or anything that hurts right now?', s:'Write "None" if you\'re good.', type:'text', req:true },
       { k:'weak', t:'What do you think your weaknesses are?', s:'Movements, lifts, engine, anything.', type:'text' }
     ];
@@ -4829,7 +4830,9 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     ov.addEventListener('click', e => { const b = e.target.closest('[data-ch]'); if(!b) return;
       const k = b.dataset.ch, v = b.dataset.v, one = b.dataset.one === 'true';
       if(one){ ov.querySelectorAll('[data-ch="'+k+'"]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); ans[k] = v; }
-      else { const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(on)); const cur = new Set(ans[k] || []); on ? cur.add(v) : cur.delete(v); ans[k] = [...cur]; } });
+      else { const on = b.getAttribute('aria-pressed') !== 'true'; const cur = new Set(ans[k] || []); const q = Q.find(x => x.k === k), mx = q && q.max;
+        if(on && mx && cur.size >= mx){ ov.querySelector('#iqErr').textContent = 'You can pick up to ' + mx + '. Tap one to turn it off first.'; return; }
+        b.setAttribute('aria-pressed', String(on)); on ? cur.add(v) : cur.delete(v); ans[k] = [...cur]; ov.querySelector('#iqErr').textContent = ''; } });
     ov.querySelector('#iqGo').onclick = () => {
       ov.querySelectorAll('[data-in]').forEach(el => { ans[el.dataset.in] = el.value.trim().slice(0, 600); });
       const miss = Q.filter(q => q.req && !(Array.isArray(ans[q.k]) ? ans[q.k].length : ans[q.k]));
