@@ -4806,6 +4806,46 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   })();
   render();
   unlockSaved().then(() => indInit()).catch(() => indInit());
+
+  /* ---------- Nov 26: one-time athlete questionnaire (shows once, existing athletes too) ---------- */
+  function intakeCheck(push){
+    if(A.intake || (typeof isCoach === 'function' && isCoach()) || document.getElementById('bbIntake')) return;
+    const Q = [
+      { k:'goals', t:'What are your goals?', s:'What do you want out of your training?', type:'text', req:true },
+      { k:'comps', t:'Any comps or races coming up?', s:'Name and date if you know it. Leave blank if none.', type:'line' },
+      { k:'where', t:'Where do you train?', s:'Pick all that apply.', type:'multi', opts:['Rebuilt class','At home','Another gym','A mix'], req:true },
+      { k:'days', t:'Which days do you plan to come to Rebuilt?', s:'Pick all that apply.', type:'multi', opts:['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Not sure yet'] },
+      { k:'equip', t:'What equipment do you have at home?', s:'Pick all that apply.', type:'multi', opts:['Jump rope','Dumbbells','Kettlebell','Box or stairs','Pull-up bar','Bands','Barbell','Nothing'] },
+      { k:'weights', t:'What weights are your dumbbells or kettlebell?', s:'For example: 2 x 25 lb DBs, one 35 lb KB.', type:'line' },
+      { k:'jump', t:'Can you jump at home?', s:'Some people can\'t because of neighbors or floors.', type:'one', opts:['Yes','No'] },
+      { k:'hurt', t:'Any injuries or anything that hurts right now?', s:'Write "None" if you\'re good.', type:'text', req:true },
+      { k:'weak', t:'What do you think your weaknesses are?', s:'Movements, lifts, engine, anything.', type:'text' },
+      { k:'sports', t:'Other sports or a schedule we should train around?', s:'Practices, games, work shifts.', type:'text' },
+      { k:'exp', t:'How long have you been training like this?', s:'', type:'one', opts:['New to this','1-2 years','3+ years','I compete'], req:true },
+      { k:'yt', t:'Your YouTube channel', s:'So you can post videos for coaching. Paste the link, or leave blank.', type:'line' }
+    ];
+    const ans = {};
+    const ov = document.createElement('div'); ov.id = 'bbIntake';
+    ov.innerHTML = '<div class="iq-card"><p class="iq-k">Team BodyBox</p><h2>A few questions first</h2><p class="iq-s">This helps Coach Reef build your program. It takes about 2 minutes, and you only do it once.</p>'+
+      Q.map(q => '<div class="iq-q" data-k="'+q.k+'"><b>'+esc(q.t)+(q.req ? '' : ' <span class="iq-opt">optional</span>')+'</b>'+(q.s ? '<small>'+esc(q.s)+'</small>' : '')+
+        (q.type === 'text' ? '<textarea rows="3" data-in="'+q.k+'"></textarea>' : q.type === 'line' ? '<input type="text" data-in="'+q.k+'">' :
+         '<div class="iq-chips">'+q.opts.map(o => '<button type="button" data-ch="'+q.k+'" data-v="'+esc(o)+'" data-one="'+(q.type === 'one')+'" aria-pressed="false">'+esc(o)+'</button>').join('')+'</div>')+'</div>').join('')+
+      '<p class="iq-err" id="iqErr"></p><button type="button" class="iq-go" id="iqGo">Send to Coach Reef</button></div>';
+    document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+    ov.addEventListener('click', e => { const b = e.target.closest('[data-ch]'); if(!b) return;
+      const k = b.dataset.ch, v = b.dataset.v, one = b.dataset.one === 'true';
+      if(one){ ov.querySelectorAll('[data-ch="'+k+'"]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); ans[k] = v; }
+      else { const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(on)); const cur = new Set(ans[k] || []); on ? cur.add(v) : cur.delete(v); ans[k] = [...cur]; } });
+    ov.querySelector('#iqGo').onclick = () => {
+      ov.querySelectorAll('[data-in]').forEach(el => { ans[el.dataset.in] = el.value.trim().slice(0, 600); });
+      const miss = Q.filter(q => q.req && !(Array.isArray(ans[q.k]) ? ans[q.k].length : ans[q.k]));
+      ov.querySelectorAll('.iq-q').forEach(el => el.classList.toggle('miss', miss.some(q => q.k === el.dataset.k)));
+      if(miss.length){ ov.querySelector('#iqErr').textContent = 'Please answer: ' + miss.map(q => q.t.replace(/\?$/,'')).join(', ') + '.'; const f = ov.querySelector('.iq-q.miss'); if(f) f.scrollIntoView({ behavior:'smooth', block:'center' }); return; }
+      A.intake = Object.assign({ v:1, at: new Date().toISOString() }, ans); saveA(); try{ push(); }catch(e){}
+      ov.querySelector('.iq-card').innerHTML = '<p class="iq-k">Team BodyBox</p><h2>Thank you</h2><p class="iq-s">Coach Reef has your answers. Now go do the work.</p><button type="button" class="iq-go" id="iqDone">Go to my program</button>';
+      ov.querySelector('#iqDone').onclick = () => { ov.remove(); document.body.style.overflow = ''; };
+    };
+  }
   /* ---------- cloud save: keeps each athlete's logs on their claude.ai account ---------- */
   (function cloudSync(){
     if(!(window.claude && window.claude.use)) return;
@@ -4878,6 +4918,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       catch(e){ try{ await new Promise(r => setTimeout(r, 800 + Math.random()*800)); s = await ref.get(); }catch(x){ ref = null; return; } }
       if(s && s.exists){ const d = s.data(); if(d) try{ mergeIn(JSON.parse(JSON.stringify(d))); }catch(e){} }
       ready = true; pullCoach(); push();
+      setTimeout(() => { try{ intakeCheck(push); }catch(e){} }, 1500); // Nov 26: one-time questionnaire
       setInterval(pullCoach, 60000); document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') pullCoach(); });
       setInterval(push, 4000);
       document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') push(); });
@@ -4887,6 +4928,22 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
 })();
 </script>
 <style>
+#bbIntake{position:fixed;inset:0;z-index:21000;background:#111;color:#F4F2EE;overflow-y:auto;font-family:var(--body);padding:max(20px,env(safe-area-inset-top)) 16px 40px}
+#bbIntake .iq-card{max-width:520px;margin:0 auto;display:grid;gap:18px}
+#bbIntake .iq-k{margin:0;font:700 12px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#FF5A64}
+#bbIntake h2{font-family:var(--display);font-weight:400;font-size:30px;margin:0;letter-spacing:.02em;text-transform:uppercase}
+#bbIntake .iq-s{margin:0;color:#C9C5BE;font-size:16px;line-height:1.45}
+#bbIntake .iq-q{display:grid;gap:8px;background:#1B1B1B;border:1px solid #2A2A2A;border-radius:14px;padding:14px}
+#bbIntake .iq-q.miss{border-color:#C8102E}
+#bbIntake .iq-q b{font-size:17px;line-height:1.3}#bbIntake .iq-opt{font-weight:400;font-size:12px;color:#8F8B84;text-transform:uppercase;letter-spacing:.08em;margin-left:6px}
+#bbIntake .iq-q small{color:#8F8B84;font-size:14px;line-height:1.35}
+#bbIntake textarea,#bbIntake input{width:100%;box-sizing:border-box;background:#111;border:1px solid #2A2A2A;border-radius:10px;color:#F4F2EE;font:16px var(--body);padding:10px 12px}
+#bbIntake textarea:focus,#bbIntake input:focus{outline:2px solid #FF5A64;outline-offset:1px}
+#bbIntake .iq-chips{display:flex;flex-wrap:wrap;gap:8px}
+#bbIntake .iq-chips button{background:#111;border:1px solid #2A2A2A;color:#F4F2EE;border-radius:999px;padding:9px 14px;font:600 15px var(--body);cursor:pointer}
+#bbIntake .iq-chips button[aria-pressed=true]{background:#C8102E;border-color:#C8102E;color:#fff}
+#bbIntake .iq-err{color:#ff8a7a;margin:0;min-height:1em;font-size:14px}
+#bbIntake .iq-go{background:#C8102E;border:0;border-radius:999px;color:#fff;font:700 17px var(--body);padding:15px 18px;cursor:pointer;width:100%}
 #bbGate{position:fixed;inset:0;z-index:20000;background:#111111;color:#F4F2EE;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;font-family:var(--body)}
 #bbGate .gcard{width:100%;max-width:380px;display:grid;gap:14px}
 #bbGate .glogo{display:flex;align-items:center;justify-content:center;gap:.32em;font-family:var(--display);font-size:34px;letter-spacing:.04em;line-height:1}
