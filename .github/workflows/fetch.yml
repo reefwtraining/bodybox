@@ -8,7 +8,7 @@ jobs:
       - run: |
           git clone --depth 1 -b media-queue https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} mq
           cd mq && mkdir -p music
-          ID=d143f629-70d9-432b-8968-b7fdf8d0c37f
+          ID=2304fe0f-94bb-4e1e-82df-08ce553e1210
           curl -sL -A "Mozilla/5.0" -e https://suno.com/ -o music/nd.mp4 -w "%{http_code} %{size_download}\n" https://cdn1.suno.ai/$ID.mp4
           ls -la music
           git config user.name bot && git config user.email bot@users.noreply.github.com
