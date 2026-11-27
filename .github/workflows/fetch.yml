@@ -1,0 +1,15 @@
+name: fetch-song
+on: { push: { branches: [fetch-song] } }
+permissions: { contents: write }
+jobs:
+  f:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          git clone --depth 1 -b media-queue https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} mq
+          cd mq && mkdir -p music
+          ID=75a8addd-054f-47ab-a71c-a15e40f5f0c3
+          curl -sL -A "Mozilla/5.0" -e https://suno.com/ -o music/nd.mp4 -w "%{http_code} %{size_download}\n" https://cdn1.suno.ai/$ID.mp4
+          ls -la music
+          git config user.name bot && git config user.email bot@users.noreply.github.com
+          git add -A music && git commit -m "song fetch" && git push
