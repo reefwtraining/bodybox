@@ -105,6 +105,8 @@ main{padding-block:18px 40px}
 .nt[open]>summary{background:var(--chalk);color:var(--ink);border-color:var(--chalk)}
 .nt[open]>summary::after{content:"\2212";color:var(--ink)}
 .ntc>summary{border-color:var(--gold);color:var(--gold)}
+.ntp>summary{border-color:var(--red,#C8102E);color:var(--red,#C8102E)}
+.ntp[open]>summary{background:var(--red,#C8102E);border-color:var(--red,#C8102E);color:#fff}
 .ntc[open]>summary{background:var(--gold);border-color:var(--gold);color:#fff}
 .ntb{display:grid;gap:8px;padding:10px 2px 2px}
 .ntb .note,.ntb .demos{border-top:0;padding-top:0}
@@ -3243,11 +3245,13 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   // per-card notes, like SugarWOD: workout lines on the card, everything else behind two tabs
   const NOPEN = new Set();
   document.addEventListener('toggle', e => { const d = e.target; if(d && d.dataset && d.dataset.nk){ if(d.open) NOPEN.add(d.dataset.nk); else NOPEN.delete(d.dataset.nk); } }, true);
-  function notesTabs(key, athHtml, coachHtml){
-    if(!athHtml && !coachHtml) return '';
-    const one = (kind, label, body) => { const k = kind+'|'+key; return '<details class="nt'+(kind==='c'?' ntc':'')+'" data-nk="'+esc(k)+'"'+(NOPEN.has(k)?' open':'')+'><summary>'+label+'</summary><div class="ntb">'+body+'</div></details>'; };
-    return '<div class="ntabs">'+(athHtml ? one('a','Athlete notes',athHtml) : '')+(coachHtml ? one('c','Coach notes',coachHtml) : '')+'</div>';
+  function notesTabs(key, athHtml, coachHtml, planHtml){
+    if(!athHtml && !coachHtml && !planHtml) return '';
+    const one = (kind, label, body) => { const k = kind+'|'+key; return '<details class="nt'+(kind==='c'?' ntc':kind==='p'?' ntp':'')+'" data-nk="'+esc(k)+'"'+(NOPEN.has(k)?' open':'')+'><summary>'+label+'</summary><div class="ntb">'+body+'</div></details>'; };
+    return '<div class="ntabs">'+(planHtml ? one('p','Reef\'s Plan',planHtml) : '')+(athHtml ? one('a','Athlete notes',athHtml) : '')+(coachHtml ? one('c','Coach notes',coachHtml) : '')+'</div>';
   }
+  // Nov 27 (Reef): "Reef's Plan" tab = how Reef wants the athlete to attack the workout (personal cards: it.plan)
+  const planNotes = t => t ? '<p class="note">'+esc(t)+'</p>' : '';
   function athNotes(note, lines){ return (note ? '<p class="note">'+esc(note)+'</p>' : '') + demoHtml(lines||[]); }
   // SugarWOD notes saved per date/program/card title (athlete notes for members, coaches notes for coaches)
   const nNorm = x => String(x||'').toLowerCase().replace(/^[a-z]?\d*\.\s*/, m => m).replace(/[^a-z0-9]+/g,'');
@@ -3343,7 +3347,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
       const nkDay = memProg+'|'+(showMoved ? mv.from : memDay);
       const partHtml = pt => '<section class="part"><span class="tag">'+esc(pt.tag)+'</span>'+lastTimeHtml(pt, showMoved ? mv.from : memDay)+'<ul class="rx">'+pt.lines.map(l => lineHtml(l, pt.lift)).join('')+'</ul>'+liftNote(pt)+
         (pt.scale?'<p class="scale"><b>Scale it:</b> '+esc(pt.scale.replace(/^Scaled:\s*/,''))+'</p>':'')+
-        notesTabs(nkDay+'|'+(pt.tag||''), athNotes(pt.note, pt.lines.concat(pt.scale||[])) + swNoteFor(window.__bbCardNotes, (showMoved ? mv.from : memDay), memProg, pt, 'a'), (cmap.map[String(pt.tag||'')]||'') + swNoteFor(window.__bbCoachCardNotes, (showMoved ? mv.from : memDay), memProg, pt, 'c'))+ (boardEvFor(pt, showMoved ? mv.from : memDay) && meId && athById(meId) ? logBar(boardEvFor(pt, showMoved ? mv.from : memDay)) + (pt.lift && LIFTS[pt.lift] ? partLogBar(pt, entry, memDay) : '') : partLogBar(pt, entry, memDay)) +'</section>';
+        notesTabs(nkDay+'|'+(pt.tag||''), athNotes(pt.note, pt.lines.concat(pt.scale||[])) + swNoteFor(window.__bbCardNotes, (showMoved ? mv.from : memDay), memProg, pt, 'a'), (cmap.map[String(pt.tag||'')]||'') + swNoteFor(window.__bbCoachCardNotes, (showMoved ? mv.from : memDay), memProg, pt, 'c'), planNotes(pt.plan))+ (boardEvFor(pt, showMoved ? mv.from : memDay) && meId && athById(meId) ? logBar(boardEvFor(pt, showMoved ? mv.from : memDay)) + (pt.lift && LIFTS[pt.lift] ? partLogBar(pt, entry, memDay) : '') : partLogBar(pt, entry, memDay)) +'</section>';
       const wv = partsWithItems(entry, showMoved ? mv.from : memDay, memProg, partHtml);
       h += ownDayHtml(wv.own) + '<div class="parts">'+wv.html+'</div>';
     }
@@ -4021,7 +4025,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
     if(it.title) h += '<h3 class="it-t">'+esc(it.title)+'</h3>';
     h += '<ul class="rx">'+(it.lines||[]).map(l => lineHtml(l, it.lift, true)).join('')+'</ul>';
     if(it.lift && LIFTS[it.lift]) h += liftNote({ lift:it.lift, lines:it.lines||[] });
-    h += notesTabs('it|'+(it.id||it.tag||''), athNotes(it.note, it.lines||[]), '');
+    h += notesTabs('it|'+(it.id||it.tag||''), athNotes(it.note, it.lines||[]), '', planNotes(it.plan));
     const sb = (it._src === 'mine' || !it._src) && it.date && !/^(your numbers|coach note)$/i.test(it.tag||'') ? partLogBar({ tag: it.title || it.tag || '', lines: it.lines || [], lift: it.lift }, null, it.date) : '';
     if(sb.indexOf('data-psets') >= 0){
       h += sb + '<div class="row" style="justify-content:flex-end;margin-top:4px"><button class="linkbtn" type="button" data-ilog="'+esc(it.id)+'">'+(r ? 'Result: '+esc(r.s||'Done')+' · edit' : 'Or log a result / note')+'</button></div>';
