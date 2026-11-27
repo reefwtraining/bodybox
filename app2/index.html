@@ -4039,9 +4039,10 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
   function partsWithItems(entry, date, prog, partHtml){
     const its = itemsFor(date, prog);
     const n = entry ? entry.parts.length : 0;
-    const rep = {}, after = {}, end = [], own = [];
+    const rep = {}, after = {}, end = [], own = [], plans = {};
     its.forEach(it => {
       const p = it.pos || { t:'end' };
+      if(p.t === 'plan'){ if(entry && p.i < n && p.i >= 0) plans[p.i] = it; return; } // Nov 27: Reef's Plan for a team card (shows as its own tab on that card)
       if(it.prog === 'own' || !entry) own.push(it);
       else if(p.t === 'replace' && p.i < n) rep[p.i] = it;
       else if(p.t === 'after' && p.i < n && p.i >= -1) (after[p.i] = after[p.i] || []).push(it);
@@ -4056,6 +4057,7 @@ if(Array.isArray(D.named)) D.named = D.named.filter(c => !/heavy weights/i.test(
         const n0 = nums[0], hdr = (pt.lines||[]).filter(l => /^!/.test(l)).slice(0,1);
         pt = Object.assign({}, pt, { lines: hdr.concat(n0.lines||[]), note: [n0.note, pt.note].filter(Boolean).join(' '), mine: true });
       }
+      if(plans[i]){ const pl = plans[i].plan || (plans[i].lines||[]).join('\n'); if(rep[i] && !rep[i].skip){ if(!rep[i].plan) rep[i] = Object.assign({}, rep[i], { plan: pl }); } else pt = Object.assign({}, pt, { plan: pl }); }
       if(rep[i] && rep[i].skip) h += (!isCoachKey() ? '' : '<details class="grpv"><summary>Removed for this athlete</summary>' + partHtml(pt) + '</details>');
       else if(rep[i]) h += itemCard(rep[i], 'replace') + (!isCoachKey() ? '' : '<details class="grpv"><summary>Group version</summary>' + partHtml(pt) + '</details>');
       else h += partHtml(pt);
