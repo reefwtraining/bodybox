@@ -1,103 +1,93 @@
 {
- "date": "2026-11-26",
+ "date": "2026-11-28",
  "name": "Today's Class",
- "note": "Thu Nov 26 · Turkey Burner · 20 min warm-up (coach's warm-up on SugarWOD) + 5 parts, about 47 min. Same order as the S.H.I.I.T Timer.",
- "jumpTo": 4,
+ "note": "Sat Nov 28 · Team of 3 · 4 Blocks · SugarWOD warm-up (about 10 min) + 4 x 9 min blocks with 1 min rest + 40 synchro burpees, about 55 min. Same order as the S.H.I.I.T Timer.",
+ "jumpTo": 2,
  "jumpLabel": "Workout starts → fade into ",
  "tracks": [
   [
    "h1",
-   "Coach's warm-up from SugarWOD",
-   "Warm-up · about 20 min"
+   "SugarWOD warm-up · synchro team",
+   "Warm-up · about 10 min"
   ],
   [
    "h2",
-   "Keep moving",
-   "Warm-up · about 20 min"
-  ],
-  [
-   "h3",
-   "Build it up",
-   "Warm-up · about 20 min"
-  ],
-  [
-   "h4",
-   "Last few minutes, get set up",
-   "Warm-up · about 20 min"
+   ":20/:10 x8, then machine check",
+   "Warm-up · about 10 min"
   ],
   [
    "kdgt",
-   "3, 2, 1, go · Round 1 easy",
-   "1. Engine · 8:30"
+   "3, 2, 1, go · rotate every minute",
+   "Block 1 · Bike / Thrusters / Pull-ups · 9:00"
   ],
   [
    "fire",
-   "Round 2 harder",
-   "1. Engine · 8:30"
+   "Keep rotating",
+   "Block 1 · Bike / Thrusters / Pull-ups · 9:00"
   ],
   [
    "tabata",
-   "Finish the round, then 1:00 rest",
-   "1. Engine · 8:30"
+   "Finish the block, then 1:00 rest",
+   "Block 1 · Bike / Thrusters / Pull-ups · 9:00"
   ],
   [
    "dstop",
-   "Round 1 · easy",
-   "2. Full Body · 18:00"
+   "Rotate every minute",
+   "Block 2 · Row / KB Swings / Sit-ups · 9:00"
   ],
   [
    "rise",
-   "Round 2 · harder",
-   "2. Full Body · 18:00"
-  ],
-  [
-   "ilove",
-   "Round 3 · hardest",
-   "2. Full Body · 18:00"
-  ],
-  [
-   "shine",
-   "Finish the last round",
-   "2. Full Body · 18:00"
-  ],
-  [
-   "giveall",
-   "Squat jumps, jumping lunges, lateral burpees",
-   "3. Power: Pop and Drop · 7:00"
+   "Keep rotating",
+   "Block 2 · Row / KB Swings / Sit-ups · 9:00"
   ],
   [
    "burnout",
-   "Back down the ladder to tuck jumps",
-   "3. Power: Pop and Drop · 7:00"
+   "Finish the block, then 1:00 rest",
+   "Block 2 · Row / KB Swings / Sit-ups · 9:00"
+  ],
+  [
+   "ilove",
+   "Rotate every minute",
+   "Block 3 · Machine / Wall Balls / Double-unders · 9:00"
+  ],
+  [
+   "shine",
+   "Keep rotating",
+   "Block 3 · Machine / Wall Balls / Double-unders · 9:00"
+  ],
+  [
+   "drum",
+   "Finish the block, then 1:00 rest",
+   "Block 3 · Machine / Wall Balls / Double-unders · 9:00"
+  ],
+  [
+   "giveall",
+   "Rotate every minute",
+   "Block 4 · Row / Step-overs / HR Push-ups · 9:00"
   ],
   [
    "grit",
-   "3:00 max rounds, count out loud",
-   "4. Grit · 4:30"
+   "Keep rotating",
+   "Block 4 · Row / Step-overs / HR Push-ups · 9:00"
   ],
   [
    "everyday",
-   "1:30 rest, write your score",
-   "4. Grit · 4:30"
-  ],
-  [
-   "plank",
-   "Round 1 · easy",
-   "5. Midline · 9:00"
+   "Last minutes, empty the tank",
+   "Block 4 · Row / Step-overs / HR Push-ups · 9:00"
   ],
   [
    "pulse",
-   "Round 2 · harder",
-   "5. Midline · 9:00"
+   "40 synchro burpees, all 3 together",
+   "Cash-out"
   ],
   [
-   "glute",
-   "Round 3 · hardest",
-   "5. Midline · 9:00"
+   "plank",
+   "Finish the burpees, write the team score",
+   "Cash-out"
   ],
   [
    "cool",
-   "Stretch it out, Happy Thanksgiving",
+   "Stretch it out",
    "After"
   ]
  ]
